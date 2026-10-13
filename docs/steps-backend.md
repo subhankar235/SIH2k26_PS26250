@@ -1,449 +1,1157 @@
-# Air Power — Backend Guide (Structure + Steps)
+# Air Power — Backend Specification (AI-Agent Ready)
 
-Covers everything except the dashboard: FastAPI backend, Kafka streaming, ML, optimisation, simulation, evaluation, and data. All data is synthetic and non-operational.
+This file is written so an AI coding agent can build any backend file from this document alone. Every file entry gives: **location**, **objective**, **inputs → outputs**, **structure (signatures)**, **rules**, **dependencies**, and **tests**.
 
----
-
-## 1. Backend Scope
-
-| Module | Folder | Features |
-|---|---|---|
-| API + services | `backend/` | F1–F10 |
-| Streaming | `streaming/` | F1 |
-| ML models | `ml/` | F1, F2, F3, F4 |
-| Optimisation | `optimisation/` | F5, F6 |
-| Simulation | `simulation/` | F7 |
-| Evaluation | `evaluation/` | F10 |
-| Synthetic data | `data/` | All |
-
-**Stack:** Python 3.11+, FastAPI, Pydantic, SQLAlchemy, Alembic, PostgreSQL, Apache Kafka, NetworkX, PyMC, PyTorch, GPyTorch, OR-Tools, `alns`, SimPy, Hypothesis, LangGraph, MLflow, Pytest.
+All data is synthetic and non-operational.
 
 ---
 
-## 2. Folder Structure
+## 0. How an AI Agent Should Use This File
+
+1. Read **§1 Global Conventions** and **§2 Shared Contracts** first. They apply to every file.
+2. Find the file entry (use the path as the search key).
+3. Create the file at exactly that path with the listed signatures. Keep names identical (other files import them).
+4. Respect **§3 Import Boundaries**. Violating them breaks the independence guarantee of verification.
+5. Write the tests listed for that file in the same change.
+6. Run the **Definition of Done** (§14) before finishing.
+
+**Prompt template to give an agent**
 
 ```
-backend/
-├── pyproject.toml
-├── Dockerfile
-├── alembic.ini
-├── .env.example
-├── app/
-│   ├── main.py
-│   ├── core/            # config, logging, security, exceptions, deps
-│   ├── db/
-│   │   ├── session.py
-│   │   ├── base.py
-│   │   ├── models/      # record, claim, decision, forecast, schedule,
-│   │   │                # experiment, agent_run, approval, audit_log
-│   │   └── migrations/
-│   ├── schemas/         # Pydantic: ingestion, evidence, validity, forecast,
-│   │                    # planning, stress, agents, verification, audit, benchmarks
-│   ├── api/
-│   │   ├── router.py
-│   │   └── v1/          # health, ingestion, evidence, validity, forecasts,
-│   │                    # planning, replanning, stress, agents,
-│   │                    # verification, approvals, audit, benchmarks
-│   ├── services/
-│   │   ├── ingestion/     # validator, normaliser, deduplicator, entity_matcher
-│   │   ├── evidence/      # contradiction_detector, staleness_checker,
-│   │   │                  # provenance_tracer, evidence_graph, uncertainty, autopsy
-│   │   ├── validity/      # dependency_graph, assumption_tracker,
-│   │   │                  # change_detector, reverifier, status
-│   │   ├── forecasting/   # features, predictor, calibration
-│   │   ├── planning/      # problem_builder, solver_service, comparator
-│   │   ├── replanning/    # diff_inputs, impact_analysis,
-│   │   │                  # incremental_recompute, schedule_diff
-│   │   ├── stress/        # run_manager
-│   │   ├── explanation/   # explainer
-│   │   ├── verification/  # constraint_checker, consistency_checker,
-│   │   │                  # uncertainty_flagger, approval_router
-│   │   ├── audit/         # audit_service
-│   │   └── benchmarking/  # results_service
-│   ├── agents/          # graph, state, routing, checkpointing, retry,
-│   │                    # human_approval, nodes/, prompts/
-│   └── utils/
-└── tests/               # unit/, integration/, api/, conftest.py
-
-streaming/               # config/, producers/, consumers/, utils/, tests/
-ml/                      # entity_matching/, temporal_graph/, bayesian/,
-                         # change_point/, forecasting/, artifacts/, common/
-optimisation/            # models/, cpsat/, alns/, incremental/, benchmarks/
-simulation/              # twin/, faults/, scenarios/, runner/, properties/
-evaluation/              # baselines/, ablations/, metrics/, stats/, experiments/, reports/
-data/                    # generators/, schemas/, samples/, raw/, processed/
-infra/                   # docker/, postgres/, kafka/, mlflow/
+Read BACKEND.md. Implement: <path>.
+Follow §1 and §2. Match the signatures exactly. Write the tests listed.
+Do not edit other files except to register routers/imports.
 ```
 
 ---
 
-## 3. Step-by-Step Backend Build
+## 1. Global Conventions
 
-### Step 1 — Environment
+| Topic | Rule |
+|---|---|
+| Python | 3.11+, full type hints, `from __future__ import annotations` |
+| Style | `ruff` + `black` (line length 100), `mypy` on `app/` |
+| Pydantic | v2 (`BaseModel`, `model_validate`, `ConfigDict(from_attributes=True)`) |
+| ORM | SQLAlchemy 2.0 style (`Mapped[...]`, `mapped_column`), sync sessions |
+| Time | Always timezone-aware UTC `datetime`. Store both `event_time` and `ingest_time` |
+| IDs | `uuid.UUID` (uuid4). Exposed as strings in JSON |
+| Seeds | Any stochastic function takes `seed: int` and uses a local `numpy.random.Generator` / seeded library RNG. Never use global RNG state |
+| Versioning | Records, forecasts, schedules, decisions carry an integer `version` that only increases |
+| Deletion | No hard deletes. Use `superseded_by` / flags |
+| Audit | Every state change calls `audit_service.record(...)` in the same DB transaction |
+| Errors | Raise subclasses of `AirPowerError`. Routers never catch generic `Exception` |
+| Logging | Structured (JSON) with `correlation_id`; never log raw payloads containing full records at INFO |
+| Purity | Services take a `Session` argument; no module-level globals holding state |
+| Determinism | Same input + same seed → identical output |
+| Docstrings | One-line summary + `Args/Returns/Raises` for public functions |
 
-```bash
-mkdir air-power && cd air-power
-git init
-python -m venv .venv && source .venv/bin/activate
-pip install fastapi "uvicorn[standard]" pydantic pydantic-settings \
-  sqlalchemy alembic psycopg2-binary pytest pytest-cov httpx \
-  networkx pandas numpy scipy mlflow
-```
+---
 
-### Step 2 — Infrastructure (Docker Compose)
+## 2. Shared Contracts
 
-Services: `postgres`, `kafka` (KRaft or with zookeeper), `mlflow`.
-
-```bash
-cp .env.example .env
-docker compose up -d postgres kafka mlflow
-bash infra/kafka/create_topics.sh   # resource, crew, availability, weather, constraint, dead_letter
-```
-
-### Step 3 — Synthetic Data (do this before models)
-
-Files in `data/generators/`: `generate_resources.py`, `generate_crew.py`, `generate_availability.py`, `generate_weather.py`, `generate_constraints.py`, `generate_all.py`, `make_splits.py`.
-
-Requirements:
-- Every generator accepts `--seed` and `--size`.
-- Save **ground-truth labels** for injected faults: stale, missing, duplicate, conflict.
-- Use **time-based** train/val/test splits.
-
-```bash
-python data/generators/generate_all.py --seed 42 --size 10000
-python data/generators/make_splits.py --seed 42
-```
-
-### Step 4 — FastAPI Core
-
-Create `app/main.py`, `app/core/config.py` (Pydantic Settings), `app/core/logging.py`, `app/db/session.py`.
+### 2.1 Enums — `backend/app/core/enums.py`
 
 ```python
-# app/main.py
-from fastapi import FastAPI
-from app.api.router import api_router
+from enum import StrEnum
 
-app = FastAPI(title="Air Power API", version="1.0.0")
-app.include_router(api_router, prefix="/api/v1")
+class SourceType(StrEnum):
+    RESOURCE = "resource"; CREW = "crew"; AVAILABILITY = "availability"
+    WEATHER = "weather"; CONSTRAINT = "constraint"
+
+class IssueClass(StrEnum):
+    STALE = "stale"; MISSING = "missing"; DUPLICATE = "duplicate"; CONFLICT = "conflict"
+
+class ValidityStatus(StrEnum):
+    VERIFIED = "verified"; STALE = "stale"; INVALIDATED = "invalidated"; UNCERTAIN = "uncertain"
+
+class VerificationOutcome(StrEnum):
+    VERIFIED = "verified"; INVALID = "invalid"; UNCERTAIN = "uncertain"
+
+class ScheduleStatus(StrEnum):
+    DRAFT = "draft"; VERIFIED = "verified"; INVALID = "invalid"; UNCERTAIN = "uncertain"
+    APPROVED = "approved"; REJECTED = "rejected"; SUPERSEDED = "superseded"
+
+class ApprovalDecision(StrEnum):
+    APPROVED = "approved"; REJECTED = "rejected"
+
+class AgentRunStatus(StrEnum):
+    PENDING = "pending"; RUNNING = "running"; AWAITING_APPROVAL = "awaiting_approval"
+    COMPLETED = "completed"; FAILED = "failed"; ESCALATED = "escalated"
+
+class FaultType(StrEnum):
+    MISSING = "missing"; STALE = "stale"; CONFLICTING = "conflicting"
+    CONSTRAINT_CHANGE = "constraint_change"
 ```
 
-```bash
-uvicorn app.main:app --reload --port 8000
+### 2.2 Error response (all non-2xx)
+
+```json
+{ "code": "NOT_FOUND", "message": "Decision not found", "details": {"id": "..."} }
 ```
 
-Add `GET /api/v1/health`.
+| Exception | HTTP | `code` |
+|---|---|---|
+| `NotFoundError` | 404 | `NOT_FOUND` |
+| `RequestValidationFailed` | 422 | `VALIDATION_ERROR` |
+| `ConflictError` | 409 | `CONFLICT` |
+| `VerificationFailed` | 422 | `VERIFICATION_FAILED` |
+| `SolverInfeasible` | 422 | `INFEASIBLE` |
+| `ForbiddenError` | 403 | `FORBIDDEN` |
+| `AirPowerError` (base) | 500 | `INTERNAL` |
 
-### Step 5 — Database Models and Migrations
+### 2.3 Pagination
 
-Create ORM models for: `source`, `raw_event`, `record`, `claim`, `issue`, `evidence_edge`, `decision`, `assumption`, `dependency`, `forecast`, `schedule`, `agent_run`, `verification_result`, `approval`, `audit_entry`, `experiment_run`.
+Query: `?limit=50&offset=0`. Response: `{"items": [...], "total": int, "limit": int, "offset": int}`.
 
-Rules:
-- Store both `event_time` and `ingest_time`.
-- Version records, forecasts, schedules, and decisions.
-- No hard deletes; use supersession and flags.
-- Unique constraint on (`source_id`, `source_event_id`) for idempotency.
+### 2.4 Idempotency
 
-```bash
-alembic init app/db/migrations
-alembic revision --autogenerate -m "initial schema"
-alembic upgrade head
+Create/solve endpoints accept header `Idempotency-Key`. Same key + same body → return the stored result, no new work.
+
+---
+
+## 3. Import Boundaries (Critical)
+
+| Package | May import | Must NOT import |
+|---|---|---|
+| `app/services/verification/*` | `app.core`, `app.db`, `app.schemas`, `app.utils` | `optimisation`, `app.agents`, `ml`, `app.services.planning` |
+| `app/services/audit/*` | `app.core`, `app.db` | everything else |
+| `app/agents/*` | `app.services.*`, `app.schemas`, `app.core` | direct DB writes to verification/audit tables (go through services) |
+| `app/api/v1/*` | `app.services.*`, `app.schemas`, `app.core.deps` | `app.db.models` directly (use services) |
+| `app/services/*` | `app.db`, `app.core`, `app.schemas`, `app.utils`, `optimisation`, `ml` (inference only) | `app.api`, `app.agents` |
+| `ml/*`, `optimisation/*`, `simulation/*`, `evaluation/*` | stdlib + own libs; may call `app.services` only in `evaluation/` and `simulation/runner/` | `app.api` |
+
+Reason: the verifier must stay independent so that a bug in the solver or an agent cannot also break the check.
+
+---
+
+## 4. Repository Layout (Backend-Related)
+
+```
+backend/            FastAPI app, services, agents, DB, tests
+streaming/          Kafka producers/consumers
+ml/                 Model training + inference code
+optimisation/       CP-SAT / ALNS
+simulation/         SimPy twin + fault injection
+evaluation/         Baselines, ablations, metrics, stats, reports
+data/               Synthetic data generators and splits
+infra/              Dockerfiles, SQL, Kafka scripts
+scripts/            Helper shell scripts
+tests/              Cross-module e2e/contract/performance tests
 ```
 
-### Step 6 — Pydantic Schemas
+---
 
-One file per domain in `app/schemas/`. Use a consistent error schema: `{code, message, details}`.
+# PART A — `backend/`
 
-### Step 7 — F1 Ingestion + Kafka
+## A1. Entry and Core
 
-**Producer** (`streaming/producers/synthetic_producer.py`): replay generated data into topics.
-
-**Consumer** (`streaming/consumers/ingestion_consumer.py`) pipeline:
-
-```
-consume → validate (Pydantic) → normalise → timestamp → dedupe → store
-                    └── invalid/conflicting → dead_letter + flagged (never dropped)
-```
-
-Services: `validator.py`, `normaliser.py`, `deduplicator.py` (deterministic keys first), `entity_matcher.py` (Ditto added in Step 11).
-
-Endpoints:
-- `POST /ingestion/events`
-- `GET /ingestion/status`
-- `GET /ingestion/flagged`
-
-```bash
-python streaming/producers/run_producer.py --topic resource
-python streaming/consumers/run_consumer.py
-```
-
-**Check:** replay of 10k records → zero duplicates; all invalid records flagged with reasons.
-
-### Step 8 — F9 Verification + Audit (build early)
-
-| File | Job |
-|---|---|
-| `constraint_checker.py` | Capacity, time windows, precedence, policy. **Must not import solver code.** |
-| `consistency_checker.py` | Schedule vs forecast vs evidence versions |
-| `uncertainty_flagger.py` | High uncertainty, unresolved conflicts, uncertain validity |
-| `approval_router.py` | Routes to human queue |
-| `audit_service.py` | Append-only audit trail |
-
-Outcomes: `verified`, `invalid`, `uncertain` (+ violations list).
-
-Endpoints:
-- `POST /verification/check`, `GET /verification/{id}`
-- `GET /approvals`, `POST /approvals/{id}/decision`
-- `GET /audit`, `GET /audit/{entity}/{id}` (read-only; no update/delete)
-
-**Check:** corrupted schedules are always rejected; audit entries cannot be modified.
-
-### Step 9 — F5 Planning (CP-SAT + ALNS)
-
-```bash
-pip install ortools alns
-```
-
-`optimisation/`:
-- `models/problem.py`, `solution.py`
-- `cpsat/model_builder.py`, `constraints/{resource_capacity,time_windows,precedence,policy}.py`, `objectives.py`, `solver.py`
-- `alns/{destroy_operators,repair_operators,hybrid,runner}.py`
-
-Objectives: makespan, cost, lateness, robustness.
-
-Minimal CP-SAT pattern:
-
+### `backend/app/main.py`
+- **Objective:** Create the FastAPI app, middleware, error handlers, routers.
+- **Structure:**
 ```python
-from ortools.sat.python import cp_model
+def create_app() -> FastAPI: ...
+app = create_app()
+```
+- **Rules:** Add `CORSMiddleware` (origins from `Settings.cors_origins`); register handler mapping `AirPowerError` → JSON error schema; add middleware that sets `correlation_id` from `X-Request-ID` or new uuid; include `api_router` at `/api/v1`.
+- **Tests:** `tests/api/test_health.py` (200), error-handler test (404 shape).
 
-model = cp_model.CpModel()
-start = {t: model.NewIntVar(0, horizon, f"s_{t}") for t in tasks}
-# add capacity, window, precedence constraints...
-solver = cp_model.CpSolver()
-solver.parameters.max_time_in_seconds = 30
-solver.parameters.random_seed = seed
-status = solver.Solve(model)
+### `backend/app/core/config.py`
+- **Objective:** Central typed settings from environment.
+- **Structure:**
+```python
+class Settings(BaseSettings):
+    postgres_user: str; postgres_password: str; postgres_db: str
+    postgres_host: str = "localhost"; postgres_port: int = 5432
+    kafka_bootstrap_servers: str = "localhost:9092"
+    mlflow_tracking_uri: str = "http://localhost:5000"
+    random_seed: int = 42
+    cors_origins: list[str] = ["http://localhost:3000"]
+    freshness_thresholds: dict[str, int]      # seconds per SourceType
+    max_agent_retries: int = 3
+    solver_time_limit_s: int = 30
+    uncertainty_threshold: float = 0.35       # relative interval width
+    @property
+    def database_url(self) -> str: ...
+@lru_cache
+def get_settings() -> Settings: ...
+```
+- **Used by:** everything. **Tests:** env override test.
+
+### `backend/app/core/enums.py`
+- **Objective:** Single source of truth for enums (see §2.1). No logic.
+
+### `backend/app/core/exceptions.py`
+- **Objective:** Exception hierarchy (see §2.2).
+- **Structure:**
+```python
+class AirPowerError(Exception):
+    code = "INTERNAL"; http_status = 500
+    def __init__(self, message: str, details: dict | None = None): ...
+class NotFoundError(AirPowerError): code="NOT_FOUND"; http_status=404
+class RequestValidationFailed(AirPowerError): ...
+class ConflictError(AirPowerError): ...
+class VerificationFailed(AirPowerError): ...
+class SolverInfeasible(AirPowerError): ...
+class ForbiddenError(AirPowerError): ...
 ```
 
-Service layer: `problem_builder.py`, `solver_service.py`, `comparator.py`.
-
-Endpoints:
-- `POST /planning/solve`
-- `GET /planning/schedules/{id}`
-- `GET /planning/alternatives`
-
-Every schedule passes Step 8 verification before acceptance.
-
-### Step 10 — F2 Evidence Intelligence (USP 1)
-
-Build the **rule-based baseline first**:
-- `staleness_checker.py` — per-type freshness thresholds
-- `contradiction_detector.py` — conflicting claims across sources
-- `evidence_graph.py` — NetworkX graph (claims, sources, entities, time)
-- `provenance_tracer.py` — origin + version chain
-- `autopsy.py` — Contradiction Autopsy report (competing claims, sources, timestamps, history, missing info, uncertainty)
-
-PyMC reliability (`ml/bayesian/`): fit source-reliability posterior, check convergence, save.
-
-Endpoints:
-- `GET /evidence/issues`
-- `GET /evidence/issues/{id}/autopsy`
-- `GET /evidence/provenance/{record_id}`
-
-### Step 11 — ML Training (Ditto, TGN, StrGNN)
-
-```bash
-pip install torch
+### `backend/app/core/logging.py`
+- **Objective:** JSON logging + correlation id.
+- **Structure:**
+```python
+correlation_id_var: ContextVar[str]
+def configure_logging(level: str = "INFO") -> None: ...
+def get_logger(name: str) -> logging.Logger: ...
 ```
 
-| Model | Files | Command |
+### `backend/app/core/security.py`
+- **Objective:** Minimal auth + roles (`viewer`, `analyst`, `approver`, `admin`).
+- **Structure:**
+```python
+class Actor(BaseModel): id: str; role: Literal["viewer","analyst","approver","admin"]
+def get_actor(x_api_key: str = Header(...)) -> Actor: ...
+def require_role(*roles: str) -> Callable[..., Actor]: ...   # FastAPI dependency factory
+```
+- **Rules:** approvals endpoint requires `approver`; audit endpoints require `viewer+`; API keys come from env/DB table.
+
+### `backend/app/core/deps.py`
+- **Objective:** Shared FastAPI dependencies.
+- **Structure:**
+```python
+def get_db() -> Iterator[Session]: ...        # commit on success, rollback on error
+def get_idempotency_key(idempotency_key: str | None = Header(None)) -> str | None: ...
+```
+
+---
+
+## A2. Database
+
+### `backend/app/db/session.py`
+```python
+engine: Engine
+SessionLocal: sessionmaker[Session]
+def session_scope() -> Iterator[Session]: ...  # for scripts/consumers
+```
+
+### `backend/app/db/base.py`
+- **Objective:** Declarative `Base` + mixins.
+```python
+class Base(DeclarativeBase): ...
+class UUIDPk: id: Mapped[uuid.UUID]            # default uuid4
+class CreatedAt: created_at: Mapped[datetime]  # default now(UTC)
+class Versioned: version: Mapped[int]          # default 1
+```
+
+### ORM models — `backend/app/db/models/`
+
+| File | Table(s) | Key columns |
 |---|---|---|
-| Ditto | `ml/entity_matching/{ditto_model,train,infer}.py`, `configs/ditto.yaml` | `python ml/entity_matching/train.py --config ml/entity_matching/configs/ditto.yaml --seed 42` |
-| TGN | `ml/temporal_graph/tgn/{model,train}.py` | `python ml/temporal_graph/tgn/train.py --config ml/temporal_graph/configs/tgn.yaml --seed 42` |
-| StrGNN | `ml/temporal_graph/strgnn/{model,train}.py` | `python ml/temporal_graph/strgnn/train.py --config ml/temporal_graph/configs/strgnn.yaml --seed 42` |
+| `source.py` | `source` | id, name (unique), source_type, reliability_prior (float) |
+| `record.py` | `raw_event`, `record` | raw_event: id, source_id, source_event_id, payload (JSONB), event_time, ingest_time; unique(source_id, source_event_id). record: id, entity_id, source_type, normalised_payload (JSONB), version, source_id, raw_event_id, event_time, ingest_time, flags (JSONB list), superseded_by (nullable) |
+| `claim.py` | `claim`, `issue`, `evidence_edge` | claim: id, record_id, attribute, value (JSONB), source_id, observed_at, superseded_by. issue: id, issue_class (IssueClass), claim_ids (JSONB), detected_at, status (open/resolved), details (JSONB). evidence_edge: id, from_id, to_id, relation, timestamp |
+| `decision.py` | `decision`, `assumption`, `dependency` | decision: id, decision_type, version, status (ValidityStatus), created_at, ref_id. assumption: id, decision_id, description, parameters (JSONB). dependency: id, decision_id, input_type, input_id, input_version |
+| `forecast.py` | `forecast` | id, target, horizon, points (JSONB: mean/lower/upper), calibration_meta (JSONB), input_versions (JSONB), version, high_uncertainty (bool) |
+| `schedule.py` | `schedule` | id, version, parent_schedule_id, assignments (JSONB), objectives (JSONB), solver_meta (JSONB), status (ScheduleStatus), problem_hash |
+| `experiment.py` | `experiment_run` | id, scenario, seed, config (JSONB), metrics (JSONB), mlflow_run_id, created_at |
+| `agent_run.py` | `agent_run` | id, request (JSONB), graph_state (JSONB), checkpoints (JSONB), retries (int), status (AgentRunStatus), explanation (JSONB), idempotency_key |
+| `approval.py` | `verification_result`, `approval` | verification_result: id, target_type, target_id, outcome, violations (JSONB), uncertainty_flags (JSONB), checked_at. approval: id, target_type, target_id, approver, decision, rationale, decided_at |
+| `audit_log.py` | `audit_entry` | id, entity_type, entity_id, action, before_ref (JSONB), after_ref (JSONB), actor, correlation_id, created_at. **Append-only** |
 
-Shared: `ml/temporal_graph/dataset.py`, `evaluate.py`, `ml/common/{seed,mlflow_utils}.py`.
+**Rules:** add DB-level trigger (in migration) that raises on `UPDATE`/`DELETE` of `audit_entry`. Index: `record(entity_id, source_type)`, `claim(record_id)`, `dependency(input_id)`, `audit_entry(entity_type, entity_id)`.
 
-Rules:
-1. Seed everything; train with multiple seeds.
-2. Time-based splits.
-3. Log params, metrics, artifacts to MLflow.
-4. Compare against rule-based baselines; **adopt a model only if it wins**.
-5. Low-confidence Ditto matches are flagged, not auto-merged.
+### `backend/app/db/migrations/`
+- Alembic env + versions. First migration creates all tables, indexes, and the audit append-only trigger.
 
-### Step 12 — F3 Decision Validity (USP 2)
+---
 
-| File | Job |
+## A3. Schemas — `backend/app/schemas/`
+
+Pydantic v2 models for requests/responses. One file per domain; all inherit `ConfigDict(from_attributes=True)`.
+
+| File | Key models |
 |---|---|
-| `dependency_graph.py` | NetworkX DAG: input versions + assumptions → decisions |
-| `assumption_tracker.py` | Stores each decision's validity envelope |
-| `change_detector.py` | Wraps BOCPD (`ml/change_point/bocpd.py`, `hazard.py`) |
-| `status.py` | One of `verified`, `stale`, `invalidated`, `uncertain`; logs transitions to audit |
-| `reverifier.py` | Traverse graph → re-verify only affected decisions |
+| `common.py` | `Page[T]`, `ErrorResponse`, `IdResponse` |
+| `ingestion.py` | `IngestEventIn(source, source_event_id, event_time, payload)`, `RecordOut`, `IngestStatusOut(topics: list[TopicStatus])`, `FlaggedRecordOut(record, reasons)` |
+| `evidence.py` | `ClaimOut`, `IssueOut`, `AutopsyOut(issue, claims, provenance, missing_information, uncertainty)`, `ProvenanceStep` |
+| `validity.py` | `DecisionOut(id, type, version, status, assumptions, dependencies)`, `ReverifyIn(change_events)`, `ReverifyOut(affected, status_changes, nodes_touched)` |
+| `forecast.py` | `ForecastIn(target, horizon, seed)`, `ForecastPoint(t, mean, lower, upper)`, `ForecastOut` |
+| `planning.py` | `ProblemIn(tasks, resources, windows, precedence, policies, objectives)`, `Assignment(task_id, resource_id, start, end)`, `ScheduleOut`, `SolveIn(problem, use_alns, time_limit_s, seed)`, `AlternativesOut` |
+| `replanning.py` | `ReplanIn(schedule_id, changes)`, `ScheduleDiff(added, removed, moved, unchanged)`, `ReplanOut` |
+| `stress.py` | `StressRunIn(scenario, seed, severity)`, `StressRunOut(id, status, metrics)` |
+| `agents.py` | `AgentRequestIn`, `AgentRunOut(status, steps, retries)`, `ExplanationOut(text, evidence_refs)` |
+| `verification.py` | `VerifyIn(target_type, target_id)`, `Violation(rule, message, refs)`, `VerificationOut(outcome, violations, uncertainty_flags)` |
+| `approvals.py` | `ApprovalQueueItem`, `ApprovalDecisionIn(decision, rationale)` |
+| `audit.py` | `AuditEntryOut`, `AuditQuery` |
+| `benchmarks.py` | `BenchmarkResultOut`, `AblationOut`, `StatResult(effect_size, ci_low, ci_high, p_value)` |
 
-BOCPD is tuned (hazard rate, priors), not trained.
+**Rule:** `ExplanationOut.evidence_refs` is required and non-empty; validator rejects empty list.
 
-Endpoints:
-- `GET /validity/decisions`, `GET /validity/decisions/{id}`
-- `POST /validity/reverify`
+---
 
-**Check:** incremental statuses equal full-recompute statuses, with fewer nodes touched on local changes.
+## A4. API Routers — `backend/app/api/`
 
-### Step 13 — F4 Prediction + Uncertainty
-
-```bash
-pip install gpytorch
+### `backend/app/api/router.py`
+```python
+api_router = APIRouter()
+# include each v1 router with prefix and tags
 ```
 
-1. `services/forecasting/features.py` — lag, rolling, calendar, weather features.
-2. **Baselines first:** `ml/forecasting/baselines/{arima,lstm,sparse_gp}.py`.
-3. **DS-DGP:** `ml/forecasting/ds_dgp/{model,train}.py`, `configs/ds_dgp.yaml`.
-4. `ml/forecasting/calibration.py` — coverage, ECE, NLL (target: 90% interval coverage within ±5 points).
-5. `services/forecasting/predictor.py` — versioned forecasts linked to input versions; flag high uncertainty.
+### Routers (`backend/app/api/v1/`)
 
-```bash
-python ml/forecasting/baselines/arima.py --seed 42
-python ml/forecasting/ds_dgp/train.py --config ml/forecasting/configs/ds_dgp.yaml --seed 42
+Each router is thin: parse → call one service function → return schema. No business logic.
+
+| File | Endpoint | Method | Auth role | Service call | Response |
+|---|---|---|---|---|---|
+| `health.py` | `/health` | GET | none | DB ping | `{status, db}` |
+| `ingestion.py` | `/ingestion/events` | POST | analyst | `ingestion.ingest_event` | 202 `RecordOut` |
+| | `/ingestion/status` | GET | viewer | `ingestion.get_status` | `IngestStatusOut` |
+| | `/ingestion/flagged` | GET | viewer | `ingestion.list_flagged` | `Page[FlaggedRecordOut]` |
+| `evidence.py` | `/evidence/issues` | GET | viewer | `evidence.list_issues` | `Page[IssueOut]` (filter `issue_class`) |
+| | `/evidence/issues/{id}/autopsy` | GET | viewer | `evidence.build_autopsy` | `AutopsyOut` |
+| | `/evidence/provenance/{record_id}` | GET | viewer | `evidence.trace` | `list[ProvenanceStep]` |
+| `validity.py` | `/validity/decisions` | GET | viewer | `validity.list_decisions` | `Page[DecisionOut]` (filter `status`) |
+| | `/validity/decisions/{id}` | GET | viewer | `validity.get_decision` | `DecisionOut` |
+| | `/validity/reverify` | POST | analyst | `validity.reverify` | `ReverifyOut` |
+| `forecasts.py` | `/forecasts` | POST | analyst | `forecasting.create_forecast` | `ForecastOut` |
+| | `/forecasts/{id}` | GET | viewer | `forecasting.get` | `ForecastOut` |
+| `planning.py` | `/planning/solve` | POST | analyst | `planning.solve_and_verify` | `ScheduleOut` |
+| | `/planning/schedules/{id}` | GET | viewer | `planning.get_schedule` | `ScheduleOut` |
+| | `/planning/alternatives` | GET | viewer | `planning.list_alternatives` | `AlternativesOut` |
+| `replanning.py` | `/replanning/run` | POST | analyst | `replanning.replan` | `ReplanOut` |
+| | `/replanning/diff/{old}/{new}` | GET | viewer | `replanning.diff` | `ScheduleDiff` |
+| `stress.py` | `/stress/runs` | POST | analyst | `stress.start_run` | 202 `StressRunOut` |
+| | `/stress/runs/{id}` | GET | viewer | `stress.get_run` | `StressRunOut` |
+| `agents.py` | `/agents/requests` | POST | analyst | `agents.start` | 202 `AgentRunOut` |
+| | `/agents/requests/{id}` | GET | viewer | `agents.get` | `AgentRunOut` |
+| | `/agents/requests/{id}/explanation` | GET | viewer | `explanation.get` | `ExplanationOut` |
+| `verification.py` | `/verification/check` | POST | analyst | `verification.run_checks` | `VerificationOut` |
+| | `/verification/{id}` | GET | viewer | `verification.get` | `VerificationOut` |
+| `approvals.py` | `/approvals` | GET | approver | `approval_router.queue` | `Page[ApprovalQueueItem]` |
+| | `/approvals/{id}/decision` | POST | approver | `approval_router.decide` | `ApprovalOut` (409 if target not verified) |
+| `audit.py` | `/audit` | GET | viewer | `audit_service.query` | `Page[AuditEntryOut]` |
+| | `/audit/{entity}/{id}` | GET | viewer | `audit_service.history` | `list[AuditEntryOut]` |
+| `benchmarks.py` | `/benchmarks/results` | GET | viewer | `benchmarking.results` | `list[BenchmarkResultOut]` |
+| | `/benchmarks/ablations` | GET | viewer | `benchmarking.ablations` | `list[AblationOut]` |
+
+**Rules:** No `PUT`/`PATCH`/`DELETE` on `/audit`. Long-running calls (`stress`, `agents`) return `202` and are polled.
+
+---
+
+## A5. Services — `backend/app/services/`
+
+### A5.1 Ingestion (F1) — `services/ingestion/`
+
+#### `validator.py`
+- **Objective:** Validate incoming events against per-source Pydantic schemas.
+- **Structure:**
+```python
+class ValidationResult(BaseModel): ok: bool; errors: list[str]; model: BaseModel | None
+SCHEMAS: dict[SourceType, type[BaseModel]]
+def validate_event(source: SourceType, payload: dict) -> ValidationResult: ...
+```
+- **Rules:** never raises on bad data; returns `ok=False` with messages. **Tests:** valid/invalid/missing-field per source.
+
+#### `normaliser.py`
+- **Objective:** Convert units, formats, ids, timestamps to canonical form.
+- **Structure:**
+```python
+def normalise(source: SourceType, model: BaseModel, ingest_time: datetime) -> NormalisedRecord: ...
+def to_utc(ts: str | datetime) -> datetime: ...
+def canonical_entity_id(source: SourceType, raw_id: str) -> str: ...
+```
+- **Rules:** keep both `event_time` and `ingest_time`; unknown fields preserved in `extras`.
+
+#### `deduplicator.py`
+- **Objective:** Detect exact and near duplicates.
+- **Structure:**
+```python
+def dedupe_key(rec: NormalisedRecord) -> str: ...                 # deterministic hash
+def find_duplicate(db: Session, rec: NormalisedRecord) -> Record | None: ...
+def classify(db: Session, rec: NormalisedRecord) -> DedupeDecision: ...  # NEW | EXACT_DUP | AMBIGUOUS
+```
+- **Rules:** deterministic key first; `AMBIGUOUS` goes to `entity_matcher`.
+
+#### `entity_matcher.py`
+- **Objective:** Resolve ambiguous matches with Ditto.
+- **Structure:**
+```python
+class MatchResult(BaseModel): is_match: bool; probability: float; flagged: bool
+def match(a: NormalisedRecord, b: Record, threshold: float = 0.9, low: float = 0.5) -> MatchResult: ...
+```
+- **Rules:** if `low <= p < threshold` → `flagged=True`, do not merge. If Ditto model missing, fall back to rule-based similarity. **Calls:** `ml.entity_matching.infer`.
+
+#### `ingestion_service.py` (orchestrator)
+```python
+def ingest_event(db: Session, source: SourceType, source_event_id: str,
+                 event_time: datetime, payload: dict) -> Record: ...
+def get_status(db: Session) -> IngestStatusOut: ...
+def list_flagged(db: Session, limit: int, offset: int) -> Page[FlaggedRecordOut]: ...
+```
+- **Flow:** store `raw_event` (idempotent on `(source_id, source_event_id)`) → validate → normalise → classify → store `record` or flag → audit.
+- **Rules:** invalid events still stored with `flags=["invalid"]` + reasons; never dropped.
+
+---
+
+### A5.2 Evidence (F2 · USP 1) — `services/evidence/`
+
+#### `staleness_checker.py`
+```python
+def is_stale(rec: Record, now: datetime, thresholds: dict[SourceType, int]) -> bool: ...
+def find_stale(db: Session, now: datetime) -> list[Issue]: ...
 ```
 
-Endpoints: `POST /forecasts`, `GET /forecasts/{id}`.
+#### `contradiction_detector.py`
+```python
+def find_conflicts(db: Session, entity_id: str, attribute: str | None = None) -> list[Issue]: ...
+def find_duplicates(db: Session) -> list[Issue]: ...
+def find_missing(db: Session, required: dict[SourceType, list[str]]) -> list[Issue]: ...
+def detect_all(db: Session, now: datetime) -> list[Issue]: ...
+```
+- **Rules:** a conflict = same entity+attribute, different values, overlapping validity windows, ≥2 sources.
 
-### Step 14 — F6 Replanning + Change Impact
-
-| File | Job |
-|---|---|
-| `diff_inputs.py` | Exact input changes between versions |
-| `impact_analysis.py` | Affected elements via F3 graph |
-| `incremental_recompute.py` | Warm start / partial re-solve (`optimisation/incremental/`) |
-| `schedule_diff.py` | Added / removed / moved / unchanged assignments |
-
-Fall back to full re-solve if feasibility can't be guaranteed. Verify the result with F9.
-
-Endpoints: `POST /replanning/run`, `GET /replanning/diff/{old}/{new}`.
-
-### Step 15 — F8 Agentic Layer (LangGraph)
-
-```bash
-pip install langgraph langchain-core
+#### `evidence_graph.py`
+```python
+def build_graph(db: Session, entity_ids: list[str] | None = None) -> nx.MultiDiGraph: ...
+# nodes: claim, source, entity, record; edges: asserted_by, about, supersedes, derived_from (with timestamp)
+def neighbours(g: nx.MultiDiGraph, node_id: str, depth: int = 2) -> nx.MultiDiGraph: ...
 ```
 
-| File | Job |
-|---|---|
-| `agents/state.py` | Typed Pydantic state |
-| `agents/graph.py` | StateGraph definition |
-| `agents/nodes/*` | evidence, prediction, change_analysis, optimisation, verification, explanation |
-| `agents/routing.py` | INVALID/UNCERTAIN → re-analysis; VERIFIED → approval |
-| `agents/retry.py` | Bounded retries (default 3), no identical retries |
-| `agents/checkpointing.py` | Postgres checkpointer |
-| `agents/human_approval.py` | Interrupt/resume |
-
-Rules:
-- Agents **cannot** override F9 validators.
-- Explanations must cite evidence (record IDs, versions, validator results).
-- Agent I/O is schema-validated; schema failure counts as a retry.
-
-Endpoints: `POST /agents/requests`, `GET /agents/requests/{id}`, `GET /agents/requests/{id}/explanation`.
-
-### Step 16 — F7 Digital Twin + Stress Lab (USP 3)
-
-```bash
-pip install simpy hypothesis
+#### `provenance_tracer.py`
+```python
+def trace(db: Session, record_id: UUID) -> list[ProvenanceStep]: ...   # origin → transformations → versions
+def version_chain(db: Session, record_id: UUID) -> list[Record]: ...
 ```
 
-- `simulation/twin/{environment,entities,clock}.py`
-- `simulation/faults/{missing_data,stale_data,conflicting_data,constraint_change,injector}.py` (seeded)
-- `simulation/scenarios/library/*.yaml` — `baseline_clean`, `heavy_staleness`, `source_conflict`, `cascading_changes`
-- `simulation/runner/{run_scenario,metrics,mlflow_logger}.py` — detection, false alarms, failure rate, feasibility, recovery
-- `simulation/properties/` — Hypothesis tests:
-  - invalid results are never accepted
-  - same seed → identical run
-  - incremental = full
+#### `uncertainty.py`
+- **Objective:** Per-claim and per-source reliability with uncertainty.
+```python
+def source_reliability(db: Session, seed: int) -> dict[UUID, ReliabilityEstimate]: ...  # mean, hdi_low, hdi_high
+def claim_belief(issue: Issue, reliabilities: dict) -> list[ClaimBelief]: ...
+```
+- **Calls:** `ml.bayesian`. Fallback: Beta-Binomial closed form if PyMC unavailable.
 
-Endpoints: `POST /stress/runs`, `GET /stress/runs/{id}`.
+#### `autopsy.py`
+```python
+def build_autopsy(db: Session, issue_id: UUID) -> AutopsyOut: ...
+def missing_information(issue: Issue, g: nx.MultiDiGraph) -> list[str]: ...
+```
+- **Output must contain:** competing claims (value, source, observed_at), provenance timeline, missing-information list, uncertainty values.
 
-### Step 17 — F10 Benchmarking + Ablations
+---
 
-| Folder | Contents |
-|---|---|
-| `evaluation/baselines/` | `naive_pipeline`, `rule_based_only`, `full_recompute` |
-| `evaluation/ablations/` | no F2, no F3, no uncertainty, no ALNS, no F9 |
-| `evaluation/metrics/` | latency, feasibility, error_detection, false_alarms, recovery, calibration |
-| `evaluation/stats/` | Wilcoxon / t-test, bootstrap CIs, effect sizes |
-| `evaluation/experiments/` | evidence detection, incremental vs full, forecast calibration, hybrid solver, end-to-end stress |
+### A5.3 Validity (F3 · USP 2) — `services/validity/`
 
-```bash
-bash scripts/run_benchmarks.sh
-python evaluation/reports/generate_report.py
+#### `dependency_graph.py`
+```python
+def build(db: Session) -> nx.DiGraph: ...             # input(version) → assumption → decision
+def affected_decisions(g: nx.DiGraph, changed_inputs: list[InputRef]) -> set[UUID]: ...
+def descendants_only(g: nx.DiGraph, node: str) -> set[str]: ...
 ```
 
-Endpoints: `GET /benchmarks/results`, `GET /benchmarks/ablations`.
+#### `assumption_tracker.py`
+```python
+def register_decision(db: Session, decision_type: str, ref_id: UUID,
+                      inputs: list[InputRef], assumptions: list[AssumptionIn]) -> Decision: ...
+def envelope(db: Session, decision_id: UUID) -> ValidityEnvelope: ...
+```
 
-### Step 18 — Testing
+#### `change_detector.py`
+```python
+def detect_changes(series: dict[str, np.ndarray], hazard: float = 1/250, seed: int = 0) -> list[ChangePoint]: ...
+def changed_inputs_since(db: Session, since: datetime) -> list[InputRef]: ...
+```
+- **Calls:** `ml.change_point.bocpd`.
 
-| Level | Location | Tool |
+#### `status.py`
+```python
+def transition(db: Session, decision: Decision, new: ValidityStatus, reason: str, actor: str) -> Decision: ...
+def evaluate(decision: Decision, check_results: list[CheckResult]) -> ValidityStatus: ...
+```
+- **Rules:** every `transition` writes an audit entry. Allowed: any → stale/uncertain; stale → verified/invalidated; invalidated → none except new version.
+
+#### `reverifier.py`
+```python
+def reverify(db: Session, change_events: list[ChangeEvent]) -> ReverifyOut: ...        # incremental
+def reverify_full(db: Session) -> ReverifyOut: ...                                       # for equivalence tests
+```
+- **Rules:** results of `reverify` must equal `reverify_full` on statuses; record `nodes_touched`.
+
+---
+
+### A5.4 Forecasting (F4) — `services/forecasting/`
+
+#### `features.py`
+```python
+def build_features(df: pd.DataFrame, target: str, lags: list[int], windows: list[int]) -> pd.DataFrame: ...
+```
+- **Rules:** no leakage (only past values); calendar + weather features optional.
+
+#### `predictor.py`
+```python
+def create_forecast(db: Session, target: str, horizon: int, seed: int, model: str = "ds_dgp") -> Forecast: ...
+def load_model(name: str) -> ForecastModel: ...    # Protocol: predict(X) -> (mean, lower, upper)
+```
+- **Rules:** store `input_versions`; fallback chain `ds_dgp → sparse_gp → arima`.
+
+#### `calibration.py`
+```python
+def coverage(y: np.ndarray, lower: np.ndarray, upper: np.ndarray) -> float: ...
+def ece(y, mean, std, bins: int = 10) -> float: ...
+def nll(y, mean, std) -> float: ...
+def flag_high_uncertainty(f: Forecast, threshold: float) -> bool: ...
+```
+
+---
+
+### A5.5 Planning (F5) — `services/planning/`
+
+#### `problem_builder.py`
+```python
+def build_problem(db: Session, req: ProblemIn, forecast_id: UUID | None = None) -> Problem: ...
+def problem_hash(p: Problem) -> str: ...
+```
+- **Rules:** forecast uncertainty may widen durations/buffers; excluded records with open `invalid` flags unless explicitly allowed.
+
+#### `solver_service.py`
+```python
+def solve_and_verify(db: Session, req: SolveIn, actor: str) -> Schedule: ...
+```
+- **Flow:** build problem → `optimisation.cpsat.solver.solve` → optional `alns.runner.improve` → persist schedule (status `draft`) → call `verification.run_checks` → set status → register decision (F3) → audit.
+- **Raises:** `SolverInfeasible` with reason.
+
+#### `comparator.py`
+```python
+def compare(schedules: list[Schedule]) -> AlternativesOut: ...   # objective table + Pareto flags
+```
+
+---
+
+### A5.6 Replanning (F6) — `services/replanning/`
+
+#### `diff_inputs.py`
+```python
+def diff_inputs(old: dict[str, InputRef], new: dict[str, InputRef]) -> list[ChangeEvent]: ...
+```
+
+#### `impact_analysis.py`
+```python
+def impacted_assignments(schedule: Schedule, changes: list[ChangeEvent], g: nx.DiGraph) -> ImpactSet: ...
+```
+
+#### `incremental_recompute.py`
+```python
+def replan(db: Session, schedule_id: UUID, changes: list[ChangeEvent], actor: str) -> ReplanOut: ...
+```
+- **Flow:** impact → try warm-start partial re-solve → verify → if infeasible/invalid, full re-solve → diff → persist new version (`parent_schedule_id`) → mark old `superseded` only after new is verified → audit.
+
+#### `schedule_diff.py`
+```python
+def diff(old: Schedule, new: Schedule) -> ScheduleDiff: ...   # added, removed, moved(before/after), unchanged count
+def stability(d: ScheduleDiff) -> float: ...                    # fraction unchanged
+```
+
+---
+
+### A5.7 Stress (F7 API-side) — `services/stress/run_manager.py`
+```python
+def start_run(db: Session, req: StressRunIn, actor: str) -> ExperimentRun: ...   # enqueues; returns immediately
+def get_run(db: Session, run_id: UUID) -> ExperimentRun: ...
+def execute_run(run_id: UUID) -> None: ...                                         # background task, calls simulation.runner
+```
+
+---
+
+### A5.8 Explanation (F8) — `services/explanation/explainer.py`
+```python
+def build_explanation(db: Session, run: AgentRun) -> ExplanationOut: ...
+def validate_citations(db: Session, text: str, refs: list[EvidenceRef]) -> list[str]: ...  # returns unresolved refs
+```
+- **Rules:** every claim sentence must map to ≥1 `EvidenceRef(kind, id, version)` that resolves in DB; unresolved → raise `VerificationFailed`.
+
+---
+
+### A5.9 Verification (F9) — `services/verification/` (INDEPENDENT)
+
+#### `constraint_checker.py`
+```python
+def check_capacity(schedule: ScheduleData, problem: ProblemData) -> list[Violation]: ...
+def check_time_windows(...) -> list[Violation]: ...
+def check_precedence(...) -> list[Violation]: ...
+def check_policies(...) -> list[Violation]: ...
+def check_all(schedule: ScheduleData, problem: ProblemData) -> list[Violation]: ...
+```
+- **Rules:** re-implements checks from scratch with plain Python; imports nothing from solver code. Operates on plain dataclasses/dicts.
+
+#### `consistency_checker.py`
+```python
+def check_versions(db: Session, schedule: Schedule) -> list[Violation]: ...    # inputs still current?
+def check_forecast_link(db: Session, schedule: Schedule) -> list[Violation]: ...
+def check_evidence_links(db: Session, schedule: Schedule) -> list[Violation]: ...
+```
+
+#### `uncertainty_flagger.py`
+```python
+def flags(db: Session, schedule: Schedule, threshold: float) -> list[UncertaintyFlag]: ...
+# flags: HIGH_FORECAST_UNCERTAINTY, UNRESOLVED_CONFLICT, DECISION_UNCERTAIN, STALE_INPUT
+```
+
+#### `verification_service.py`
+```python
+def run_checks(db: Session, target_type: str, target_id: UUID, actor: str) -> VerificationResult: ...
+# outcome = INVALID if violations; else UNCERTAIN if flags; else VERIFIED
+def get(db: Session, id: UUID) -> VerificationResult: ...
+```
+
+#### `approval_router.py`
+```python
+def route(db: Session, result: VerificationResult) -> ApprovalQueueItem | None: ...   # VERIFIED/UNCERTAIN → human queue
+def queue(db: Session, limit: int, offset: int) -> Page[ApprovalQueueItem]: ...
+def decide(db: Session, approval_id: UUID, decision: ApprovalDecision,
+           rationale: str, actor: Actor) -> Approval: ...
+```
+- **Rules:** `decide(APPROVED)` raises `ConflictError` unless latest verification outcome is `VERIFIED`; rationale required (≥10 chars); writes audit.
+
+---
+
+### A5.10 Audit (F9) — `services/audit/audit_service.py`
+```python
+def record(db: Session, entity_type: str, entity_id: UUID, action: str,
+           before: dict | None, after: dict | None, actor: str) -> AuditEntry: ...
+def query(db: Session, filters: AuditQuery, limit: int, offset: int) -> Page[AuditEntry]: ...
+def history(db: Session, entity_type: str, entity_id: UUID) -> list[AuditEntry]: ...
+```
+- **Rules:** no update/delete functions exist. `before/after` are references or small diffs, not full payloads.
+
+### A5.11 Benchmarking — `services/benchmarking/results_service.py`
+```python
+def results(db: Session, filters: dict) -> list[BenchmarkResultOut]: ...   # reads MLflow + experiment_run
+def ablations(db: Session) -> list[AblationOut]: ...
+```
+
+---
+
+## A6. Agents (F8) — `backend/app/agents/`
+
+#### `state.py`
+```python
+class AgentState(BaseModel):
+    run_id: UUID
+    request: AgentRequestIn
+    evidence: EvidenceSummary | None = None
+    forecast_ids: list[UUID] = []
+    changes: list[ChangeEvent] = []
+    schedule_id: UUID | None = None
+    verification: VerificationOutcome | None = None
+    retries: int = 0
+    explanation: ExplanationOut | None = None
+    status: AgentRunStatus = AgentRunStatus.PENDING
+```
+
+#### `graph.py`
+```python
+def build_graph(checkpointer) -> CompiledGraph: ...
+# nodes: evidence → prediction → change_analysis → optimise → verify → (route) → explain → human_approval → finish
+def start(db: Session, req: AgentRequestIn, actor: str) -> AgentRun: ...
+def resume(db: Session, run_id: UUID, approval: ApprovalDecision) -> AgentRun: ...
+```
+
+#### `routing.py`
+```python
+def route_after_verify(state: AgentState) -> Literal["reanalyse","explain","escalate"]: ...
+# INVALID/UNCERTAIN & retries < max → reanalyse; retries >= max → escalate; VERIFIED → explain
+```
+
+#### `retry.py`
+```python
+def next_attempt(state: AgentState, max_retries: int) -> AgentState: ...
+def changed_since_last(state: AgentState, prev_fingerprint: str) -> bool: ...   # identical retries disallowed
+```
+
+#### `checkpointing.py`
+```python
+def get_checkpointer(db_url: str): ...   # Postgres saver
+```
+
+#### `human_approval.py`
+```python
+def approval_interrupt(state: AgentState) -> AgentState: ...   # sets status AWAITING_APPROVAL and interrupts
+```
+
+#### `nodes/` (each takes and returns `AgentState`; calls services only)
+| File | Function | Calls |
 |---|---|---|
-| Unit | `backend/tests/unit/` | Pytest |
-| Integration | `backend/tests/integration/` | Pytest + test DB/Kafka |
-| API | `backend/tests/api/` | Pytest + httpx/TestClient |
-| Property | `simulation/properties/` | Hypothesis |
-| E2E | `tests/e2e/` | Pytest + Docker Compose |
-| Contract | `tests/contract/` | TS types ↔ Pydantic parity |
+| `evidence_agent.py` | `run(state, db)` | `evidence.detect_all`, `evidence.build_autopsy` |
+| `prediction_agent.py` | `run(state, db)` | `forecasting.create_forecast` |
+| `change_analysis_agent.py` | `run(state, db)` | `replanning.diff_inputs`, `validity.reverify` |
+| `optimisation_node.py` | `run(state, db)` | `planning.solve_and_verify` or `replanning.replan` |
+| `verification_node.py` | `run(state, db)` | `verification.run_checks` (**authoritative**, output cannot be edited) |
+| `explanation_agent.py` | `run(state, db)` | `explanation.build_explanation` |
 
-```bash
-pytest --cov=app
-ruff check . && black --check . && mypy app
-```
+#### `prompts/` — `evidence.md`, `explanation.md`, `change_analysis.md`
+- Plain-text prompt templates. Must instruct: cite evidence ids, never invent ids, output JSON matching schema.
 
-### Step 19 — Dockerise
-
-```bash
-docker compose up --build
-```
-
-Dockerfiles for backend, streaming, simulation, mlflow. Add health checks.
+**Rules:** all LLM output parsed through Pydantic; parse failure = one retry; verification node never takes LLM output as input.
 
 ---
 
-## 4. Full API Reference
+## A7. Utils — `backend/app/utils/`
+```python
+# time.py
+def utcnow() -> datetime: ...
+def parse_iso(s: str) -> datetime: ...
+# ids.py
+def new_id() -> UUID: ...
+def stable_hash(obj: Any) -> str: ...        # sha256 of canonical JSON
+# graph_utils.py
+def to_node_link(g: nx.Graph) -> dict: ...   # for API/UI
+def subgraph_by_depth(g: nx.Graph, root: str, depth: int) -> nx.Graph: ...
+```
 
-Base path: `/api/v1`
+---
 
-| Area | Endpoints |
+## A8. Backend Tests — `backend/tests/`
+
+| File | Purpose |
 |---|---|
-| Health | `GET /health` |
-| Ingestion | `POST /ingestion/events`, `GET /ingestion/status`, `GET /ingestion/flagged` |
-| Evidence | `GET /evidence/issues`, `GET /evidence/issues/{id}/autopsy`, `GET /evidence/provenance/{record_id}` |
-| Validity | `GET /validity/decisions`, `GET /validity/decisions/{id}`, `POST /validity/reverify` |
-| Forecasts | `POST /forecasts`, `GET /forecasts/{id}` |
-| Planning | `POST /planning/solve`, `GET /planning/schedules/{id}`, `GET /planning/alternatives` |
-| Replanning | `POST /replanning/run`, `GET /replanning/diff/{old}/{new}` |
-| Stress | `POST /stress/runs`, `GET /stress/runs/{id}` |
-| Agents | `POST /agents/requests`, `GET /agents/requests/{id}`, `GET /agents/requests/{id}/explanation` |
-| Verification | `POST /verification/check`, `GET /verification/{id}` |
-| Approvals | `GET /approvals`, `POST /approvals/{id}/decision` |
-| Audit | `GET /audit`, `GET /audit/{entity}/{id}` |
-| Benchmarks | `GET /benchmarks/results`, `GET /benchmarks/ablations` |
-
-**API rules:** consistent error schema, idempotency keys on create/solve, pagination on lists, OpenAPI exported to `docs/api/openapi.json`.
+| `conftest.py` | Postgres test container/DB, session fixture with rollback, factories for source/record/claim/schedule, `client` fixture with API key headers |
+| `unit/test_validator.py` | each source: valid, missing field, wrong type |
+| `unit/test_deduplicator.py` | exact dup, near dup, new |
+| `unit/test_contradiction_detector.py` | conflict/missing/duplicate/stale on labelled fixtures |
+| `unit/test_dependency_graph.py` | affected set correctness |
+| `unit/test_reverifier.py` | **incremental == full** on random change sets |
+| `unit/test_constraint_checker.py` | each violation type triggers |
+| `unit/test_schedule_diff.py` | added/removed/moved |
+| `unit/test_audit_append_only.py` | UPDATE/DELETE blocked at DB level |
+| `integration/test_ingestion_flow.py` | replay 1k events → no dupes, invalid flagged |
+| `integration/test_agent_workflow.py` | full run, retries bounded, escalation |
+| `integration/test_approval_flow.py` | cannot approve non-verified |
+| `api/test_*.py` | status codes, schemas, auth roles, pagination |
 
 ---
 
-## 5. Backend Rules to Remember
+# PART B — `streaming/` (F1)
 
-1. **Validators are authoritative.** Agents and models are advisory.
-2. **Never drop bad data.** Store it and flag it.
-3. **Everything is seeded and versioned.**
-4. **Incremental by default**, with a full-recompute fallback.
-5. **Baselines before advanced models.** Adopt only if they win.
-6. **Audit is append-only.**
+### `streaming/config/topics.yaml`
+- Topics: `resource`, `crew`, `availability`, `weather`, `constraint`, `dead_letter`. Fields: `partitions`, `replication`, `retention_ms`.
+
+### `streaming/config/schemas/*.json`
+- JSON Schema per source mirroring the Pydantic models in `services/ingestion/validator.py`.
+
+### `streaming/utils/kafka_client.py`
+```python
+def make_producer(bootstrap: str, **cfg) -> Producer: ...
+def make_consumer(bootstrap: str, group_id: str, topics: list[str], **cfg) -> Consumer: ...
+```
+
+### `streaming/utils/serialization.py`
+```python
+def encode(event: dict) -> bytes: ...
+def decode(raw: bytes) -> dict: ...
+```
+
+### `streaming/producers/base_producer.py`
+```python
+class BaseProducer:
+    def __init__(self, topic: str, bootstrap: str): ...
+    def send(self, key: str, event: dict) -> None: ...
+    def flush(self) -> None: ...
+```
+
+### `streaming/producers/synthetic_producer.py`
+```python
+class SyntheticProducer(BaseProducer):
+    def replay(self, path: Path, rate_per_s: float, seed: int, shuffle_late: float = 0.0) -> int: ...
+```
+- **Objective:** replay generated data; optionally delay/duplicate a fraction (for realism).
+
+### `streaming/producers/run_producer.py`
+- CLI: `--topic --path --rate --seed`.
+
+### `streaming/consumers/base_consumer.py`
+```python
+class BaseConsumer:
+    def poll_loop(self, handler: Callable[[dict], None], stop: Event) -> None: ...
+    def commit(self) -> None: ...
+```
+- **Rules:** at-least-once; commit only after DB commit; handler idempotent.
+
+### `streaming/consumers/ingestion_consumer.py`
+```python
+def handle(event: dict) -> None: ...   # opens session_scope(), calls ingestion_service.ingest_event
+```
+- **Rules:** on unexpected error send to `dead_letter` with error + original payload.
+
+### `streaming/consumers/dead_letter_consumer.py`
+```python
+def handle(event: dict) -> None: ...   # stores flagged record with reason, never drops
+```
+
+### `streaming/consumers/run_consumer.py`
+- CLI entry; graceful shutdown on SIGTERM.
+
+### Tests — `streaming/tests/`
+- `test_producer.py` (serialises, keys), `test_consumer.py` (idempotent replay, dead-letter path).
 
 ---
 
-## 6. Backend Build Order (Summary)
+# PART C — `ml/`
 
+### `ml/common/seed.py`
+```python
+def set_all_seeds(seed: int) -> None: ...      # random, numpy, torch, cuda
 ```
-Env → Infra → Synthetic data → FastAPI core → DB models
-→ F1 Ingestion → F9 Verification/Audit → F5 Planning
-→ F2 Evidence → ML training (Ditto/TGN/StrGNN) → F3 Validity
-→ F4 Prediction → F6 Replanning → F8 Agents
-→ F7 Stress Lab → F10 Benchmarks → Tests → Docker
+
+### `ml/common/mlflow_utils.py`
+```python
+def start_run(experiment: str, params: dict, tags: dict | None = None) -> ContextManager: ...
+def log_metrics(metrics: dict[str, float], step: int | None = None) -> None: ...
+def log_artifact_path(path: Path) -> None: ...
 ```
+
+### `ml/entity_matching/ditto_model.py`
+```python
+class DittoMatcher(nn.Module):
+    def __init__(self, base: str = "distilbert-base-uncased"): ...
+    def forward(self, input_ids, attention_mask) -> Tensor: ...    # logits [match, no_match]
+def serialize_pair(a: dict, b: dict) -> str: ...                    # "[COL] k [VAL] v ... [SEP] ..."
+```
+
+### `ml/entity_matching/train.py`
+- CLI: `--config --seed`. Loads pairs CSV, trains, logs P/R/F1 to MLflow, saves to `ml/artifacts/ditto/`.
+```python
+def train(cfg: DittoConfig, seed: int) -> Path: ...
+```
+
+### `ml/entity_matching/infer.py`
+```python
+def load(path: Path) -> DittoMatcher: ...
+def predict_proba(model, a: dict, b: dict) -> float: ...
+```
+
+### `ml/temporal_graph/dataset.py`
+```python
+def build_temporal_graph(db_url: str, split: Literal["train","val","test"]) -> TemporalData: ...
+```
+- **Rules:** time-based split; features: source id embedding, attribute, value hash, time delta.
+
+### `ml/temporal_graph/tgn/model.py`, `tgn/train.py`
+```python
+class TGNModel(nn.Module): ...      # memory + message + embedding + link/node classifier
+def train(cfg, seed) -> Path: ...
+```
+
+### `ml/temporal_graph/strgnn/model.py`, `strgnn/train.py`
+```python
+class StrGNNModel(nn.Module): ...   # structural snapshot GNN for anomaly/edge-state classification
+def train(cfg, seed) -> Path: ...
+```
+
+### `ml/temporal_graph/evaluate.py`
+```python
+def evaluate_all(split: str = "test") -> pd.DataFrame: ...   # TGN, StrGNN, rule-based, statistical: P/R/F1/AUROC
+```
+- **Rule:** adoption gate: model is adopted only if it beats rule-based baseline on F1 with CI excluding 0.
+
+### `ml/bayesian/source_reliability.py`
+```python
+def fit(observations: pd.DataFrame, seed: int, draws: int = 1000, tune: int = 1000) -> az.InferenceData: ...
+```
+### `ml/bayesian/claim_posterior.py`
+```python
+def posterior_for_claims(idata: az.InferenceData, claims: list[ClaimObs]) -> list[ClaimPosterior]: ...
+```
+### `ml/bayesian/diagnostics.py`
+```python
+def check(idata) -> DiagnosticsReport: ...    # r_hat < 1.01, ESS, divergences
+```
+
+### `ml/change_point/hazard.py`, `bocpd.py`
+```python
+def constant_hazard(lam: float) -> Callable[[np.ndarray], np.ndarray]: ...
+def bocpd(x: np.ndarray, hazard, mu0=0., kappa0=1., alpha0=1., beta0=1.) -> np.ndarray: ...  # run-length posterior
+def change_points(R: np.ndarray, threshold: float = 0.5) -> list[int]: ...
+```
+
+### `ml/forecasting/ds_dgp/model.py`, `train.py`
+```python
+class DSDGP(gpytorch.models.deep_gps.DeepGP): ...   # 2–3 layers, inducing points, doubly stochastic VI
+def train(cfg, seed) -> Path: ...
+def predict(model, X) -> tuple[np.ndarray, np.ndarray, np.ndarray]: ...  # mean, lower, upper
+```
+
+### `ml/forecasting/baselines/{arima,lstm,sparse_gp}.py`
+```python
+def fit_predict(train: pd.DataFrame, test: pd.DataFrame, seed: int) -> ForecastResult: ...  # mean, lower, upper
+```
+
+### `ml/forecasting/calibration.py`
+- Same metrics as `services/forecasting/calibration.py` (shared implementation imported by service).
+
+### `ml/*/configs/*.yaml`
+- Keys: `seed`, `data_path`, `epochs`, `lr`, `batch_size`, `output_dir`, model-specific.
+
+### Notebooks — `ml/notebooks/` (exploration only; never imported by code).
+
+---
+
+# PART D — `optimisation/` (F5, F6)
+
+### `optimisation/models/problem.py`
+```python
+@dataclass(frozen=True)
+class Task: id: str; duration: int; resource_type: str; earliest: int; latest: int; priority: int = 1
+@dataclass(frozen=True)
+class Resource: id: str; type: str; capacity: int; available: list[tuple[int, int]]
+@dataclass(frozen=True)
+class Precedence: before: str; after: str; min_gap: int = 0
+@dataclass(frozen=True)
+class Policy: name: str; params: dict
+@dataclass
+class Problem:
+    tasks: list[Task]; resources: list[Resource]; precedence: list[Precedence]
+    policies: list[Policy]; horizon: int; objectives: dict[str, float]  # weights
+```
+### `optimisation/models/solution.py`
+```python
+@dataclass
+class Assignment: task_id: str; resource_id: str; start: int; end: int
+@dataclass
+class Solution:
+    assignments: list[Assignment]; objectives: dict[str, float]
+    status: Literal["OPTIMAL","FEASIBLE","INFEASIBLE","UNKNOWN"]; wall_time_s: float; seed: int
+```
+
+### `optimisation/cpsat/model_builder.py`
+```python
+def build(problem: Problem) -> tuple[cp_model.CpModel, ModelVars]: ...
+```
+### `optimisation/cpsat/constraints/`
+| File | Function |
+|---|---|
+| `resource_capacity.py` | `add(model, vars, problem)` — interval vars + `AddCumulative` / no-overlap per resource |
+| `time_windows.py` | `add(...)` — earliest/latest + resource availability windows |
+| `precedence.py` | `add(...)` — `start[after] >= end[before] + gap` |
+| `policy.py` | `add(...)` — registry: `max_consecutive_hours`, `rest_gap`, `forbidden_pairs` |
+
+### `optimisation/cpsat/objectives.py`
+```python
+def add_objective(model, vars, problem) -> None: ...   # weighted: makespan, cost, lateness, robustness
+```
+### `optimisation/cpsat/solver.py`
+```python
+def solve(problem: Problem, time_limit_s: int, seed: int, hint: Solution | None = None) -> Solution: ...
+```
+- **Rules:** set `random_seed`, `num_workers`, `max_time_in_seconds`; return `INFEASIBLE` instead of raising.
+
+### `optimisation/alns/destroy_operators.py`, `repair_operators.py`
+```python
+def random_removal(state: SolutionState, rng, degree: float) -> SolutionState: ...
+def resource_removal(...), time_window_removal(...), related_removal(...)
+def greedy_repair(state, rng) -> SolutionState: ...
+def cpsat_repair(state, rng, time_limit_s: int) -> SolutionState: ...
+```
+### `optimisation/alns/hybrid.py`, `runner.py`
+```python
+def improve(problem: Problem, initial: Solution, iterations: int, time_limit_s: int, seed: int) -> Solution: ...
+```
+- **Rule:** never return a solution worse than `initial`; every returned solution passes internal feasibility check (the independent verifier still runs later).
+
+### `optimisation/incremental/warm_start.py`, `partial_resolve.py`
+```python
+def to_hint(prev: Solution, frozen: set[str]) -> Solution: ...
+def partial_resolve(problem: Problem, prev: Solution, affected: set[str], time_limit_s: int, seed: int,
+                    stability_weight: float = 0.1) -> Solution: ...   # penalises moving unaffected tasks
+```
+
+### `optimisation/benchmarks/instances/` — generated JSON instances: `small_*`, `medium_*`, `large_*`.
+
+### Tests — `optimisation/tests/`: `test_cpsat.py`, `test_alns.py`, `test_feasibility.py` (property: returned solutions satisfy independent checker).
+
+---
+
+# PART E — `simulation/` (F7 · USP 3)
+
+### `simulation/twin/clock.py`
+```python
+class SimClock: def now(self) -> int; def advance(self, dt: int) -> None
+```
+### `simulation/twin/entities.py`
+```python
+@dataclass class SimResource: ...; @dataclass class SimCrew: ...; @dataclass class SimTask: ...
+```
+### `simulation/twin/environment.py`
+```python
+class TwinEnvironment:
+    def __init__(self, scenario: Scenario, seed: int): ...
+    def run(self, until: int) -> Iterator[TwinEvent]: ...   # yields timestamped events
+```
+
+### `simulation/faults/`
+| File | Function |
+|---|---|
+| `missing_data.py` | `apply(events, rate, fields, rng) -> (events, labels)` |
+| `stale_data.py` | `apply(events, rate, lag_s, rng) -> (events, labels)` |
+| `conflicting_data.py` | `apply(events, rate, delta, rng) -> (events, labels)` |
+| `constraint_change.py` | `apply(problem, changes, at_time) -> (Problem, labels)` |
+| `injector.py` | `inject(events, plan: FaultPlan, seed) -> InjectionResult` (`events`, `labels` ground truth) |
+
+### `simulation/scenarios/`
+- `library/*.yaml` (`baseline_clean`, `heavy_staleness`, `source_conflict`, `cascading_changes`).
+- `loader.py`: `load(name) -> Scenario`.
+- `generator.py`: `generate_variants(base: Scenario, strategy) -> list[Scenario]` (Hypothesis strategies).
+
+### `simulation/runner/`
+```python
+# run_scenario.py
+def run(scenario: Scenario, seed: int, system: SystemUnderTest) -> RunResult: ...
+# metrics.py
+def compute(result: RunResult, labels: GroundTruth) -> dict[str, float]:
+    # detection_precision, detection_recall, false_alarm_rate, feasibility_rate, failure_rate, recovery_time
+# mlflow_logger.py
+def log_run(result: RunResult, metrics: dict, seed: int, scenario: str) -> str: ...
+```
+- `SystemUnderTest` protocol: `ingest(events)`, `detect()`, `plan()`, `verify()` — implemented by the full system and each baseline.
+
+### `simulation/properties/`
+- `test_invariants.py`: Hypothesis — random fault plans never crash the pipeline.
+- `test_no_invalid_accept.py`: no `INVALID` result becomes `APPROVED`.
+- `test_reproducibility.py`: same seed → identical metrics.
+
+---
+
+# PART F — `evaluation/` (F10)
+
+### `evaluation/baselines/`
+| File | Class |
+|---|---|
+| `naive_pipeline.py` | `NaiveSystem(SystemUnderTest)` — no evidence tracking, no revalidation |
+| `rule_based_only.py` | `RuleBasedSystem` — thresholds only |
+| `full_recompute.py` | `FullRecomputeSystem` — recompute everything on any change |
+
+### `evaluation/ablations/`
+- One class per disabled component: `NoEvidence`, `NoValidity`, `NoUncertainty`, `NoALNS`, `NoVerification`. Each wraps the full system with one flag off.
+
+### `evaluation/metrics/`
+```python
+# latency.py:       summarise(times: list[float]) -> dict
+# feasibility.py:   rate(results) -> float
+# error_detection.py: precision_recall(pred_labels, true_labels) -> dict
+# false_alarms.py:  rate(flags, clean_mask) -> float
+# recovery.py:      time_to_recover(events) -> float
+# calibration.py:   coverage/ece/nll (reuse ml.forecasting.calibration)
+```
+
+### `evaluation/stats/`
+```python
+# significance.py
+def paired_test(a: np.ndarray, b: np.ndarray, method: Literal["wilcoxon","ttest"]) -> StatResult: ...
+def bootstrap_ci(x: np.ndarray, stat=np.mean, n: int = 10_000, seed: int = 0) -> tuple[float, float]: ...
+# effect_size.py
+def cohens_d(a, b) -> float: ...
+def cliffs_delta(a, b) -> float: ...
+```
+
+### `evaluation/experiments/`
+- `exp_evidence_detection.py`, `exp_incremental_vs_full.py`, `exp_forecast_calibration.py`, `exp_hybrid_solver.py`, `exp_stress_end_to_end.py`.
+- Each exposes `run(seeds: list[int], out_dir: Path) -> pd.DataFrame` and logs to MLflow.
+
+### `evaluation/reports/generate_report.py`
+```python
+def generate(mlflow_experiment: str, out_dir: Path) -> Path: ...   # tables (CSV/MD) + figures (PNG)
+```
+
+### `evaluation/mlflow/mlflow_config.py`
+- Experiment names, tag conventions (`git_sha`, `seed`, `scenario`).
+
+---
+
+# PART G — `data/`
+
+### `data/generators/`
+```python
+# generate_resources.py:    generate(n: int, seed: int) -> pd.DataFrame
+# generate_crew.py:         generate(n: int, seed: int) -> pd.DataFrame
+# generate_availability.py: generate(resources, crew, horizon_days, seed) -> pd.DataFrame
+# generate_weather.py:      generate(horizon_days, seed) -> pd.DataFrame
+# generate_constraints.py:  generate(resources, seed) -> list[dict]
+# generate_all.py:          main(seed: int, size: int, out: Path)   # writes raw/ + labels.parquet
+# make_splits.py:           main(seed: int)    # time-based train/val/test for pairs, graph, forecast
+```
+- **Labels file schema (`labels.parquet`):** `record_id, fault_type, true_value, duplicate_of, conflict_group_id, true_freshness_time`.
+- **Rules:** all generators deterministic by seed; never contain real data.
+
+### `data/schemas/data_dictionary.md` — field-level definitions per source.
+
+---
+
+# PART H — Infra & Scripts (Backend-Related)
+
+| Path | Objective |
+|---|---|
+| `infra/postgres/init.sql` | Create extensions (`pgcrypto`), roles, schema |
+| `infra/kafka/create_topics.sh` | Create topics from `streaming/config/topics.yaml` |
+| `infra/docker/backend.Dockerfile` | Python 3.11 slim, install deps, run `uvicorn app.main:app` |
+| `infra/docker/streaming.Dockerfile` | Run consumer entry |
+| `infra/docker/simulation.Dockerfile` | Run stress runner |
+| `scripts/seed_db.sh` | Run migrations + seed sources + API keys |
+| `scripts/generate_synthetic_data.sh` | `python data/generators/generate_all.py` |
+| `scripts/run_benchmarks.sh` | Run all experiments + report |
+| `scripts/wait_for_services.sh` | Wait for Postgres/Kafka health |
+
+---
+
+# PART I — Cross-Module Tests — `tests/`
+
+| File | Verifies |
+|---|---|
+| `e2e/test_full_pipeline.py` | Kafka → DB → evidence → plan → verify → approve → audit |
+| `e2e/test_replan_on_change.py` | Inject change → impacted decisions flagged → new verified schedule + diff |
+| `e2e/test_human_approval_gate.py` | Non-verified results cannot be approved via API or agent |
+| `contract/test_frontend_backend_schemas.py` | TS types match Pydantic JSON schema |
+| `performance/test_latency_budget.py` | Read p95 < 500 ms; ingestion ≥ 1,000 events/s (dev machine) |
+
+---
+
+## 13. Build Order (Per-File Agent Tasks)
+
+| # | Task | Files |
+|---|---|---|
+| 1 | Core + DB | `core/*`, `db/*`, migrations, `main.py`, `health.py` |
+| 2 | Data | `data/generators/*`, `make_splits.py` |
+| 3 | Ingestion | `services/ingestion/*`, `streaming/*`, ingestion router |
+| 4 | Verification + audit | `services/verification/*`, `services/audit/*`, routers |
+| 5 | Planning | `optimisation/models,cpsat`, `services/planning/*`, router; then `alns/` |
+| 6 | Evidence | `services/evidence/*`, `ml/bayesian/*`, router; then `ml/entity_matching`, `ml/temporal_graph` |
+| 7 | Validity | `services/validity/*`, `ml/change_point/*`, router |
+| 8 | Forecasting | `ml/forecasting/baselines` → `ds_dgp`; `services/forecasting/*`, router |
+| 9 | Replanning | `optimisation/incremental/*`, `services/replanning/*`, router |
+| 10 | Agents | `agents/*`, `services/explanation/*`, routers |
+| 11 | Stress lab | `simulation/*`, `services/stress/*`, router |
+| 12 | Evaluation | `evaluation/*`, `services/benchmarking/*`, router |
+| 13 | Hardening | e2e/contract/performance tests, Dockerfiles |
+
+---
+
+## 14. Definition of Done (Per File / Task)
+
+- [ ] File exists at the listed path with the listed signatures.
+- [ ] Type hints complete; `mypy app/` passes.
+- [ ] `ruff` + `black --check` pass.
+- [ ] Listed tests written and passing.
+- [ ] Respects §3 import boundaries.
+- [ ] Seeds and versions handled per §1.
+- [ ] State changes write audit entries.
+- [ ] Errors use `AirPowerError` subclasses.
+- [ ] Public functions have docstrings.
+
+---
+
+## 15. Non-Negotiable Rules (Summary)
+
+1. The verifier is independent and authoritative; agents and models are advisory.
+2. Never drop bad data. Store it and flag it.
+3. Audit is append-only, enforced at the database level.
+4. Incremental results must equal full-recompute results.
+5. Everything stochastic is seeded; everything stored is versioned.
+6. Advanced models are adopted only if they beat baselines.
+7. Only `VERIFIED` results can be approved by a human.
