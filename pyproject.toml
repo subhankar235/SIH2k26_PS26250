@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "air-power"
+version = "0.1.0"
+description = "Grid resilience monitoring and optimization starter platform"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "fastapi>=0.115,<1.0",
+  "uvicorn[standard]>=0.34,<1.0",
+  "pydantic>=2.10,<3.0",
+  "simpy>=4.1,<5.0",
+]
+
+[project.optional-dependencies]
+dev = ["httpx>=0.28,<1.0", "mypy>=1.15,<2.0", "pytest>=8.3,<9.0", "ruff>=0.11,<1.0"]
+
+[tool.setuptools.packages.find]
+include = ["backend*", "streaming*", "ml*", "optimisation*", "simulation*", "evaluation*", "data*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests", "backend"]
+python_files = ["test_*.py"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+plugins = ["pydantic.mypy"]
