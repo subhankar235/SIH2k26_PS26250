@@ -67,3 +67,10 @@ class ForbiddenError(AirPowerError):
 
     code = "FORBIDDEN"
     http_status = 403
+
+
+class ServiceUnavailableError(AirPowerError):
+    """Indicate that an API operation has no configured service implementation."""
+
+    code = "SERVICE_UNAVAILABLE"
+    http_status = 503

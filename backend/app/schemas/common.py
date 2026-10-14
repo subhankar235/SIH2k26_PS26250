@@ -9,10 +9,14 @@ from pydantic import BaseModel, ConfigDict, Field
 T = TypeVar("T")
 
 
-class Page(BaseModel, Generic[T]):
-    """Represent a page of results with its pagination metadata."""
+class APIModel(BaseModel):
+    """Base Pydantic v2 contract with ORM attribute support."""
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, extra="forbid")
+
+
+class Page(APIModel, Generic[T]):
+    """Represent a page of results with its pagination metadata."""
 
     items: list[T]
     total: int = Field(ge=0)
@@ -20,28 +24,22 @@ class Page(BaseModel, Generic[T]):
     offset: int = Field(ge=0)
 
 
-class PaginationParams(BaseModel):
+class PaginationParams(APIModel):
     """Represent validated pagination query parameters."""
-
-    model_config = ConfigDict(from_attributes=True)
 
     limit: int = Field(default=50, gt=0)
     offset: int = Field(default=0, ge=0)
 
 
-class ErrorResponse(BaseModel):
+class ErrorResponse(APIModel):
     """Represent a structured API error response."""
-
-    model_config = ConfigDict(from_attributes=True)
 
     code: str
     message: str
     details: dict[str, object] | None = None
 
 
-class IdResponse(BaseModel):
+class IdResponse(APIModel):
     """Represent a response containing a resource identifier."""
-
-    model_config = ConfigDict(from_attributes=True)
 
     id: str

@@ -9,7 +9,17 @@ from fastapi import Header, Query
 from sqlalchemy.orm import Session
 
 from backend.app.core.exceptions import RequestValidationFailed
+from backend.app.core.security import Actor, get_actor, require_role
 from backend.app.schemas.common import PaginationParams
+
+__all__ = [
+    "Actor",
+    "get_actor",
+    "get_db",
+    "get_idempotency_key",
+    "get_pagination",
+    "require_role",
+]
 
 
 def get_pagination(
