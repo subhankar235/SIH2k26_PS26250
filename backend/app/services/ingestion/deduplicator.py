@@ -5,8 +5,15 @@ from __future__ import annotations
 import hashlib
 import json
 from dataclasses import dataclass
-from enum import StrEnum
 from typing import Any
+
+try:
+    from enum import StrEnum
+except ImportError:  # Python 3.10 compatibility
+    from enum import Enum
+
+    class StrEnum(str, Enum):
+        """Backport of Python 3.11's StrEnum for older runtimes."""
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session

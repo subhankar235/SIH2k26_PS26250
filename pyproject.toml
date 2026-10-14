@@ -19,6 +19,7 @@ dependencies = [
   "networkx>=3.2,<4.0",
   "numpy>=1.26,<3.0",
   "simpy>=4.1,<5.0",
+  "ortools>=9.10,<10.0",
 ]
 
 [project.optional-dependencies]

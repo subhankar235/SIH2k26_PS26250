@@ -1,0 +1,1 @@
+"""Solver-independent optimization contracts."""

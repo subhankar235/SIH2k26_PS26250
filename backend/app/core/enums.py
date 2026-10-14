@@ -2,7 +2,13 @@
 
 from __future__ import annotations
 
-from enum import StrEnum
+try:
+    from enum import StrEnum
+except ImportError:  # Python 3.10 compatibility
+    from enum import Enum
+
+    class StrEnum(str, Enum):
+        """Backport of Python 3.11's StrEnum for older runtimes."""
 
 
 class SourceType(StrEnum):

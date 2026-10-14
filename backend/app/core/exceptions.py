@@ -62,6 +62,13 @@ class SolverInfeasible(AirPowerError):
     http_status = 422
 
 
+class SolverOutcomeError(AirPowerError):
+    """Indicate that the solver returned no usable schedule."""
+
+    code = "SOLVER_NO_SOLUTION"
+    http_status = 422
+
+
 class ForbiddenError(AirPowerError):
     """Indicate that the actor is not allowed to perform an operation."""
 
