@@ -2,13 +2,15 @@
 
 A standalone JavaScript ingestion service for aircraft maintenance status, crew availability, weather observations, airport capacity, and ordinary relief cargo. It maintains an authenticated event history and source-specific latest observations, then delivers eligible changes to Kafka through a durable transactional outbox.
 
-This module records observations. It does not create flight assignments, optimise military operations, process adversary intelligence, or allocate weapons. Sample data is fictional.
+The gateway records observations; its separate bounded civilian planner displays fictional proposals. It does not optimise military operations, process adversary intelligence or allocate weapons.
 
 [Verification evidence for the monitoring increment](docs/validation-monitoring.md).
 
-The complete fixed **civilian relief simulation** now adds five constraint specialists, bounded multi-objective optimization, independent verification, automatic replanning, a trained synthetic demand forecast, and two optional real local language models for validated evidence highlighting. [Detailed implementation guide](docs/CIVILIAN_ENGINE_GUIDE.md) covers architecture, models/datasets, algorithms, JavaScript/Kafka, persistence, setup and testing. This is a separate fictional engine; it does not optimize real gateway data or fulfil combat-planning requirements.
+The bounded **civilian relief simulation** adds five constraint specialists, bounded multi-objective optimization, independent verification, automatic replanning, a trained synthetic demand forecast, and two optional real local language models for validated evidence highlighting. [Detailed implementation guide](docs/CIVILIAN_ENGINE_GUIDE.md) covers architecture, models/datasets, algorithms, JavaScript/Kafka, persistence, setup and testing. Only explicitly bound ordinary source observations can update fictional resources; this does not fulfil combat-planning requirements.
 
 After starting the API and signing into the monitor, run `npm run relief:demo` in another terminal. The dashboard shows fictional proposals, unmet reasons, specialist reports, budget status, independent checks, forecast evaluation, model status and revision history. Use `npm run relief:train` for the synthetic model artifact; the guide explains installing/testing local Gemma/Qwen via `compose.ai.yaml` and enabling `RELIEF_AI_MODE=ollama`.
+
+The [dynamic extension guide](docs/DYNAMIC_CIVILIAN_GUIDE.md) explains configurable gateway runs, authenticated event-driven replanning, input TTL/maintenance expiry, deterministic specialist messages and explicit Open-Meteo refresh. Run `npm run relief:dynamic` for the new demo, optionally `-- --weather` for public model estimates. [Dynamic validation evidence](docs/validation-dynamic-system.md).
 
 ## Quick start
 

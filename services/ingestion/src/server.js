@@ -6,6 +6,7 @@ import { pathToFileURL } from 'node:url';
 import { resolve } from 'node:path';
 import { installShutdownHandlers } from './shutdown.js';
 import { ReliefSimulationService } from './relief-service.js';
+import { createReliefWeatherProvider } from './relief-weather.js';
 import { loadReliefAIConfig, createReliefAnnotator } from './relief-ai.js';
 
 function logger(message, fields = {}) {
@@ -16,7 +17,7 @@ export async function startServer(env = process.env) {
   const config = loadConfig(env);
   const store = new EventStore({ path: config.dbPath, maxPending: config.maxPending });
   let simulation;
-  try { simulation = new ReliefSimulationService({ store, sources: config.sources, annotator: createReliefAnnotator(loadReliefAIConfig(env)), logger }); }
+  try { simulation = new ReliefSimulationService({ store, sources: config.sources, weatherProvider: createReliefWeatherProvider(), annotator: createReliefAnnotator(loadReliefAIConfig(env)), logger }); }
   catch (error) { store.close(); throw error; }
   let ready = true;
   const publisher = new OutboxPublisher({ store, adapter: config.kafka.brokers.length ? createKafkaAdapter(config.kafka) : null,
@@ -29,11 +30,12 @@ export async function startServer(env = process.env) {
     await new Promise((resolve, reject) => { server.once('listening', resolve); server.once('error', reject); });
   } catch (error) { await Promise.allSettled([publisher.stop(), simulation.close()]); store.close(); throw error; }
   publisher.start(config.flushIntervalMs);
+  const expiryTimer=setInterval(()=>{try {simulation.expireInputs();}catch{logger('simulation.expiry_failed');}},1000);expiryTimer.unref();
   logger('service.started', { host: config.host, port: config.port, kafkaEnabled: publisher.enabled });
   let closing;
   function close() {
     if (closing) return closing;
-    ready = false;
+    ready = false;clearInterval(expiryTimer);
     closing = (async () => {
       const force = setTimeout(() => server.closeAllConnections(), 10000); force.unref();
       try {

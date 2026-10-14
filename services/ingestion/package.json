@@ -3,7 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "engines": { "node": ">=24.19.0" },
+  "engines": {
+    "node": ">=24.19.0"
+  },
   "packageManager": "npm@11.17.0",
   "scripts": {
     "setup": "node scripts/patch-kafkajs.js",
@@ -29,7 +31,10 @@
     "smoke:pipeline": "node --env-file-if-exists=.env scripts/pipeline-smoke.js",
     "smoke": "node --env-file-if-exists=.env scripts/smoke.js",
     "kafka:topics": "node --env-file-if-exists=.env scripts/kafka-topics.js",
-    "test:kafka": "node --test integration/kafka.test.js"
+    "test:kafka": "node --test integration/kafka.test.js",
+    "relief:dynamic": "node --env-file-if-exists=.env scripts/dynamic-demo.js",
+    "relief:test:dynamic": "node --env-file-if-exists=.env scripts/dynamic-smoke.js",
+    "relief:test:dynamic-ui": "python scripts/dynamic-ui-fixture.py"
   },
   "dependencies": {
     "express": "5.3.0",

@@ -191,3 +191,9 @@ test('close cancels a pending body read and drains the public operation', async 
   await entered; await weather.close(); await failed;
   assert.equal(cancelled, true);
 });
+test('heavy thunderstorm WMO code 97 maps to storm', async () => {
+  const value = payload(); value.current.weather_code = 97;
+  const weather = provider(async () => response(value));
+  try { assert.equal((await weather.fetch('delhi')).data.condition, 'storm'); }
+  finally { await weather.close(); }
+});

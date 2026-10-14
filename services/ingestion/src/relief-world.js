@@ -47,13 +47,14 @@ export function reliefEvents(world, sources, now = Date.now()) {
     if (!source) throw new Error(`Simulation requires a configured source for ${type}.`);
     return [type, source.sourceId];
   }));
+  const slotTimestamp = (minutes) => new Date(Date.parse(world.createdAt) + minutes * 60000).toISOString();
   const make = (type, id, data) => validateEvent({ schemaVersion: 1, eventId: randomUUID(), sourceId: sourceByType[type], entityId: prefix + id,
     type, sequence: world.revision + 1, observedAt: timestamp(0), validUntil: timestamp(120), data }, { now });
   return [
     ...world.aircraft.map((a) => make('aircraft.status', a.id, { status: a.status, airportId: prefix + a.airportId, capacityKg: a.capacityKg })),
-    ...world.crews.map((c) => make('crew.availability', c.id, { status: c.status, qualifications: c.qualifications, availableFrom: timestamp(c.fromSlot * 30), availableUntil: timestamp(c.toSlot * 30) })),
+    ...world.crews.map((c) => make('crew.availability', c.id, { status: c.status, qualifications: c.qualifications, availableFrom: slotTimestamp(c.fromSlot * 30), availableUntil: slotTimestamp(c.toSlot * 30) })),
     ...world.airports.map((a) => make('airport.capacity', a.id, { status: a.status, arrivalsPerHour: a.arrivalsPerSlot * 2, departuresPerHour: a.departuresPerSlot * 2 })),
-    ...world.weather.map((w) => make('weather.observation', w.airportId, { temperatureC: 24, windSpeedMps: w.windSpeedMps, visibilityM: w.visibilityM, condition: w.condition })),
-    ...world.requests.map((r) => make('cargo.request', r.id, { category: r.category, massKg: r.massKg, originAirportId: prefix + r.originId, destinationAirportId: prefix + r.destinationId, requestedDeliveryBy: timestamp(r.deadlineSlot * 30), temperatureControlled: r.temperatureControlled })),
+    ...world.weather.map((w) => make('weather.observation', w.airportId, { temperatureC: w.temperatureC ?? 24, windSpeedMps: w.windSpeedMps, visibilityM: w.visibilityM, condition: w.condition })),
+    ...world.requests.map((r) => make('cargo.request', r.id, { category: r.category, massKg: r.massKg, originAirportId: prefix + r.originId, destinationAirportId: prefix + r.destinationId, requestedDeliveryBy: slotTimestamp(r.deadlineSlot * 30), temperatureControlled: r.temperatureControlled })),
   ];
 }

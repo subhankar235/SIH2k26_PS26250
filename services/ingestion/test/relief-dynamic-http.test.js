@@ -1,0 +1,38 @@
+﻿import assert from 'node:assert/strict';
+import test from 'node:test';
+import { randomUUID } from 'node:crypto';
+import { once } from 'node:events';
+import { createApp } from '../src/app.js';
+import { loadConfig } from '../src/config.js';
+import { EventStore } from '../src/store.js';
+import { ReliefSimulationService } from '../src/relief-service.js';
+import { createReliefWorld } from '../src/relief-world.js';
+import { EVENT_TYPES } from '../src/contracts.js';
+import { createReliefAnnotator, loadReliefAIConfig } from '../src/relief-ai.js';
+
+test('configured gateway runs require admin; authenticated source events replan and viewers only inspect', async t => {
+ const admin='a'.repeat(48),viewer='v'.repeat(48);
+ const sources=EVENT_TYPES.map((type,i)=>({sourceId:`source-${i}`,token:String(i).repeat(48),types:[type]}));
+ const config=loadConfig({INGESTION_ADMIN_TOKEN:admin,MONITOR_VIEWER_TOKEN:viewer,INGESTION_SOURCES_JSON:JSON.stringify(sources)});
+ const now=Date.now(),store=new EventStore({path:':memory:',now:()=>now});
+ let fetches=0;
+ const simulation=new ReliefSimulationService({store,sources:config.sources,now:()=>now,annotator:createReliefAnnotator(loadReliefAIConfig({})),weatherProvider:{fetch:async()=>{fetches++;throw Object.assign(new Error('upstream private data'),{code:'WEATHER_UNAVAILABLE'});},close:async()=>{}}});
+ const server=createApp({config,store,simulation,now:()=>now,publisher:{enabled:false}}).listen(0,'127.0.0.1');await once(server,'listening');
+ t.after(async()=>{await new Promise(resolve=>server.close(resolve));await simulation.close();store.close();});
+ const base=`http://127.0.0.1:${server.address().port}`;
+ const send=(path,{token=admin,body,cookie}={})=>fetch(base+path,{method:body?'POST':'GET',headers:{...(token?{Authorization:`Bearer ${token}`} :{}),...(body?{'Content-Type':'application/json',Origin:base}:{}),...(cookie?{Cookie:cookie}:{})},body:body?JSON.stringify(body):undefined});
+ const {aircraft,crews,airports,weather,routes,requests}=createReliefWorld({now});requests[0].priority=2;
+ const configuration={aircraft,crews,airports,weather,routes,requests};
+ const start=await send('/v1/simulation/start',{body:{scenario:'civilian-relief',inputMode:'gateway',configuration,commandId:randomUUID()}});assert.equal(start.status,201);const state=await start.json();assert.equal(state.world.requests[0].priority,2);
+ const event={schemaVersion:1,eventId:randomUUID(),sourceId:sources[2].sourceId,type:'weather.observation',entityId:state.inputs.namespace+'SIM-CLINIC',sequence:1,observedAt:new Date(now).toISOString(),validUntil:new Date(now+60000).toISOString(),data:{temperatureC:20,windSpeedMps:25,visibilityM:1500,condition:'storm'}};
+ assert.equal((await send('/v1/events',{body:event,token:sources[0].token})).status,403);
+ assert.equal((await send('/v1/events',{body:event,token:sources[2].token})).status,201);
+ assert.equal(simulation.snapshot().world.revision,1);
+ const login=await send('/monitor/session',{token:null,body:{token:viewer}});const cookie=login.headers.get('set-cookie').split(';')[0];
+ const read=await send('/monitor/api/simulation',{token:null,cookie});assert.equal(read.status,200);assert.equal((await read.json()).world.revision,1);
+ const command={commandId:randomUUID(),runId:state.world.runId,expectedRevision:1,airportId:'SIM-CLINIC',location:'delhi'};
+ for(const token of [null,viewer,sources[2].token])assert.equal((await send('/v1/simulation/weather',{body:command,token,cookie})).status,401);
+ assert.equal(fetches,0);
+ const live=await send('/v1/simulation/weather',{body:command});assert.equal(live.status,200);const degraded=await live.json();assert.equal(degraded.weatherFeed.status,'degraded');assert.ok(!JSON.stringify(degraded).includes('upstream private data'));assert.equal(fetches,1);
+ assert.equal((await send('/v1/simulation/weather',{body:command})).status,200);assert.equal(fetches,1);
+});

@@ -49,7 +49,7 @@ WMO codes map to the canonical coarse conditions as follows:
 | fog | 45, 48 |
 | rain | 51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82 |
 | snow | 71, 73, 75, 77, 85, 86 |
-| storm | 95, 96, 99 |
+| storm | 95, 96, 97, 99 |
 
 The existing canonical `clear` category includes mainly clear, partly cloudy and
 overcast model codes: it means no listed precipitation/fog/storm category and does
@@ -94,3 +94,5 @@ Failures throw `ApiError` with fixed codes/messages, never upstream text or bodi
 No fallback weather, retry, or world mutation occurs in this adapter. The service
 retains error status/provenance and commits successful observations through its
 existing transactional ingestion path.
+
+The provider also maps current documented WMO code 97 (heavy thunderstorm) to `storm`, alongside 95, 96 and 99; unknown codes remain rejected.

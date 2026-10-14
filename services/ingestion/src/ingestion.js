@@ -3,7 +3,7 @@ import { validateEvent } from './contracts.js';
 
 /** Boundary validation and source authorization precede the atomic write. */
 export class IngestionService {
-  constructor({ store, now = Date.now }) { this.store = store; this.now = now; }
+  constructor({ store, simulation, now = Date.now }) { this.store = store; this.simulation = simulation; this.now = now; }
 
   accept(inputs, source) {
     if (!Array.isArray(inputs) || inputs.length < 1 || inputs.length > 100) {
@@ -17,6 +17,6 @@ export class IngestionService {
       }
       return event;
     });
-    return this.store.acceptBatch(events);
+    return this.simulation ? this.simulation.acceptEvents(events) : this.store.acceptBatch(events);
   }
 }

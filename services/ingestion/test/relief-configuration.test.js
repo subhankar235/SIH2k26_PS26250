@@ -87,3 +87,11 @@ test('configured worlds reject malformed trusted run metadata', () => {
   assert.throws(() => configuredReliefWorld(configuration(), { runId, now: Infinity }));
   assert.throws(() => configuredReliefWorld(configuration(), { runId: { toString: () => runId }, now: 0 }));
 });
+test('configurations reject leading-hyphen qualifications and wholly empty fixtures at the boundary', () => {
+  for (const qualification of ['-', '-pilot']) {
+    const c = configuration(); c.crews[0].qualifications = [qualification];
+    assert.equal(configurationSchema.safeParse(c).success, false);
+  }
+  const empty = { aircraft: [], crews: [], airports: [], weather: [], routes: [], requests: [] };
+  assert.equal(configurationSchema.safeParse(empty).success, false);
+});

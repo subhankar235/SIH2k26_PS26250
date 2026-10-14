@@ -11,7 +11,7 @@ const aircraft = z.strictObject({
 });
 const crew = z.strictObject({
   id, status: z.enum(['available', 'rest', 'unavailable']),
-  qualifications: z.array(z.string().regex(/^[a-z-]{1,64}$/)).min(1).max(8)
+  qualifications: z.array(z.string().regex(/^[a-z][a-z-]{0,63}$/)).min(1).max(8)
     .refine(values => new Set(values).size === values.length, 'Qualifications must be unique'),
   fromSlot: slot, toSlot: slot, validThroughTick: tick,
 }).superRefine((value, ctx) => {
@@ -42,6 +42,7 @@ export const configurationSchema = z.strictObject({
   demandHistory: z.array(z.strictObject({ day: z.number().int().min(0).max(1_000_000), demand: z.number().int().min(0).max(1_000_000) })).max(31).optional(),
 }).superRefine((configuration, ctx) => {
   const issue = (path, message) => ctx.addIssue({ code: 'custom', path, message });
+  if (['aircraft', 'crews', 'airports', 'weather', 'requests'].every(key => !configuration[key].length)) issue([], 'Scenario requires at least one fictional entity');
   const ids = new Set();
   for (const key of ['aircraft', 'crews', 'airports', 'requests']) {
     configuration[key].forEach((entity, index) => {

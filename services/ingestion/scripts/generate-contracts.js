@@ -2,6 +2,7 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { eventSchemas, EVENT_TYPES } from '../src/contracts.js';
 import { sampleEvent } from '../src/sample-events.js';
 import { z } from 'zod';
+import { weatherCommandSchema } from '../src/relief-weather.js';
 import { reliefStartSchema, reliefStepSchema } from '../src/relief-service.js';
 
 const schemas = eventSchemas();
@@ -73,17 +74,18 @@ const reliefSnapshot = { oneOf: [
   { type: 'object', required: ['status'], properties: { status: { const: 'idle' } } },
   { type: 'object', required: ['status', 'world', 'plan', 'validation', 'demand', 'annotations', 'evidence', 'history', 'generatedAt', 'nextPhase'],
     properties: { status: { const: 'ready' }, world: { type: 'object', required: ['simulation', 'runId', 'revision', 'tick'], properties: {
-      simulation: { const: true }, runId: { type: 'string', format: 'uuid' }, revision: { type: 'integer', minimum: 0, maximum: 5 }, tick: { type: 'integer', minimum: 0, maximum: 6 } } },
+      simulation: { const: true }, runId: { type: 'string', format: 'uuid' }, revision: { type: 'integer', minimum: 0, maximum: 20 }, tick: { type: 'integer', minimum: 0, maximum: 6 } } },
     plan: { type: 'object', required: ['status', 'assignments', 'unserved', 'agentReports'], properties: { status: { enum: ['optimal', 'feasible_budget'] },
       assignments: { type: 'array', maxItems: 3, items: object }, unserved: { type: 'array', maxItems: 5, items: object }, agentReports: { type: 'array', minItems: 5, maxItems: 5, items: object } } },
     validation: { type: 'object', required: ['valid', 'errors'], properties: { valid: { type: 'boolean' }, errors: { type: 'array', items: { type: 'string' } } } },
-    demand: object, annotations: object, evidence: { type: 'array', maxItems: 17, items: object }, history: { type: 'array', maxItems: 6, items: object },
+    demand: object, annotations: object, inputs: object, inputFreshness: object, planUsable: { type: 'boolean' }, coordination: object, weatherFeed: object, evidence: { type: 'array', maxItems: 17, items: object }, history: { type: 'array', maxItems: 21, items: object },
     nextPhase: { type: ['string', 'null'] }, generatedAt: { type: 'string', format: 'date-time' } } },
 ] };
-operation('/v1/simulation', 'get', 'Read the fixed fictional civilian simulation', { success: reliefSnapshot });
-operation('/v1/simulation/start', 'post', 'Atomically start/replace a fixed civilian fixture run', { body: z.toJSONSchema(reliefStartSchema), success: reliefSnapshot, status: 201 });
+operation('/v1/simulation', 'get', 'Read the bounded fictional civilian simulation and feed freshness', { success: reliefSnapshot });
+operation('/v1/simulation/start', 'post', 'Atomically start/replace a bounded civilian fixture or configured gateway run', { body: z.toJSONSchema(reliefStartSchema), success: reliefSnapshot, status: 201 });
 paths['/v1/simulation/start'].post.responses[200] = response(reliefSnapshot, 'Exact command replay; original saved response, no new events.');
 operation('/v1/simulation/step', 'post', 'Apply the next fixed perturbation with run/revision guards and automatic replanning', { body: z.toJSONSchema(reliefStepSchema), success: reliefSnapshot });
+operation('/v1/simulation/weather', 'post', 'Refresh fixed-location public weather for a fictional gateway airport; inspect weatherFeed for explicit degradation', { body: z.toJSONSchema(weatherCommandSchema), success: reliefSnapshot });
 paths['/monitor/api/simulation'] = { get: { summary: 'Inspect fictional proposals; viewer cannot execute or change the simulation', security: [{ ViewerCookie: [] }],
   responses: { 200: response(reliefSnapshot, 'No-store fictional snapshot. Logical ticks are separate from gateway wall-clock TTL.'), ...errors } } };
 for (const [path, body, description] of [

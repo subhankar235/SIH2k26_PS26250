@@ -2,7 +2,7 @@
 
 ## 1. What this system actually implements
 
-This guide describes the working noncombat educational system in this repository. It is not a combat-engine build guide or a recipe for adapting the system to weapon allocation, adversary threat evaluation, military mission planning or targeting. The simulation accepts one fixed fictional relief scenario and five predefined perturbations. It cannot accept real operational datasets, arbitrary routes, risk models or user-defined optimization objectives through its API.
+This guide describes the working noncombat educational system in this repository. It is not a combat-engine build guide or a recipe for adapting the system to weapon allocation, adversary threat evaluation, military mission planning or targeting. The scripted mode accepts one fixed fictional relief scenario and five predefined perturbations. Gateway mode adds strict configurable fictional fixtures, bound source updates, input expiry, deterministic coordination and explicit public weather refresh; see the [dynamic extension guide](DYNAMIC_CIVILIAN_GUIDE.md) for those APIs and their limits. The system cannot accept real operational datasets, arbitrary risk models or user-defined optimization objectives through its API.
 
 The engine proposes allocations of ordinary medical supplies, water, food and equipment among three fictional aircraft and three fictional crews. Each resource can be used once within a small toy planning horizon. Weather observations and airport closure reports affect feasibility; the engine never routes around adversaries or reasons about weapons. Proposals are displayed for inspection. No aircraft, crew or delivery is dispatched by this application.
 
@@ -105,6 +105,8 @@ Official references: [Ollama structured generation](https://docs.ollama.com/api/
 Cold storage, priorities, routes, duty slots and logical validity are **scenario metadata**. They were not inferred from the gateway's more limited event schemas. The simulation uses those explicit assumptions to demonstrate constraint evaluation. It is not a certification system and does not assess real pilot qualifications, maintenance release or weather suitability.
 
 Two clocks coexist. Gateway `observedAt` and `validUntil` are wall-clock timestamps, with the same normalization and freshness rules as other events. Simulation `tick`, slots and `validThroughTick` are logical values advanced by predefined phases. At tick6, records valid through tick5 are excluded from simulation planning. This does not secretly modify the wall-clock validity of gateway projections. The UI labels the clock and fixture scope so that the two cannot be mistaken for one operational timeline.
+
+In gateway mode, mirrors inherit bound TTL and omit expired input; absolute duty/deadline times are anchored to run creation. Scripted logical expiry remains separate from wall-clock TTL.
 
 Mirrored gateway entity IDs use `relief-<full-run-UUID>-<SIM-ID>`, preserving source/type/entity sequence isolation. Aircraft airport references and cargo endpoint references use the same namespace as mirrored airport entities. The full UUID prevents runs sharing an eight-character prefix from colliding. Every snapshot includes event IDs, cursors, sources, types and entity IDs under `evidence` for inspecting the accepted typed records.
 

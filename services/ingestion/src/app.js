@@ -7,6 +7,7 @@ import { EVENT_TYPES, eventSchemas } from './contracts.js';
 import { tokenHash } from './config.js';
 import { IngestionService } from './ingestion.js';
 import { mountMonitoring } from './monitoring.js';
+import { weatherCommandSchema } from './relief-weather.js';
 import { reliefStartSchema, reliefStepSchema } from './relief-service.js';
 
 const id = z.string().regex(/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/);
@@ -44,7 +45,7 @@ function limiter({ maximum, windowMs, now, maxKeys = 10000 }) {
 export function createApp({ config, store, publisher, simulation, now = Date.now, logger = () => {}, isReady = () => true }) {
   const app = express(); app.disable('x-powered-by'); app.set('trust proxy', false);
   app.set('query parser', 'simple');
-  const ingest = new IngestionService({ store, now });
+  const ingest = new IngestionService({ store, simulation, now });
   const http = { requests: 0, failures: 0 };
   const ipLimit = limiter({ maximum: config.publicRate, windowMs: config.rateWindowMs, now });
   const sourceLimit = limiter({ maximum: config.sourceRate, windowMs: config.rateWindowMs, now, maxKeys: 100 });
@@ -138,6 +139,10 @@ export function createApp({ config, store, publisher, simulation, now = Date.now
       res.status(action === 'start' && !result.command.replayed ? 201 : 200).json(result);
     });
   }
+  router.post('/simulation/weather', ...json, async (req,res)=>{
+    if(!simulation)throw new ApiError(503,'SIMULATION_UNAVAILABLE','Simulation is not configured.');
+    res.json(await simulation.weather(parse(weatherCommandSchema,req.body,'INVALID_SIMULATION_COMMAND')));
+  });
   app.use('/v1', router);
   mountMonitoring(app, { config, store, simulation, now });
   app.use((_req, _res, next) => next(new ApiError(404, 'NOT_FOUND', 'Endpoint not found.')));

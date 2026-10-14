@@ -19,7 +19,7 @@ const CODES = new Map([
   ...[45, 48].map(code => [code, 'fog']),
   ...[51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82].map(code => [code, 'rain']),
   ...[71, 73, 75, 77, 85, 86].map(code => [code, 'snow']),
-  ...[95, 96, 99].map(code => [code, 'storm']),
+  ...[95, 96, 97, 99].map(code => [code, 'storm']),
 ]);
 const timestamp = z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2})?Z?$/)
   .refine(value => z.iso.datetime({ local: true }).safeParse(value).success)

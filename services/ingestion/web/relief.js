@@ -4,7 +4,7 @@ const get = (id) => document.getElementById(id);
 const list = (value) => Array.isArray(value) ? value : [];
 const value = (input) => typeof input === 'string' || (typeof input === 'number' && Number.isFinite(input)) ? String(input) : 'Not reported';
 const labels = { fleet: 'Fleet', crew: 'Crew', weather: 'Weather', airport: 'Airport', cargo: 'Cargo' };
-const phases = { 'weather-change': 'Weather change', 'maintenance-change': 'Maintenance change', 'airport-closure': 'Airport closure', 'new-request': 'New request', 'validity-expiry': 'Validity expiry', start: 'Initial scenario' };
+const phases = { 'weather-change': 'Weather change', 'maintenance-change': 'Maintenance change', 'airport-closure': 'Airport closure', 'new-request': 'New request', 'validity-expiry': 'Validity expiry', start: 'Initial scenario', 'gateway-update': 'Gateway update', 'input-expiry': 'Input expiry' };
 function node(tag, text, className) {
   const result = document.createElement(tag);
   if (text !== undefined) result.textContent = value(text);
@@ -191,7 +191,7 @@ export function reliefRender(snapshot) {
   forecast.append(definition([['Model', demand?.modelId], ['Synthetic day', demand?.forecastDay], ['Predicted request count', demand?.predictedRequests], ['Training / held-out samples', `${value(demand?.trainingCount)} / ${value(demand?.testCount)}`], ['Held-out MAE / baseline MAE', `${value(demand?.evaluation?.mae)} / ${value(demand?.evaluation?.baselineMae)}`]]));
   const requests = section('Fictional relief requests', 'Priority, cold storage and logical validity are scenario metadata.');
   requests.append(table('relief-table-requests', 'Fictional request metadata', ['Request / category', 'Route', 'Mass (kg)', 'Priority', 'Cold chain', 'Deadline slot', 'Valid through tick'], list(world.requests).map((item) => [`${value(item.id)} / ${value(item.category)}`,`${value(item.originId)} → ${value(item.destinationId)}`,item.massKg,item.priority,item.temperatureControlled === true ? 'Required' : 'No',item.deadlineSlot,item.validThroughTick]), 'No fictional requests reported.'));
-  const history = section('Prior revisions', 'Current run only. Up to six retained revision summaries.');
+  const history = section('Prior revisions', 'Current run only. Up to 21 retained revision summaries in a gateway run; six in the scripted demo.');
   history.append(table('relief-table-history', 'Relief revision history', ['Revision', 'Phase', 'Served priority', 'Assignments', 'Changed assignments'], list(snapshot.history).map((item) => [item.revision,phases[item.phase] || item.phase,item.servedPriority,item.assignedCount,item.changedAssignments]), 'No prior revisions reported.'));
   const overview = node('div', undefined, 'relief-overview'); overview.append(revision, checker, forecast);
   const inputSections = [];

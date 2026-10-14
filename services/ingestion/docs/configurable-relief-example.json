@@ -1,0 +1,164 @@
+{
+  "aircraft": [
+    {
+      "id": "SIM-A1",
+      "airportId": "SIM-HUB",
+      "capacityKg": 800,
+      "coldStorage": true,
+      "status": "available",
+      "validThroughTick": 5
+    },
+    {
+      "id": "SIM-A2",
+      "airportId": "SIM-HUB",
+      "capacityKg": 1200,
+      "coldStorage": false,
+      "status": "available",
+      "validThroughTick": 5
+    },
+    {
+      "id": "SIM-A3",
+      "airportId": "SIM-HUB",
+      "capacityKg": 600,
+      "coldStorage": true,
+      "status": "available",
+      "validThroughTick": 5
+    }
+  ],
+  "crews": [
+    {
+      "id": "SIM-C1",
+      "status": "available",
+      "qualifications": [
+        "relief-pilot"
+      ],
+      "fromSlot": 0,
+      "toSlot": 4,
+      "validThroughTick": 5
+    },
+    {
+      "id": "SIM-C2",
+      "status": "available",
+      "qualifications": [
+        "relief-pilot"
+      ],
+      "fromSlot": 0,
+      "toSlot": 4,
+      "validThroughTick": 5
+    },
+    {
+      "id": "SIM-C3",
+      "status": "rest",
+      "qualifications": [
+        "relief-pilot"
+      ],
+      "fromSlot": 0,
+      "toSlot": 4,
+      "validThroughTick": 5
+    }
+  ],
+  "airports": [
+    {
+      "id": "SIM-HUB",
+      "status": "open",
+      "arrivalsPerSlot": 2,
+      "departuresPerSlot": 2,
+      "validThroughTick": 5
+    },
+    {
+      "id": "SIM-CLINIC",
+      "status": "open",
+      "arrivalsPerSlot": 2,
+      "departuresPerSlot": 2,
+      "validThroughTick": 5
+    },
+    {
+      "id": "SIM-SHELTER",
+      "status": "open",
+      "arrivalsPerSlot": 2,
+      "departuresPerSlot": 2,
+      "validThroughTick": 5
+    }
+  ],
+  "weather": [
+    {
+      "airportId": "SIM-HUB",
+      "windSpeedMps": 5,
+      "visibilityM": 10000,
+      "condition": "clear",
+      "validThroughTick": 5
+    },
+    {
+      "airportId": "SIM-CLINIC",
+      "windSpeedMps": 5,
+      "visibilityM": 10000,
+      "condition": "clear",
+      "validThroughTick": 5
+    },
+    {
+      "airportId": "SIM-SHELTER",
+      "windSpeedMps": 5,
+      "visibilityM": 10000,
+      "condition": "clear",
+      "validThroughTick": 5
+    }
+  ],
+  "routes": [
+    {
+      "originId": "SIM-HUB",
+      "destinationId": "SIM-CLINIC",
+      "durationSlots": 1
+    },
+    {
+      "originId": "SIM-HUB",
+      "destinationId": "SIM-SHELTER",
+      "durationSlots": 1
+    }
+  ],
+  "requests": [
+    {
+      "id": "SIM-REQ-MED",
+      "category": "medical",
+      "massKg": 600,
+      "originId": "SIM-HUB",
+      "destinationId": "SIM-CLINIC",
+      "temperatureControlled": true,
+      "priority": 5,
+      "deadlineSlot": 2,
+      "validThroughTick": 5
+    },
+    {
+      "id": "SIM-REQ-WATER",
+      "category": "water",
+      "massKg": 700,
+      "originId": "SIM-HUB",
+      "destinationId": "SIM-SHELTER",
+      "temperatureControlled": false,
+      "priority": 4,
+      "deadlineSlot": 3,
+      "validThroughTick": 5
+    },
+    {
+      "id": "SIM-REQ-FOOD",
+      "category": "food",
+      "massKg": 300,
+      "originId": "SIM-HUB",
+      "destinationId": "SIM-SHELTER",
+      "temperatureControlled": false,
+      "priority": 3,
+      "deadlineSlot": 3,
+      "validThroughTick": 5
+    },
+    {
+      "id": "SIM-REQ-EQUIP",
+      "category": "equipment",
+      "massKg": 500,
+      "originId": "SIM-HUB",
+      "destinationId": "SIM-CLINIC",
+      "temperatureControlled": false,
+      "priority": 1,
+      "deadlineSlot": 4,
+      "validThroughTick": 5
+    }
+  ]
+}
