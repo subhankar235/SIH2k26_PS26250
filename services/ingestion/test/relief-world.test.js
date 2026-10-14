@@ -18,3 +18,14 @@ test('fixed civilian world is sealed to finite ordinary cargo and validated gate
   assert.equal(world.tick, 0); assert.equal(latest.tick, 6); assert.equal(latest.requests.length, 5);
   assert.ok(latest.aircraft.every((a) => a.validThroughTick < latest.tick));
 });
+test('full run IDs isolate streams and cargo/aircraft airport references resolve to mirrored airports', () => {
+  const first = createReliefWorld({ runId: 'aaaaaaaa-1111-4111-8111-111111111111', now });
+  const second = createReliefWorld({ runId: 'aaaaaaaa-2222-4222-8222-222222222222', now });
+  const left = reliefEvents(first, sources, now), right = reliefEvents(second, sources, now);
+  assert.notEqual(left[0].entityId, right[0].entityId);
+  const airports = new Set(left.filter((e) => e.type === 'airport.capacity').map((e) => e.entityId));
+  for (const event of left.filter((e) => e.type === 'aircraft.status')) assert.ok(airports.has(event.data.airportId));
+  for (const event of left.filter((e) => e.type === 'cargo.request')) {
+    assert.ok(airports.has(event.data.originAirportId)); assert.ok(airports.has(event.data.destinationAirportId));
+  }
+});

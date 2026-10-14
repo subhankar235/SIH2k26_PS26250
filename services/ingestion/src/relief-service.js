@@ -62,9 +62,14 @@ export class ReliefSimulationService {
       const plan = optimizeReliefWorld(world, { previousAssignments: previous });
       const validation = validateReliefPlan(world, plan, { previousAssignments: previous });
       if (!validation.valid) throw new Error('Simulation plan failed independent verification.');
-      this.store.acceptBatch(reliefEvents(world, this.sources, this.now()));
+      const events = reliefEvents(world, this.sources, this.now());
+      const receipts = this.store.acceptBatch(events);
+      if (receipts.some((r) => r.disposition !== 'current' || r.delivery !== 'queued' || r.duplicate)) {
+        throw new ApiError(409, 'SIMULATION_FIXTURE_CONFLICT', 'A fictional source stream conflicts with this phase; no changes were committed.');
+      }
       const forecastDay = 120 + world.tick;
       const snapshot = { status: 'ready', world, plan, validation,
+        evidence: events.map((event, i) => ({ eventId: event.eventId, cursor: receipts[i].cursor, type: event.type, entityId: event.entityId, sourceId: event.sourceId })),
         demand: { modelId: 'synthetic-demand-ols', simulation: true, forecastDay, predictedRequests: forecastDemand(this.demandModel, forecastDay),
           trainingCount: this.demandModel.trainingCount, testCount: this.demandModel.testCount, evaluation: this.demandModel.evaluation },
         annotations: { status: 'pending', runId: world.runId, revision: world.revision }, nextPhase: RELIEF_PHASES[world.revision] ?? null,

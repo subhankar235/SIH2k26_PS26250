@@ -87,3 +87,13 @@ test('retained command capacity fails closed before fixture writes', (t) => {
   assert.throws(() => service.start({ scenario: 'civilian-relief', commandId: randomUUID() }), (e) => e.code === 'SIMULATION_COMMAND_CAPACITY');
   assert.equal(store.metrics().events, 0); assert.deepEqual(service.snapshot(), { status: 'idle' });
 });
+
+test('poisoned fixture sequence refuses the entire phase instead of silently losing Kafka delivery', (t) => {
+  const { store, service } = setup(t);
+  const initial = service.start({ scenario: 'civilian-relief', commandId: randomUUID() });
+  const prior = store.listState({ type: 'aircraft.status' }).items[0].event;
+  store.acceptBatch([{ ...prior, eventId: randomUUID(), sequence: 99 }]);
+  const events = store.metrics().events;
+  assert.throws(() => service.step({ commandId: randomUUID(), runId: initial.world.runId, expectedRevision: 0, phase: 'weather-change' }), (e) => e.code === 'SIMULATION_FIXTURE_CONFLICT');
+  assert.equal(store.metrics().events, events); assert.equal(service.snapshot().world.revision, 0);
+});
