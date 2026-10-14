@@ -48,13 +48,38 @@ operation('/v1/retention', 'post', 'Purge bounded eligible settled history older
     after: { type: 'integer', minimum: 0, maximum: Number.MAX_SAFE_INTEGER } } } });
 operation('/v1/metrics', 'get', 'Read operational counters without payloads or credentials');
 operation('/v1/schema', 'get', 'Read generated input schemas and runtime-validation caveats');
+const count = { type: 'integer', minimum: 0 };
+const delivery = { type: 'object', required: ['queued', 'dead', 'published'], properties: { queued: count, dead: count, published: count } };
+const fact = { type: 'object', required: [...receipt.required, 'event', 'freshness', 'ageMs', 'flags', 'reportedStatus'], properties: {
+  ...receipt.properties, event, freshness: { enum: ['current', 'expired'] }, ageMs: count,
+  flags: { type: 'array', items: { enum: ['expired', 'sequence_gap', 'source_disagreement', 'maintenance_date_passed'] } },
+  reportedStatus: { type: ['string', 'null'] },
+} };
+const snapshot = { type: 'object', required: ['generatedAt', 'scope', 'summary', 'records', 'delivery', 'deliveryScope'], properties: {
+  generatedAt: { type: 'string', format: 'date-time' },
+  scope: { type: 'object', required: ['limit', 'shown', 'truncated'], properties: { limit: { const: 1000 }, shown: count, truncated: { type: 'boolean' } } },
+  summary: { type: 'object', required: ['total', 'current', 'expired', 'sequenceGaps', 'disagreements', 'byType'], properties: {
+    total: count, current: count, expired: count, sequenceGaps: count, disagreements: count,
+    byType: { type: 'object', required: EVENT_TYPES, properties: Object.fromEntries(EVENT_TYPES.map((type) => [type, count])) },
+  } },
+  records: { type: 'array', maxItems: 1000, items: fact }, delivery, deliveryScope: { const: 'global_outbox' },
+} };
+paths['/monitor/api/snapshot'] = { get: { summary: 'Read bounded source assertions and quality flags; delivery totals are global',
+  security: [{ ViewerCookie: [] }], parameters: [query('type', { enum: EVENT_TYPES }), filters[0]],
+  responses: { 200: response(snapshot, 'No-store snapshot. Summary counts cover selected records; delivery covers the whole outbox.'), ...errors } } };
+for (const [path, body, description] of [
+  ['/monitor/session', { ...empty, required: ['token'], properties: { token: { type: 'string', maxLength: 128 } } }, 'Create bounded 30-minute read-only cookie session with separate viewer token'],
+  ['/monitor/logout', empty, 'Revoke current read-only cookie session'],
+]) paths[path] = { post: { summary: description, security: [], parameters: [{ name: 'Origin', in: 'header', required: true, schema: { type: 'string', format: 'uri' } }],
+  requestBody: { required: true, content: json(body) }, responses: { 200: response(object, 'No-store JSON; HttpOnly SameSite=Strict session cookie set or cleared.'), ...errors } } };
 for (const path of ['/health/live', '/health/ready']) paths[path] = { get: { summary: 'Minimal local service health', security: [], responses: {
   200: response(object, 'Healthy'), 503: response(object, 'Not ready'), 429: errors[429],
 } } };
 const openapi = { openapi: '3.1.0', info: { title: 'Administrative Logistics Ingestion', version: '0.1.0',
   description: 'Noncombat observations only. All JSON objects are strict. Runtime enforces cross-field consistency and observation-time rules beyond JSON Schema. Accepted means durably stored; Kafka delivery is asynchronous and at least once.' },
   servers: [{ url: 'http://127.0.0.1:3100' }], paths,
-  components: { securitySchemes: { SourceBearer: { type: 'http', scheme: 'bearer' }, AdminBearer: { type: 'http', scheme: 'bearer' } }, schemas } };
+  components: { securitySchemes: { SourceBearer: { type: 'http', scheme: 'bearer' }, AdminBearer: { type: 'http', scheme: 'bearer' },
+    ViewerCookie: { type: 'apiKey', in: 'cookie', name: 'logistics_viewer' } }, schemas } };
 const samples = EVENT_TYPES.map((type, index) => ({ ...sampleEvent(type, { now: Date.parse('2026-10-15T06:00:00Z') }),
   eventId: `00000000-0000-4000-8000-${String(index + 1).padStart(12, '0')}` }));
 const artifacts = { 'docs/openapi.json': openapi, 'docs/event-schemas.json': { schemaVersion: 1, schemas }, 'docs/sample-events.json': samples };

@@ -30,9 +30,12 @@ test('real Kafka acknowledges the outbox and two independent groups receive the 
     delivery.catch(() => {});
     for (let index = 0; index < 2; index++) {
       const consumer = kafka.consumer({ groupId: `logistics-test-${runId}-${index}` }); consumers.push(consumer);
-      consumer.on(consumer.events.CRASH, () => failed(new Error('Kafka test consumer crashed.')));
+      consumer.on(consumer.events.CRASH, ({ payload }) => failed(new Error(`Kafka test consumer crashed (${payload.error?.name ?? 'unknown'}; cause ${payload.error?.cause?.name ?? 'unknown'}).`)));
       await consumer.connect(); await consumer.subscribe({ topic: TOPICS[input.type], fromBeginning: true });
       await consumer.run({ eachMessage: async ({ message }) => {
+        // Other integration scenarios deliberately leave malformed records on
+        // this shared development topic. Inspect only this test's unique key.
+        if (message.key?.toString() !== `integration-test:${runId}`) return;
         const parsed = JSON.parse(message.value.toString());
         if (parsed.eventId !== input.eventId) return;
         received[index].push({ key: message.key.toString(), event: parsed, idHeader: message.headers['event-id'].toString() });

@@ -1,8 +1,8 @@
-# Air Power — standalone ingestion increment
+# Air Power — administrative event gateway and monitor
 
-The new noncombat administrative logistics ingestion service is in [services/ingestion](services/ingestion/README.md). It accepts authenticated maintenance, crew, weather, airport-capacity, and ordinary relief-cargo observations, with durable history, stale-data protection, and Kafka delivery. See that module's README for installation, tests, demo, and limitations.
+The new noncombat administrative logistics system is in [services/ingestion](services/ingestion/README.md). It accepts authenticated maintenance, crew, weather, airport-capacity, and ordinary relief-cargo observations, with durable history, stale-data protection, Kafka delivery, an independent durable Kafka reader, a read-only browser dashboard, data-quality indicators and a finite fictional update simulator. See that module's README for installation, tests, demo, and limitations.
 
-Implementation/design: [docs/logistics-ingestion-design.md](docs/logistics-ingestion-design.md). This work does not implement military operational planning or weapons allocation.
+Implementation/design: [ingestion design](docs/logistics-ingestion-design.md), [monitoring modules](docs/logistics-monitoring-plan.md), [module map and demo](services/ingestion/docs/monitoring.md). This work does not implement military operational planning or weapons allocation.
 
 The earlier grid platform below is historical scaffolding and is not wired into the standalone ingestion module.
 

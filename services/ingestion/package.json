@@ -17,6 +17,9 @@
     "viewer:credentials": "node scripts/viewer-credentials.js",
     "demo": "node --env-file-if-exists=.env scripts/demo.js",
     "scenario": "node --env-file-if-exists=.env scripts/scenario.js",
+    "consumer": "node --env-file-if-exists=.env src/consumer-cli.js",
+    "test:consumer:kafka": "node --test integration/consumer.test.js",
+    "test:browser": "python scripts/browser-smoke.py",
     "smoke": "node --env-file-if-exists=.env scripts/smoke.js",
     "kafka:topics": "node --env-file-if-exists=.env scripts/kafka-topics.js",
     "test:kafka": "node --test integration/kafka.test.js"

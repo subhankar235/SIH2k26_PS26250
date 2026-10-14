@@ -1,4 +1,4 @@
-# Administrative logistics ingestion
+# Administrative logistics event gateway and monitor
 
 A standalone JavaScript ingestion service for aircraft maintenance status, crew availability, weather observations, airport capacity, and ordinary relief cargo. It maintains an authenticated event history and source-specific latest observations, then delivers eligible changes to Kafka through a durable transactional outbox.
 
@@ -15,7 +15,11 @@ npm run credentials
 npm start
 ```
 
-The credential generator creates an ignored `.env` file with separate random admin and per-domain source tokens. It refuses to overwrite an existing file and prints no tokens. The empty `.env.example` intentionally cannot start the server. Keep credentials private; file mode alone does not configure Windows ACLs.
+The credential generator creates an ignored `.env` file with separate random admin, viewer and per-domain source tokens. It refuses to overwrite an existing file and prints no tokens. The empty `.env.example` intentionally cannot start the server. Keep credentials private; file mode alone does not configure Windows ACLs.
+
+Open `http://127.0.0.1:3100/monitor/` and enter the separate `MONITOR_VIEWER_TOKEN` from your private `.env`. For an existing credential file without that setting, run `npm run viewer:credentials` once, then restart the server. Never enter the admin or source token into the dashboard. The browser receives only a read-only 30-minute HttpOnly cookie; viewer sessions cannot write events or invoke admin endpoints.
+
+In a second terminal, `npm run scenario` demonstrates five fictional domains, weather changes, maintenance reports, an airport closure report, sequence gaps, duplicate/stale events and validity expiry over about 35 seconds. `npm run scenario -- --fast` compresses timing for smoke checks. These are administrative source updates; no flight decisions are generated. The page polls every five seconds, so fast-mode phases can finish between polls. [Monitoring contracts, module map and demonstration](docs/monitoring.md) explain the full flow.
 
 Default API: `http://127.0.0.1:3100`. In another terminal in this directory:
 
@@ -43,12 +47,25 @@ npm run kafka:topics
 npm start
 ```
 
+In a third terminal, `npm run consumer` runs the independent durable read model. It uses `var/read-model.sqlite` and a stable consumer group, validates/quarantines broker messages, records checkpoints transactionally before acknowledgment, and handles crash replay. [Consumer runbook](docs/consumer.md) covers capacity, broker rewind and rebuild procedures. The dashboard reads the gateway database, so an outbox marked published does **not** imply the downstream reader processed it.
+
 The topic setup is idempotent. It configures three partitions and one replica only when creating a new topic; it does not overwrite existing broker/topic settings. Default topic retention on creation follows `INGESTION_RETENTION_DAYS`. Existing broker retention must be managed separately.
 
 ```powershell
 $env:KAFKA_TEST_BROKERS = 'localhost:29092'
 npm run test:kafka
 ```
+
+Additional verification commands (browser smoke needs a running local server, `.env` viewer/source credentials, Python and Playwright Chromium):
+
+```powershell
+npm run test:consumer:kafka
+python -m pip install playwright
+python -m playwright install chromium
+npm run test:browser
+```
+
+The consumer integration fails when no test broker is configured. Browser smoke posts uniquely named fictional airport assertions, verifies actual updates/TTL through the UI, exports a secret-free snapshot and saves ignored screenshots in `var/`. Run it against an isolated development database when existing records matter.
 
 This enabled integration test uses the actual broker and two different consumer groups. Without that environment variable it is explicitly skipped. `docker compose stop` stops this project's development broker while preserving its volume.
 
