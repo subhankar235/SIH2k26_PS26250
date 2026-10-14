@@ -57,7 +57,7 @@ function cookieValue(req) {
   return TOKEN.test(value) ? tokenHash(value).toString('hex') : null;
 }
 
-export function mountMonitoring(app, { config, store, now = Date.now }) {
+export function mountMonitoring(app, { config, store, simulation, now = Date.now }) {
   const sessions = new Map(); const settings = config.monitor ?? { digest: null };
   const router = express.Router();
   router.use((_req, res, next) => { res.setHeader('Cache-Control', 'no-store'); next(); });
@@ -100,6 +100,12 @@ export function mountMonitoring(app, { config, store, now = Date.now }) {
     enabled(); cleanSessions(); const key = cookieValue(req);
     if (!key || !sessions.has(key)) throw new ApiError(401, 'UNAUTHORIZED', 'Sign in with read-only viewer credentials.');
     res.json(monitoringSnapshot(store, parse(query, req.query), now()));
+  });
+  router.get('/api/simulation', (req, res) => {
+    enabled(); cleanSessions(); const key = cookieValue(req);
+    if (!key || !sessions.has(key)) throw new ApiError(401, 'UNAUTHORIZED', 'Sign in with read-only viewer credentials.');
+    parse(z.strictObject({}), req.query);
+    res.json(simulation?.snapshot() ?? { status: 'idle' });
   });
   router.use(express.static(fileURLToPath(new URL('../web/', import.meta.url)), { index: 'index.html', dotfiles: 'deny', fallthrough: true }));
   app.use('/monitor', router);

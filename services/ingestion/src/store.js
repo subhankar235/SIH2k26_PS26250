@@ -24,6 +24,7 @@ export class EventStore {
     if (!path || !Number.isInteger(maxPending) || maxPending < 1) throw new Error('Invalid store configuration.');
     this.now = now;
     this.maxPending = maxPending;
+    this.transactionDepth = 0;
     if (path !== ':memory:') mkdirSync(dirname(path), { recursive: true });
     this.db = new DatabaseSync(path);
     try {
@@ -61,9 +62,17 @@ export class EventStore {
   }
 
   transaction(action) {
-    this.db.exec('BEGIN IMMEDIATE');
-    try { const result = action(); this.db.exec('COMMIT'); return result; }
-    catch (error) { this.db.exec('ROLLBACK'); throw error; }
+    const nested = this.transactionDepth > 0;
+    const savepoint = `event_store_${this.transactionDepth}`;
+    this.db.exec(nested ? `SAVEPOINT ${savepoint}` : 'BEGIN IMMEDIATE'); this.transactionDepth++;
+    try { const result = action(); this.db.exec(nested ? `RELEASE ${savepoint}` : 'COMMIT'); return result; }
+    catch (error) {
+      if (this.db.isTransaction) {
+        if (nested) { this.db.exec(`ROLLBACK TO ${savepoint}`); this.db.exec(`RELEASE ${savepoint}`); }
+        else this.db.exec('ROLLBACK');
+      }
+      throw error;
+    } finally { this.transactionDepth--; }
   }
 
   receipt(row, duplicate = false) {

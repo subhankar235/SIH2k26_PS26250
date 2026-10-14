@@ -17,6 +17,8 @@
     "viewer:credentials": "node scripts/viewer-credentials.js",
     "demo": "node --env-file-if-exists=.env scripts/demo.js",
     "scenario": "node --env-file-if-exists=.env scripts/scenario.js",
+    "relief:demo": "node --env-file-if-exists=.env scripts/relief-demo.js",
+    "relief:train": "node scripts/train-relief-models.js",
     "consumer": "node --env-file-if-exists=.env src/consumer-cli.js",
     "test:consumer:kafka": "node --test integration/consumer.test.js",
     "test:browser": "python scripts/browser-smoke.py",

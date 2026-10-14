@@ -7,6 +7,7 @@ import { EVENT_TYPES, eventSchemas } from './contracts.js';
 import { tokenHash } from './config.js';
 import { IngestionService } from './ingestion.js';
 import { mountMonitoring } from './monitoring.js';
+import { reliefStartSchema, reliefStepSchema } from './relief-service.js';
 
 const id = z.string().regex(/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/);
 const cursor = z.string().regex(/^\d+$/).transform(Number).refine(Number.isSafeInteger).refine((n) => n >= 0);
@@ -40,7 +41,7 @@ function limiter({ maximum, windowMs, now, maxKeys = 10000 }) {
   };
 }
 
-export function createApp({ config, store, publisher, now = Date.now, logger = () => {}, isReady = () => true }) {
+export function createApp({ config, store, publisher, simulation, now = Date.now, logger = () => {}, isReady = () => true }) {
   const app = express(); app.disable('x-powered-by'); app.set('trust proxy', false);
   app.set('query parser', 'simple');
   const ingest = new IngestionService({ store, now });
@@ -129,8 +130,16 @@ export function createApp({ config, store, publisher, now = Date.now, logger = (
   router.get('/metrics', (_req, res) => res.json({ http: { ...http }, store: store.metrics(), broker: publisher.diagnostics?.() ?? { enabled: publisher.enabled } }));
   router.get('/schema', (_req, res) => res.json({ schemaVersion: 1, schemas,
     runtimeRules: ['Cross-field consistency and observation-time checks are enforced by runtime validation.'] }));
+  router.get('/simulation', (_req, res) => res.json(simulation?.snapshot() ?? { status: 'idle' }));
+  for (const [path, schema, action] of [['start', reliefStartSchema, 'start'], ['step', reliefStepSchema, 'step']]) {
+    router.post(`/simulation/${path}`, ...json, (req, res) => {
+      if (!simulation) throw new ApiError(503, 'SIMULATION_UNAVAILABLE', 'Simulation is not configured.');
+      const result = simulation[action](parse(schema, req.body, 'INVALID_SIMULATION_COMMAND'));
+      res.status(action === 'start' && !result.command.replayed ? 201 : 200).json(result);
+    });
+  }
   app.use('/v1', router);
-  mountMonitoring(app, { config, store, now });
+  mountMonitoring(app, { config, store, simulation, now });
   app.use((_req, _res, next) => next(new ApiError(404, 'NOT_FOUND', 'Endpoint not found.')));
   app.use((error, req, res, _next) => {
     if (res.headersSent) { res.destroy(); return; }
