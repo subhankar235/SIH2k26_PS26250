@@ -37,7 +37,7 @@ export function monitoringSnapshot(store, filters = {}, now = Date.now()) {
     if (record.flags.includes('source_disagreement')) summary.disagreements++;
   }
   return { generatedAt: new Date(now).toISOString(), scope: { limit: 1000, shown: records.length, truncated: selected.truncated },
-    summary, records, delivery: store.metrics().outbox };
+    summary, records, delivery: store.metrics().outbox, deliveryScope: 'global_outbox' };
 }
 
 const SESSION_MS = 30 * 60 * 1000;

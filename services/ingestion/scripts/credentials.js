@@ -11,6 +11,7 @@ const destination = resolve(arguments_[1] ?? '.env');
 const sources = EVENT_TYPES.map((type) => ({ sourceId: `demo-${type.split('.')[0]}`,
   token: randomBytes(36).toString('base64url'), types: [type] }));
 const config = [`INGESTION_ADMIN_TOKEN=${randomBytes(36).toString('base64url')}`,
+  `MONITOR_VIEWER_TOKEN=${randomBytes(36).toString('base64url')}`,
   `INGESTION_SOURCES_JSON=${JSON.stringify(sources)}`, 'HOST=127.0.0.1', 'PORT=3100',
   'INGESTION_DB_PATH=var/events.sqlite', 'KAFKA_BROKERS=', 'KAFKA_TLS=false', ''];
 // Exclusive creation refuses to overwrite an existing credential file.

@@ -136,7 +136,7 @@ export function createApp({ config, store, publisher, now = Date.now, logger = (
     if (res.headersSent) { res.destroy(); return; }
     let status = 500; let code = 'INTERNAL_ERROR'; let message = 'Request could not be completed.'; let details;
     if (error instanceof ApiError) ({ status, code, message, details } = error);
-    else if (error.type === 'entity.too.large') { status = 413; code = 'BODY_TOO_LARGE'; message = 'Request body exceeds 256 KiB.'; }
+    else if (error.type === 'entity.too.large') { status = 413; code = 'BODY_TOO_LARGE'; message = 'Request body exceeds the endpoint size limit.'; }
     else if (error.type === 'entity.parse.failed') { status = 400; code = 'INVALID_JSON'; message = 'Request body must contain valid JSON.'; }
     else if (error.type === 'encoding.unsupported' || error.type === 'charset.unsupported') { status = 415; code = 'UNSUPPORTED_MEDIA_TYPE'; message = 'Unsupported body encoding.'; }
     if (error.retryAfter) res.setHeader('Retry-After', error.retryAfter);

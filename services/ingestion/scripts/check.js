@@ -8,7 +8,7 @@ function visit(directory) {
     if (entry.isDirectory()) visit(path); else if (path.endsWith('.js')) files.push(path);
   }
 }
-for (const directory of ['src', 'test', 'integration', 'scripts']) visit(directory);
+for (const directory of ['src', 'test', 'integration', 'scripts', 'web']) visit(directory);
 for (const file of files) {
   const result = spawnSync(process.execPath, ['--check', file], { stdio: 'inherit' });
   if (result.status !== 0) process.exit(result.status ?? 1);

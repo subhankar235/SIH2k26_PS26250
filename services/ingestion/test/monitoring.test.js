@@ -38,6 +38,9 @@ test('snapshot preserves source assertions, flags disagreement and time expiry w
   assert.ok(snapshot.records.find((r) => r.event.sourceId === 'second').flags.includes('maintenance_date_passed'));
   assert.equal(snapshot.summary.total, 2);
   assert.equal(monitoringSnapshot(store, { sourceId: 'first' }, clock).summary.disagreements, 0);
+  const filtered = monitoringSnapshot(store, { sourceId: 'missing' }, clock);
+  assert.equal(filtered.summary.total, 0); assert.equal(filtered.deliveryScope, 'global_outbox');
+  assert.equal(filtered.delivery.queued, 2);
   clock += 3600000;
   snapshot = monitoringSnapshot(store, {}, clock);
   assert.equal(snapshot.summary.expired, 2); assert.equal(snapshot.summary.disagreements, 0);
@@ -90,4 +93,17 @@ test('viewer configuration rejects shared credentials and insecure remote origin
   assert.throws(() => loadConfig({ ...env, MONITOR_VIEWER_TOKEN: VIEWER, MONITOR_ORIGIN: 'http://remote.example' }));
   assert.throws(() => loadConfig({ ...env, MONITOR_VIEWER_TOKEN: VIEWER, MONITOR_ORIGIN: 'https://remote.example/path' }));
   assert.equal(loadConfig({ ...env, MONITOR_VIEWER_TOKEN: VIEWER, MONITOR_ORIGIN: 'https://remote.example' }).monitor.origin, 'https://remote.example');
+});
+
+test('sessions rotate, ambiguous cookies fail closed, and session creation is bounded', async (t) => {
+  const { request } = await setup(t);
+  const first = await request('/monitor/session', { method: 'POST', body: { token: VIEWER } });
+  const oldCookie = first.headers.get('set-cookie').split(';')[0];
+  const second = await request('/monitor/session', { method: 'POST', body: { token: VIEWER }, cookie: oldCookie });
+  const cookie = second.headers.get('set-cookie').split(';')[0];
+  assert.equal((await request('/monitor/api/snapshot', { cookie: oldCookie })).status, 401);
+  assert.equal((await request('/monitor/api/snapshot', { cookie: `${cookie}; ${cookie}` })).status, 401);
+  for (let i = 1; i < 200; i++) assert.equal((await request('/monitor/session', { method: 'POST', body: { token: VIEWER } })).status, 200);
+  const full = await request('/monitor/session', { method: 'POST', body: { token: VIEWER } });
+  assert.equal(full.status, 503); assert.equal((await full.json()).error.code, 'SESSION_CAPACITY');
 });

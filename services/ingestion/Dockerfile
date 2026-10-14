@@ -5,6 +5,7 @@ RUN npm ci --omit=dev --ignore-scripts
 COPY src ./src
 COPY scripts ./scripts
 COPY docs ./docs
+COPY web ./web
 RUN npm run setup && mkdir -p var && chown node:node var
 USER node
 ENV HOST=0.0.0.0

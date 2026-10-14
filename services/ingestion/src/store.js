@@ -67,9 +67,10 @@ export class EventStore {
   }
 
   receipt(row, duplicate = false) {
-    const outbox = this.db.prepare('SELECT status FROM outbox WHERE event_cursor=?').get(row.id);
+    const delivery = Object.hasOwn(row, 'delivery_status') ? row.delivery_status :
+      this.db.prepare('SELECT status FROM outbox WHERE event_cursor=?').get(row.id)?.status;
     return { eventId: row.event_id, cursor: row.id, disposition: row.disposition, duplicate,
-      delivery: outbox?.status ?? 'not_queued', warnings: JSON.parse(row.warnings_json),
+      delivery: delivery ?? 'not_queued', warnings: JSON.parse(row.warnings_json),
       receivedAt: new Date(row.received_ms).toISOString() };
   }
 
@@ -167,7 +168,8 @@ export class EventStore {
   /** One bounded synchronous query: newest facts first, no historical scan. */
   monitoringState(options = {}) {
     const { clauses, values } = this.filters(options);
-    const rows = this.db.prepare(`SELECT e.* FROM projections p JOIN events e ON e.id=p.event_cursor
+    const rows = this.db.prepare(`SELECT e.*,o.status AS delivery_status FROM projections p JOIN events e ON e.id=p.event_cursor
+      LEFT JOIN outbox o ON o.event_cursor=e.id
       ${clauses.length ? `WHERE ${clauses.join(' AND ')}` : ''} ORDER BY e.id DESC LIMIT 1001`).all(...values);
     return { truncated: rows.length > 1000, records: rows.slice(0, 1000).map((row) => this.record(row)) };
   }
