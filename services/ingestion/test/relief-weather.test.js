@@ -197,3 +197,8 @@ test('heavy thunderstorm WMO code 97 maps to storm', async () => {
   try { assert.equal((await weather.fetch('delhi')).data.condition, 'storm'); }
   finally { await weather.close(); }
 });
+test('weather commands cover every bounded SIM identifier grammar used by configurable airports', () => {
+ for(const airportId of ['SIM-_HUB','SIM--HUB','SIM-A_B','SIM-A'.padEnd(20,'_')]) {
+   assert.equal(weatherCommandSchema.safeParse({commandId:UUID,runId:UUID,expectedRevision:0,airportId,location:'delhi'}).success,true);
+ }
+});

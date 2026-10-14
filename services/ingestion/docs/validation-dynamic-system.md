@@ -1,4 +1,4 @@
-﻿# Dynamic civilian system validation
+# Dynamic civilian system validation
 
 Validated on2026-10-15 in the isolated feature/logistics-ingestion worktree. Baseline before this increment: ed8ecc0. Existing original workspace remains unchanged.
 
@@ -22,4 +22,5 @@ Dynamic and existing Playwright fixtures both passed. Desktop/mobile screenshots
 
 Independent task reviews found and verified fixes for qualification grammar, empty-world configuration, WMO97, receipt-time maintenance checks, mirrored TTL evidence, slot anchoring and weather finalization replay. Source-backed docs were retrieved through Context7 for Zod, Open-Meteo and Express5 async error propagation. agy gemini-3.8-flash-high performed bounded read-only smoke-harness inspection; root implemented and reasoned about integration.
 
-Final unit/syntax/contracts counts and broad-review outcome will be appended after completion. No military planning, autonomous negotiating network, real fleet dispatch or production scalability claim is made. The bounded revision/resource/command limits are documented in DYNAMIC_CIVILIAN_GUIDE.md.
+No military planning, autonomous negotiating network, real fleet dispatch or production scalability claim is made. The bounded revision/resource/command limits are documented in DYNAMIC_CIVILIAN_GUIDE.md.
+Final verification: 178unit tests passed with0failures/0skips;72JavaScript files passed syntax checks; generated OpenAPI/event schemas match source. Broad independent review approved after regression fixes for full-outbox restart recovery and configurable airport-ID compatibility. The configured main demo also passed nine revisions through all five source domains and real public weather with independent verification. No required review finding remains.

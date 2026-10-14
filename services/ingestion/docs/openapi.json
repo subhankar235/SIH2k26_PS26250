@@ -8079,7 +8079,7 @@
                   },
                   "airportId": {
                     "type": "string",
-                    "pattern": "^SIM-[A-Za-z0-9][A-Za-z0-9._-]{0,15}$"
+                    "pattern": "^SIM-[A-Za-z0-9_-]{1,16}$"
                   },
                   "location": {
                     "type": "string",

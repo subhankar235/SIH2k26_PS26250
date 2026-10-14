@@ -10,7 +10,7 @@ coordinates, credentials, API key, geocoding, redirect, or automatic polling is 
 
 The command schema is strict: UUID `commandId`, UUID `runId`, integer
 `expectedRevision` from 0 through 18, `airportId` beginning `SIM-` with an
-alphanumeric suffix and at most 20 total identifier characters, and one supported
+letters/digits/underscore/hyphen suffix and at most 20 total identifier characters, and one supported
 `location`. The service checks the run, airport binding, mode, authority, and
 revision before and after the network request.
 

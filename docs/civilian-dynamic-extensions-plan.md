@@ -1,4 +1,4 @@
-﻿# Civilian dynamic relief extensions — implementation plan
+# Civilian dynamic relief extensions — implementation plan
 
 ## Authorization and design
 Implement the previously offered civilian extensions autonomously, as explicitly requested. Preserve the existing military exclusions. This increment adds source-driven civilian replanning, configurable bounded fictional fixtures, deterministic specialist communication and a public weather integration. Choices here are implementation decisions; they are not claims that the user supplied all these details.
@@ -29,3 +29,5 @@ Admin-only POST /v1/simulation/weather accepts strict UUID commandId/runId, expe
 
 ## Review rulings
 Leading-hyphen crew qualifications and wholly empty configurations fail at schema boundary. WMO97 is a supported heavy-thunderstorm category. Aircraft due dates use receipt time and future validity caps. Mirrors preserve input TTL, temperature and fixed slot anchoring. Weather finalization failures retain exact error receipts. Task reviews independently reproduced these cases before regression fixes.
+
+Final review rulings: defer unsuccessful startup expiry so the publisher can drain and timer retry, while snapshot marks overdue inputs historical; weather commands accept the same bounded SIM identifier grammar as configurable airports. Both changes have red-to-green regressions and independent approval.

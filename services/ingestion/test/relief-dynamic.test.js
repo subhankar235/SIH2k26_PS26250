@@ -110,3 +110,11 @@ test('mirrors retain binding TTL, weather temperature and original slot anchor a
  assert.equal(mirrored.data.availableFrom,crew.data.availableFrom);assert.equal(mirrored.data.availableUntil,crew.data.availableUntil);
  advance(60001);service.expireInputs();assert.equal(store.listState({type:'weather.observation',entityId:`relief-${initial.world.runId}-SIM-CLINIC`}).items[0].freshness,'expired');
 });
+test('restart with expired input and full persisted outbox starts historical and can recover', async t => {
+ const {store,service,ingress,initial,advance}=setup(t);
+ ingress.accept([observation(initial)],sources[2]);await service.close();advance(60001);store.maxPending=store.metrics().outbox.queued;
+ let recovered;
+ assert.doesNotThrow(()=>{recovered=new ReliefSimulationService({store,sources,now:()=>store.now(),annotator:{annotate:async x=>({...x,mode:'deterministic'}),close:async()=>{}}});});
+ assert.equal(recovered.snapshot().planUsable,false);assert.equal(recovered.snapshot().inputFreshness.replanPending,true);
+ store.maxPending=10000;recovered.expireInputs();assert.equal(recovered.snapshot().planUsable,true);assert.equal(recovered.snapshot().world.revision,2);await recovered.close();
+});

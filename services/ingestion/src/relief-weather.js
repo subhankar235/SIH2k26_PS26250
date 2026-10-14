@@ -3,7 +3,7 @@ import { ApiError } from './errors.js';
 
 export const weatherCommandSchema = z.strictObject({
   commandId: z.uuid(), runId: z.uuid(), expectedRevision: z.number().int().min(0).max(18),
-  airportId: z.string().regex(/^SIM-[A-Za-z0-9][A-Za-z0-9._-]{0,15}$/),
+  airportId: z.string().regex(/^SIM-[A-Za-z0-9_-]{1,16}$/),
   location: z.enum(['delhi', 'mumbai', 'chennai']),
 });
 

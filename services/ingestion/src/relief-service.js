@@ -35,7 +35,10 @@ export class ReliefSimulationService {
         recovered.weatherFeed={...recovered.weatherFeed,status:'degraded',errorCode:'WEATHER_INTERRUPTED',generatedAt:new Date(this.now()).toISOString()};
         store.transaction(()=>this.write(recovered));
       }
-      this.expireInputs();this.queue();
+      // Start the publisher even if an expiry transaction cannot yet fit the outbox.
+      // snapshot() marks overdue evidence historical; the server timer retries after drain.
+      try { this.expireInputs(); } catch { this.logger('simulation.expiry_deferred'); }
+      this.queue();
     }
   }
   snapshot() {
