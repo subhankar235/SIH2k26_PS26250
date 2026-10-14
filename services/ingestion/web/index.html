@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Administrative facts monitor</title>
+  <link rel="stylesheet" href="/monitor/styles.css">
+  <script type="module" src="/monitor/app.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="masthead">
+    <div class="brand"><span class="brand-mark" aria-hidden="true">≡</span><span>Event gateway <span class="brand-sub">/ Administrative monitor</span></span></div>
+    <span class="read-only">Read only</span>
+  </header>
+  <main id="main">
+    <div class="page-heading">
+      <div><p class="eyebrow">Source assertions · Data quality</p><h1>Administrative facts</h1><p class="muted">Inspect reported facts, their age and their provenance.</p></div>
+      <button id="logout" class="secondary" hidden>Sign out</button>
+    </div>
+    <section id="login-panel" class="login-panel" aria-labelledby="login-title" hidden>
+      <p class="eyebrow">Viewer access</p><h2 id="login-title">Open a monitoring session</h2>
+      <p>A separate viewer token grants read-only access for 30 minutes.</p>
+      <form id="login-form">
+        <label for="viewer-token">Viewer token</label>
+        <input id="viewer-token" name="viewer-token" type="password" autocomplete="off" spellcheck="false" required maxlength="128" aria-describedby="token-note login-message">
+        <p id="token-note" class="muted small">Enter your viewer token manually. It is used only to open this session.</p>
+        <button id="login-submit" type="submit">Open session</button>
+      </form>
+      <p id="login-message" role="status" class="login-message"></p>
+    </section>
+    <div id="workspace" hidden>
+      <div id="connection" class="connection" role="status" aria-live="polite"><span id="connection-text">Checking session…</span><span id="snapshot-time" class="small"></span></div>
+      <section class="summary-strip" aria-label="Selected snapshot summary" id="summary"></section>
+      <div class="workspace-grid">
+        <section class="facts-panel" aria-labelledby="facts-title">
+          <div class="section-heading"><div><h2 id="facts-title">Reported facts</h2><p id="scope-note" class="muted small">Loading bounded snapshot…</p></div><div class="actions"><button id="refresh" class="secondary">Refresh</button><button id="download" class="secondary" disabled>Download JSON</button></div></div>
+          <form id="filters" class="filters">
+            <div><label for="type-filter">Fact type</label><select id="type-filter" name="type"><option value="">All types</option><option value="aircraft.status">Aircraft status</option><option value="crew.availability">Crew availability</option><option value="weather.observation">Weather observation</option><option value="airport.capacity">Airport capacity</option><option value="cargo.request">Cargo request</option></select></div>
+            <div><label for="source-filter">Source ID</label><input id="source-filter" name="sourceId" placeholder="All sources" maxlength="64" pattern="[A-Za-z0-9][A-Za-z0-9._-]{0,63}" autocomplete="off"></div>
+            <button class="secondary" type="submit">Apply filters</button><button id="clear-filters" class="quiet" type="button">Clear</button>
+          </form>
+          <p class="table-note">Reported status is a source assertion. “Current” means within the source validity window.</p>
+          <div class="table-scroll" tabindex="0" role="region" aria-label="Reported facts table, scroll for more rows and columns">
+            <table><caption class="sr-only">Source reports in the selected bounded snapshot. Inspect a record for full provenance.</caption><thead><tr><th scope="col">Entity / fact type</th><th scope="col">Source</th><th scope="col">Reported value</th><th scope="col">Freshness / age</th><th scope="col">Quality flags</th><th scope="col"><span class="sr-only">Provenance</span></th></tr></thead><tbody id="records"></tbody></table>
+          </div>
+          <div id="table-state" class="table-state" role="status">Loading source reports…</div>
+          <nav class="pagination" aria-label="Fact table pages"><span id="page-description">No records loaded</span><div><button id="previous" class="secondary" disabled>Previous</button><button id="next" class="secondary" disabled>Next</button></div></nav>
+        </section>
+        <aside class="sidebar">
+          <section class="side-panel" aria-labelledby="quality-title"><p class="eyebrow">Interpretation</p><h2 id="quality-title">Quality &amp; freshness</h2><dl class="legend"><dt>Expired</dt><dd>The source validity window has ended.</dd><dt>Sequence gap</dt><dd>An expected sequence number was skipped.</dd><dt>Source disagreement</dt><dd>Current sources differ on the same entity. No source is chosen as truth.</dd><dt>Maintenance date passed</dt><dd>A reported maintenance date has passed. Review the source record.</dd></dl></section>
+          <section class="side-panel" aria-labelledby="delivery-title"><p class="eyebrow">Gateway outbox</p><h2 id="delivery-title">Delivery</h2><dl id="delivery" class="delivery"></dl><p class="muted small">Gateway-wide counts, independent of table filters. Published means sent to the broker; it does not confirm downstream processing.</p></section>
+          <p class="muted small footnote">Auto-refresh every 5 seconds while visible. Counts describe up to 1,000 selected records. This view supports inspection only.</p>
+        </aside>
+      </div>
+    </div>
+  </main>
+  <dialog id="inspector" aria-labelledby="inspector-title"><div class="dialog-heading"><div><p class="eyebrow">Source provenance</p><h2 id="inspector-title">Record details</h2></div><button id="close-inspector" class="secondary">Close</button></div><p class="table-note">The report below is a source assertion. Availability is not a readiness determination.</p><div id="inspector-content"></div></dialog>
+</body>
+</html>
