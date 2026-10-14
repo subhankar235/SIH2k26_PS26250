@@ -6,6 +6,7 @@
   <meta name="color-scheme" content="light">
   <title>Administrative facts monitor</title>
   <link rel="stylesheet" href="/monitor/styles.css">
+  <link rel="stylesheet" href="/monitor/relief.css">
   <script type="module" src="/monitor/app.js"></script>
 </head>
 <body>
@@ -54,6 +55,12 @@
           <p class="muted small footnote">Auto-refresh every 5 seconds while visible. Counts describe up to 1,000 selected records. This view supports inspection only.</p>
         </aside>
       </div>
+      <section id="relief-panel" class="relief-panel" aria-labelledby="relief-title">
+        <div class="section-heading"><div><p class="eyebrow">Fixed educational scenario</p><h2 id="relief-title">Civilian relief simulation</h2></div><span class="badge review">Fictional · Read only</span></div>
+        <p class="relief-banner"><strong>Fictional civilian relief scenario only</strong>Aircraft are fictional capacity containers. Ticks and slots are logical simulation steps, not wall-clock schedules or a real flight plan. Proposals do not dispatch or execute deliveries. Fact filters do not alter this fixed scenario.</p>
+        <p id="relief-state" class="relief-state" role="status" aria-live="polite">Loading simulation…</p>
+        <div id="relief-content"></div>
+      </section>
     </div>
   </main>
   <dialog id="inspector" aria-labelledby="inspector-title"><div class="dialog-heading"><div><p class="eyebrow">Source provenance</p><h2 id="inspector-title">Record details</h2></div><button id="close-inspector" class="secondary">Close</button></div><p class="table-note">The report below is a source assertion. Availability is not a readiness determination.</p><div id="inspector-content"></div></dialog>

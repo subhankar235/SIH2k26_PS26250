@@ -1,0 +1,33 @@
+.relief-panel { margin-top:24px; border:1px solid var(--line); border-radius:4px; background:var(--surface); min-width:0; }
+.relief-banner { padding:12px 16px; background:var(--amber-bg); color:var(--amber); border-block:1px solid #ead7ad; }
+.relief-banner strong { display:block; margin-bottom:4px; }
+.relief-state { padding:12px 16px; color:var(--muted); font-size:12px; border-bottom:1px solid var(--line); }
+.relief-state:empty { display:none; }
+.relief-block { min-width:0; padding:16px; border-bottom:1px solid var(--line); }
+.relief-block:last-child { border-bottom:none; }
+.relief-block h3 { font-size:15px; line-height:1.4; margin:0 0 8px; font-weight:650; }
+.relief-block > p + p { margin-top:8px; }
+.relief-overview { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); border-bottom:1px solid var(--line); }
+.relief-overview .relief-block { border-bottom:none; border-right:1px solid var(--line); }
+.relief-overview .relief-block:last-child { border-right:none; }
+.relief-definition { display:grid; grid-template-columns:minmax(110px,1fr) minmax(0,1fr); gap:8px 16px; font-size:12px; margin:12px 0; }
+.relief-definition dt { color:var(--muted); }
+.relief-definition dd { margin:0; font-weight:600; overflow-wrap:anywhere; font-variant-numeric:tabular-nums; }
+.relief-label { font-weight:650; }
+.relief-pass { color:var(--teal); }
+.relief-warning { color:var(--danger); }
+.relief-empty { color:var(--muted); font-size:12px; margin-top:12px; }
+.relief-table { margin-top:12px; border:1px solid var(--line); border-radius:4px; max-height:40dvh; }
+.relief-table table { min-width:600px; }
+.relief-panel td { overflow-wrap:anywhere; }
+.relief-report { padding:12px 0; border-bottom:1px solid var(--line); }
+.relief-report:last-child { border-bottom:none; }
+.relief-report summary { cursor:pointer; font-size:13px; font-weight:650; min-height:32px; padding-block:4px; }
+.relief-report > p { margin-top:8px; }
+.relief-world { padding:12px 16px; }
+.relief-findings { list-style:none; margin:8px 0 0; padding:0; }
+.relief-findings li { padding:12px; margin-top:8px; background:var(--canvas); border:1px solid var(--line); border-radius:4px; }
+.relief-findings p + p { margin-top:4px; }
+.relief-panel p { overflow-wrap:anywhere; }
+@media(max-width:1100px) { .relief-overview { grid-template-columns:1fr; }.relief-overview .relief-block { border-right:none; border-bottom:1px solid var(--line); }.relief-overview .relief-block:last-child { border-bottom:none; } }
+@media(max-width:640px) { .relief-definition { grid-template-columns:1fr; gap:4px; }.relief-definition dd { margin-bottom:8px; } }

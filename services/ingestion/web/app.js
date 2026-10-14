@@ -1,4 +1,5 @@
 import { safeSnapshot } from './format.js';
+import { reliefRender, reliefClear, reliefUnavailable } from './relief.js';
 import { element, connection, summary, table, inspector, clearData, clearInspector, restoreInspectionFocus } from './render.js';
 
 const PAGE_SIZE = 100;
@@ -9,7 +10,7 @@ function stop() {
   clearTimeout(timer); generation++; activeRequest?.abort(); activeRequest = null;
 }
 function showLogin(message = '') {
-  stop(); authenticated = false; snapshot = null; clearData();
+  stop(); authenticated = false; snapshot = null; clearData(); reliefClear();
   element('workspace').hidden = true; element('login-panel').hidden = false;
   element('logout').hidden = true; element('login-message').textContent = message;
   element('viewer-token').focus();
@@ -53,6 +54,17 @@ async function refresh() {
     snapshot = safeSnapshot(data);
     element('login-panel').hidden = true; element('workspace').hidden = false; element('logout').hidden = false;
     render(); connection('Updated · Auto-refresh every 5s', false, snapshot.generatedAt);
+    // Reuse this poll's controller and generation; simulation failures do not hide source facts.
+    try {
+      const simulationResponse = await request('/monitor/api/simulation', {}, controller);
+      const simulation = await simulationResponse.json();
+      if (currentGeneration !== generation || controller.signal.aborted) return;
+      reliefRender(simulation);
+    } catch (error) {
+      if (currentGeneration !== generation) return;
+      if (error.status === 401 || error.status === 403 || error.code === 'VIEWER_DISABLED') throw error;
+      reliefUnavailable(error.status === 404);
+    }
   } catch (error) {
     if (currentGeneration !== generation) return;
     if (error.status === 401) {
@@ -94,7 +106,7 @@ element('login-form').addEventListener('submit', async (event) => {
 });
 
 element('logout').addEventListener('click', async () => {
-  stop(); authenticated = false; snapshot = null; clearData();
+  stop(); authenticated = false; snapshot = null; clearData(); reliefClear();
   element('logout').disabled = true;
   const controller = new AbortController(); const timeout = setTimeout(() => controller.abort(), 12_000);
   try {
@@ -108,7 +120,7 @@ element('logout').addEventListener('click', async () => {
 
 function applyFilters() {
   stop(); filters = { type: element('type-filter').value, sourceId: element('source-filter').value.trim() };
-  snapshot = null; page = 0; clearData(); refresh();
+  snapshot = null; page = 0; clearData(); reliefClear(); refresh();
 }
 element('filters').addEventListener('submit', (event) => { event.preventDefault(); applyFilters(); });
 element('clear-filters').addEventListener('click', () => { element('filters').reset(); applyFilters(); });
