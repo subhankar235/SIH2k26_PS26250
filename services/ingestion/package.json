@@ -7,12 +7,16 @@
   "packageManager": "npm@11.17.0",
   "scripts": {
     "setup": "node scripts/patch-kafkajs.js",
-    "start": "node src/server.js",
+    "start": "node --env-file-if-exists=.env src/server.js",
     "test": "node --test test/*.test.js",
     "test:coverage": "node --test --experimental-test-coverage test/*.test.js",
     "check": "node scripts/check.js",
+    "contracts": "node scripts/generate-contracts.js",
+    "contracts:check": "node scripts/generate-contracts.js --check",
     "credentials": "node scripts/credentials.js",
-    "demo": "node scripts/demo.js",
+    "demo": "node --env-file-if-exists=.env scripts/demo.js",
+    "smoke": "node --env-file-if-exists=.env scripts/smoke.js",
+    "kafka:topics": "node --env-file-if-exists=.env scripts/kafka-topics.js",
     "test:kafka": "node --test integration/kafka.test.js"
   },
   "dependencies": {

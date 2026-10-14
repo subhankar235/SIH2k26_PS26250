@@ -1,0 +1,84 @@
+[
+  {
+    "schemaVersion": 1,
+    "eventId": "00000000-0000-4000-8000-000000000001",
+    "sourceId": "demo-aircraft",
+    "type": "aircraft.status",
+    "entityId": "aircraft-demo",
+    "sequence": 1,
+    "observedAt": "2026-10-15T06:00:00.000Z",
+    "validUntil": "2026-10-15T06:02:00.000Z",
+    "data": {
+      "status": "available",
+      "airportId": "RELIEF-HUB",
+      "capacityKg": 1200
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "eventId": "00000000-0000-4000-8000-000000000002",
+    "sourceId": "demo-crew",
+    "type": "crew.availability",
+    "entityId": "crew-demo",
+    "sequence": 1,
+    "observedAt": "2026-10-15T06:00:00.000Z",
+    "validUntil": "2026-10-15T06:02:00.000Z",
+    "data": {
+      "status": "available",
+      "qualifications": [
+        "transport-qualified"
+      ],
+      "availableFrom": "2026-10-15T05:59:00.000Z",
+      "availableUntil": "2026-10-15T07:00:00.000Z"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "eventId": "00000000-0000-4000-8000-000000000003",
+    "sourceId": "demo-weather",
+    "type": "weather.observation",
+    "entityId": "weather-demo",
+    "sequence": 1,
+    "observedAt": "2026-10-15T06:00:00.000Z",
+    "validUntil": "2026-10-15T06:02:00.000Z",
+    "data": {
+      "temperatureC": 24,
+      "windSpeedMps": 4,
+      "visibilityM": 10000,
+      "condition": "clear"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "eventId": "00000000-0000-4000-8000-000000000004",
+    "sourceId": "demo-airport",
+    "type": "airport.capacity",
+    "entityId": "airport-demo",
+    "sequence": 1,
+    "observedAt": "2026-10-15T06:00:00.000Z",
+    "validUntil": "2026-10-15T06:02:00.000Z",
+    "data": {
+      "status": "open",
+      "arrivalsPerHour": 12,
+      "departuresPerHour": 12
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "eventId": "00000000-0000-4000-8000-000000000005",
+    "sourceId": "demo-cargo",
+    "type": "cargo.request",
+    "entityId": "cargo-demo",
+    "sequence": 1,
+    "observedAt": "2026-10-15T06:00:00.000Z",
+    "validUntil": "2026-10-15T06:02:00.000Z",
+    "data": {
+      "category": "medical",
+      "massKg": 250,
+      "originAirportId": "RELIEF-HUB",
+      "destinationAirportId": "RELIEF-OUTPOST",
+      "requestedDeliveryBy": "2026-10-15T07:00:00.000Z",
+      "temperatureControlled": true
+    }
+  }
+]

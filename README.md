@@ -1,4 +1,12 @@
-# Air Power
+# Air Power — standalone ingestion increment
+
+The new noncombat administrative logistics ingestion service is in [services/ingestion](services/ingestion/README.md). It accepts authenticated maintenance, crew, weather, airport-capacity, and ordinary relief-cargo observations, with durable history, stale-data protection, and Kafka delivery. See that module's README for installation, tests, demo, and limitations.
+
+Implementation/design: [docs/logistics-ingestion-design.md](docs/logistics-ingestion-design.md). This work does not implement military operational planning or weapons allocation.
+
+The earlier grid platform below is historical scaffolding and is not wired into the standalone ingestion module.
+
+## Earlier grid scaffolding
 
 Air Power is a starter platform for monitoring and optimizing a resilient power grid. It combines an operator dashboard, a FastAPI service, event-streaming infrastructure, simulation, forecasting, and optimization modules.
 
