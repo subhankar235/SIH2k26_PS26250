@@ -4,6 +4,7 @@ import { createKafkaAdapter, OutboxPublisher } from './publisher.js';
 import { createApp } from './app.js';
 import { pathToFileURL } from 'node:url';
 import { resolve } from 'node:path';
+import { installShutdownHandlers } from './shutdown.js';
 
 function logger(message, fields = {}) {
   process.stdout.write(`${JSON.stringify({ timestamp: new Date().toISOString(), message, ...fields })}\n`);
@@ -44,8 +45,7 @@ export async function startServer(env = process.env) {
 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
   startServer().then((runtime) => {
-    const shutdown = () => runtime.close().catch(() => { logger('service.shutdown_failed'); process.exitCode = 1; });
-    process.once('SIGINT', shutdown); process.once('SIGTERM', shutdown);
+    installShutdownHandlers(runtime, { logger });
   }).catch((error) => {
     const reason = error.message?.startsWith('Invalid configuration:') ? error.message : 'Startup failed.';
     process.stderr.write(`${reason}\n`); process.exitCode = 1;
