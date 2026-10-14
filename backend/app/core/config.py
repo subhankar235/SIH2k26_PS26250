@@ -6,7 +6,7 @@ from functools import lru_cache
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from sqlalchemy.engine import URL
+from sqlalchemy.engine import URL, make_url
 
 
 class Settings(BaseSettings):
@@ -14,9 +14,9 @@ class Settings(BaseSettings):
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
-    postgres_user: str
-    postgres_password: str
-    postgres_db: str
+    postgres_user: str = ""
+    postgres_password: str = ""
+    postgres_db: str = ""
     postgres_host: str = "localhost"
     postgres_port: int = 5432
     kafka_bootstrap_servers: str = "localhost:9092"
@@ -28,6 +28,9 @@ class Settings(BaseSettings):
     solver_time_limit_s: int = 30
     uncertainty_threshold: float = 0.35
     api_keys: dict[str, dict[str, str]] = Field(default_factory=dict)
+    database_url_override: str | None = Field(
+        default=None, validation_alias="DATABASE_URL", repr=False
+    )
 
     @property
     def database_url(self) -> str:
@@ -36,6 +39,18 @@ class Settings(BaseSettings):
         Returns:
             A SQLAlchemy URL using the psycopg 3 driver.
         """
+        if self.database_url_override:
+            url = make_url(self.database_url_override)
+            if url.drivername in {"postgres", "postgresql"}:
+                url = url.set(drivername="postgresql+psycopg")
+            if url.host and url.host.endswith(".neon.tech"):
+                url = url.update_query_dict({"sslmode": "require"})
+            return url.render_as_string(hide_password=False)
+
+        if not self.postgres_user or not self.postgres_password or not self.postgres_db:
+            raise ValueError(
+                "Configure DATABASE_URL or all of POSTGRES_USER, POSTGRES_PASSWORD, and POSTGRES_DB"
+            )
         return URL.create(
             "postgresql+psycopg",
             username=self.postgres_user,

@@ -48,3 +48,22 @@ def test_actor_authentication_and_role_dependency(monkeypatch) -> None:
         require_role("approver")(actor)
     with pytest.raises(ForbiddenError):
         get_actor("unknown")
+
+
+def test_neon_database_url_uses_psycopg_and_ssl(monkeypatch) -> None:
+    """Accept the standard Neon URL form and ensure PostgreSQL SSL is enabled."""
+    monkeypatch.delenv("POSTGRES_USER", raising=False)
+    monkeypatch.delenv("POSTGRES_PASSWORD", raising=False)
+    monkeypatch.delenv("POSTGRES_DB", raising=False)
+    monkeypatch.setenv(
+        "DATABASE_URL",
+        "postgresql://neon_user:secret@ep-example.neon.tech/airpower?channel_binding=require",
+    )
+    get_settings.cache_clear()
+    try:
+        settings = get_settings()
+    finally:
+        get_settings.cache_clear()
+
+    assert settings.database_url.startswith("postgresql+psycopg://")
+    assert "sslmode=require" in settings.database_url
