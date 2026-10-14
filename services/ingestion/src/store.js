@@ -164,6 +164,14 @@ export class EventStore {
       nextAttemptAt: new Date(row.next_attempt_ms).toISOString(), lastErrorCode: row.last_error_code }));
   }
 
+  /** One bounded synchronous query: newest facts first, no historical scan. */
+  monitoringState(options = {}) {
+    const { clauses, values } = this.filters(options);
+    const rows = this.db.prepare(`SELECT e.* FROM projections p JOIN events e ON e.id=p.event_cursor
+      ${clauses.length ? `WHERE ${clauses.join(' AND ')}` : ''} ORDER BY e.id DESC LIMIT 1001`).all(...values);
+    return { truncated: rows.length > 1000, records: rows.slice(0, 1000).map((row) => this.record(row)) };
+  }
+
   pending({ limit = 50 } = {}) {
     pageOptions({ limit });
     return this.db.prepare(`SELECT o.*,e.event_id,e.event_json FROM outbox o JOIN events e ON e.id=o.event_cursor

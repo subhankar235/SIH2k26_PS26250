@@ -6,6 +6,7 @@ import { ApiError } from './errors.js';
 import { EVENT_TYPES, eventSchemas } from './contracts.js';
 import { tokenHash } from './config.js';
 import { IngestionService } from './ingestion.js';
+import { mountMonitoring } from './monitoring.js';
 
 const id = z.string().regex(/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/);
 const cursor = z.string().regex(/^\d+$/).transform(Number).refine(Number.isSafeInteger).refine((n) => n >= 0);
@@ -129,6 +130,7 @@ export function createApp({ config, store, publisher, now = Date.now, logger = (
   router.get('/schema', (_req, res) => res.json({ schemaVersion: 1, schemas,
     runtimeRules: ['Cross-field consistency and observation-time checks are enforced by runtime validation.'] }));
   app.use('/v1', router);
+  mountMonitoring(app, { config, store, now });
   app.use((_req, _res, next) => next(new ApiError(404, 'NOT_FOUND', 'Endpoint not found.')));
   app.use((error, req, res, _next) => {
     if (res.headersSent) { res.destroy(); return; }

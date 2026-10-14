@@ -41,6 +41,17 @@ export function loadConfig(env = process.env) {
     ids.add(source.sourceId); tokens.add(source.token);
     return Object.freeze({ sourceId: source.sourceId, digest: tokenHash(source.token), types: Object.freeze([...source.types]) });
   });
+  const viewerToken = env.MONITOR_VIEWER_TOKEN;
+  if (viewerToken !== undefined && (!tokenPattern.test(viewerToken) || tokens.has(viewerToken))) fail('MONITOR_VIEWER_TOKEN');
+  let monitorOrigin;
+  if (env.MONITOR_ORIGIN) {
+    try {
+      const url = new URL(env.MONITOR_ORIGIN);
+      if (url.origin !== env.MONITOR_ORIGIN || url.username || url.password ||
+        (url.protocol !== 'https:' && !(url.protocol === 'http:' && ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname)))) fail('MONITOR_ORIGIN');
+      monitorOrigin = url.origin;
+    } catch { fail('MONITOR_ORIGIN'); }
+  }
   const brokers = (env.KAFKA_BROKERS ?? '').split(',').map((s) => s.trim()).filter(Boolean);
   if (brokers.length > 10 || brokers.some((value) => !/^(?:[A-Za-z0-9.-]+|\[[0-9a-fA-F:]+\]):\d{1,5}$/.test(value) ||
     Number(value.slice(value.lastIndexOf(':') + 1)) < 1 || Number(value.slice(value.lastIndexOf(':') + 1)) > 65535)) fail('KAFKA_BROKERS');
@@ -58,6 +69,7 @@ export function loadConfig(env = process.env) {
   return Object.freeze({ host, port: integer(env, 'PORT', 3100, 1, 65535),
     dbPath: env.INGESTION_DB_PATH === ':memory:' ? ':memory:' : resolve(moduleRoot, env.INGESTION_DB_PATH ?? 'var/events.sqlite'),
     adminDigest: tokenHash(adminToken), sources: Object.freeze(sources),
+    monitor: Object.freeze({ digest: viewerToken ? tokenHash(viewerToken) : null, origin: monitorOrigin }),
     maxPending: integer(env, 'INGESTION_MAX_PENDING', 10000, 1, 1000000),
     sourceRate: integer(env, 'INGESTION_SOURCE_RATE', 1000, 1, 100000),
     publicRate: integer(env, 'INGESTION_PUBLIC_RATE', 300, 1, 100000),
