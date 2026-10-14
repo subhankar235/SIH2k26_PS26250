@@ -114,3 +114,10 @@ test('internal errors expose no exception message or stack', async (t) => {
   assert.equal(response.status, 500); assert.equal(response.body.error.code, 'INTERNAL_ERROR');
   assert.ok(!JSON.stringify(response.body).includes('secret123'));
 });
+test('broker unavailability during flush uses the same structured error contract', async (t) => {
+  const { send } = await setup(t, {}, { enabled: true, flush: async () => ({ attempted: 1, published: 0, failed: 1 }) });
+  const response = await send('/v1/outbox/flush', { method: 'POST', body: {} });
+  assert.equal(response.status, 503); assert.equal(response.body.error.code, 'BROKER_UNAVAILABLE');
+  assert.equal(response.body.requestId, response.headers.get('x-request-id'));
+  assert.equal(response.body.error.details.failed, 1);
+});

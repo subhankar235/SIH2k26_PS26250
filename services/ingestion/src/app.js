@@ -117,7 +117,8 @@ export function createApp({ config, store, publisher, now = Date.now, logger = (
     parse(z.strictObject({}), req.body);
     if (!publisher.enabled) throw new ApiError(503, 'BROKER_DISABLED', 'Broker delivery is not configured.');
     const result = await publisher.flush();
-    res.status(result.failed > 0 ? 503 : 200).json(result);
+    if (result.failed > 0) throw new ApiError(503, 'BROKER_UNAVAILABLE', 'Delivery is unavailable; work remains durably queued or dead.', result);
+    res.json(result);
   });
   router.post('/retention', ...json, (req, res) => {
     const input = parse(z.strictObject({ limit: z.number().int().min(1).max(1000).optional() }), req.body);
