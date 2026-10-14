@@ -40,7 +40,7 @@ Source bindings come from `INGESTION_SOURCES_JSON`: array of `{sourceId, token, 
 - An outbox worker sends bounded batches sequentially, only marks a row delivered after acknowledgement, retries using bounded exponential delay, and dead-letters after configurable attempts. It prevents concurrent flushes in one process. Manual retry is admin-only and audited. At-least-once delivery means consumers must deduplicate by event ID; a crash after acknowledgement can cause a duplicate.
 - Topic mapping is server-owned: `logistics.aircraft.v1`, `logistics.crew.v1`, `logistics.weather.v1`, `logistics.airport.v1`, `logistics.cargo.v1`. Key is source ID plus entity ID. No cross-topic ordering guarantee.
 - Source-specific projections have explicit freshness; expired state is returned as expired rather than represented as current. Historical replay reads immutable history using bounded cursor pagination and filters; it never changes projections or creates outbox messages.
-- Retention removes only records older than the configured retention period with no queued/dead outbox work and not referenced by current projections. Pending/dead events are never silently dropped. Pagination tolerates retained/deleted IDs.
+- Retention scans at most the specified candidate limit using an indexed ID cursor, then removes only old records with no queued/dead work and no current projection reference. The projection-reference lookup is indexed. Pending/dead events are never silently dropped. Return deleted/scanned/nextCursor; callers advance after to sweep past protected prefixes. Start later sweeps at zero to reconsider old protected records. Pagination tolerates retained/deleted IDs.
 
 ## HTTP routes
 

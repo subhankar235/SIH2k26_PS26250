@@ -44,6 +44,7 @@ export class EventStore {
           event_cursor INTEGER NOT NULL REFERENCES events(id),
           PRIMARY KEY(source_id,event_type,entity_id)
         );
+        CREATE INDEX IF NOT EXISTS projections_cursor ON projections(event_cursor);
         CREATE TABLE IF NOT EXISTS outbox (
           event_cursor INTEGER PRIMARY KEY REFERENCES events(id) ON DELETE CASCADE,
           topic TEXT NOT NULL,message_key TEXT NOT NULL,status TEXT NOT NULL DEFAULT 'queued',
@@ -200,20 +201,25 @@ export class EventStore {
     });
   }
 
-  purge({ before, limit = 1000 }) {
-    if (!Number.isSafeInteger(before) || !Number.isInteger(limit) || limit < 1 || limit > 1000) {
+  purge({ before, limit = 1000, after = 0 }) {
+    if (!Number.isSafeInteger(before) || !Number.isInteger(limit) || limit < 1 || limit > 1000 ||
+      !Number.isSafeInteger(after) || after < 0) {
       throw new ApiError(422, 'INVALID_RETENTION', 'Invalid retention bounds.');
     }
     return this.transaction(() => {
-      const rows = this.db.prepare(`SELECT e.id FROM events e WHERE received_ms<?
-        AND NOT EXISTS(SELECT 1 FROM projections p WHERE p.event_cursor=e.id)
-        AND NOT EXISTS(SELECT 1 FROM outbox o WHERE o.event_cursor=e.id AND o.status!='published')
-        ORDER BY e.id LIMIT ?`).all(before, limit);
-      const remove = this.db.prepare('DELETE FROM events WHERE id=?');
-      for (const row of rows) remove.run(row.id);
+      // Limit candidates before eligibility checks, not just deletions. The cursor
+      // ensures protected prefixes cannot starve eligible later history forever.
+      const rows = this.db.prepare('SELECT id FROM events WHERE id>? ORDER BY id LIMIT ?').all(after, limit);
+      const remove = this.db.prepare(`DELETE FROM events WHERE id=? AND received_ms<?
+        AND NOT EXISTS(SELECT 1 FROM projections p WHERE p.event_cursor=events.id)
+        AND NOT EXISTS(SELECT 1 FROM outbox o WHERE o.event_cursor=events.id AND o.status!='published')`);
+      let deleted = 0;
+      for (const row of rows) deleted += remove.run(row.id, before).changes;
+      const lastCursor = rows.at(-1)?.id ?? after;
+      const hasMore = Boolean(this.db.prepare('SELECT id FROM events WHERE id>? LIMIT 1').get(lastCursor));
       this.db.prepare('DELETE FROM audit WHERE occurred_ms<? AND id IN (SELECT id FROM audit ORDER BY id LIMIT ?)').run(before, limit);
       this.db.prepare("INSERT INTO audit(action,occurred_ms) VALUES('retention.purge',?)").run(this.now());
-      return { deleted: rows.length };
+      return { deleted, scanned: rows.length, nextCursor: hasMore ? lastCursor : null };
     });
   }
 

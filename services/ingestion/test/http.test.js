@@ -121,3 +121,14 @@ test('broker unavailability during flush uses the same structured error contract
   assert.equal(response.body.requestId, response.headers.get('x-request-id'));
   assert.equal(response.body.error.details.failed, 1);
 });
+test('retention HTTP scans are bounded and accept the returned continuation cursor', async (t) => {
+  const { send } = await setup(t);
+  await send('/v1/events', { token: SOURCE, method: 'POST', body: input() });
+  await send('/v1/events', { token: SOURCE, method: 'POST', body: input({ sequence: 2 }) });
+  const first = await send('/v1/retention', { method: 'POST', body: { limit: 1 } });
+  assert.equal(first.status, 200); assert.equal(first.body.scanned, 1); assert.equal(first.body.deleted, 0);
+  assert.ok(first.body.nextCursor > 0);
+  const second = await send('/v1/retention', { method: 'POST', body: { limit: 1, after: first.body.nextCursor } });
+  assert.equal(second.status, 200); assert.equal(second.body.scanned, 1); assert.equal(second.body.nextCursor, null);
+  assert.equal((await send('/v1/retention', { method: 'POST', body: { after: -1 } })).status, 422);
+});

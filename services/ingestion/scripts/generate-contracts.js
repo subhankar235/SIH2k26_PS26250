@@ -44,7 +44,8 @@ operation('/v1/outbox', 'get', 'Read delivery metadata', { parameters: [...pagin
 operation('/v1/outbox/{eventId}/retry', 'post', 'Audit and requeue one dead delivery', { body: empty, parameters: [uuidParam] });
 operation('/v1/outbox/flush', 'post', 'Drain bounded eligible delivery work', { body: empty });
 operation('/v1/retention', 'post', 'Purge bounded eligible settled history older than retention policy', {
-  body: { ...empty, properties: { limit: { type: 'integer', minimum: 1, maximum: 1000 } } } });
+  body: { ...empty, properties: { limit: { type: 'integer', minimum: 1, maximum: 1000 },
+    after: { type: 'integer', minimum: 0, maximum: Number.MAX_SAFE_INTEGER } } } });
 operation('/v1/metrics', 'get', 'Read operational counters without payloads or credentials');
 operation('/v1/schema', 'get', 'Read generated input schemas and runtime-validation caveats');
 for (const path of ['/health/live', '/health/ready']) paths[path] = { get: { summary: 'Minimal local service health', security: [], responses: {

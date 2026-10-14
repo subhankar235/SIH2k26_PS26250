@@ -121,8 +121,9 @@ export function createApp({ config, store, publisher, now = Date.now, logger = (
     res.json(result);
   });
   router.post('/retention', ...json, (req, res) => {
-    const input = parse(z.strictObject({ limit: z.number().int().min(1).max(1000).optional() }), req.body);
-    res.json(store.purge({ before: now() - config.retentionDays * 86400000, limit: input.limit ?? 1000 }));
+    const input = parse(z.strictObject({ limit: z.number().int().min(1).max(1000).optional(),
+      after: z.number().int().min(0).max(Number.MAX_SAFE_INTEGER).optional() }), req.body);
+    res.json(store.purge({ before: now() - config.retentionDays * 86400000, limit: input.limit ?? 1000, after: input.after ?? 0 }));
   });
   router.get('/metrics', (_req, res) => res.json({ http: { ...http }, store: store.metrics(), broker: publisher.diagnostics?.() ?? { enabled: publisher.enabled } }));
   router.get('/schema', (_req, res) => res.json({ schemaVersion: 1, schemas,

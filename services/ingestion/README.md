@@ -70,7 +70,7 @@ Every event supplies `schemaVersion:1`, UUID `eventId`, `sourceId`, `type`, `ent
 | `GET /v1/outbox` | Admin | Delivery metadata, without payload dumps |
 | `POST /v1/outbox/:eventId/retry` | Admin | Audit and requeue dead work; JSON `{}` |
 | `POST /v1/outbox/flush` | Admin | Bounded delivery drain; JSON `{}` |
-| `POST /v1/retention` | Admin | Bounded settled-history cleanup; `{}` or `{limit:100}` |
+| `POST /v1/retention` | Admin | Bounded history scan; `{}` or `{limit:100,after:0}` |
 | `GET /v1/metrics`, `/v1/schema` | Admin | Counters/diagnostics and generated schemas |
 
 History/state filters: `after` cursor, `limit`1..100, `sourceId`, `type`, `entityId`. Outbox filters: cursor/limit and `status` (`queued`, `dead`, `published`). Unknown/duplicate query parameters are rejected. Pagination is a live view, not a transactionally frozen snapshot. Historical replay has no write or publication side effects.
@@ -91,6 +91,8 @@ Delivery is **at least once**: a crash after broker acknowledgement and before t
 Retention removes only old settled/history records that are not current projection targets. It preserves every queued/dead delivery. Once a historical event is purged, its event-ID deduplication record is also gone: idempotency is retained-history-bounded. Source sequence checks still protect the surviving projection, but an old purged ID with new higher-sequence content can be accepted again. Retention runs only when an admin invokes it; monitor disk use and set an appropriate policy. Kafka retention is a separate policy.
 
 ## Configuration and operations
+
+Retention examines at most `limit` candidate events per call and returns `{deleted,scanned,nextCursor}`. Pass a non-null `nextCursor` as the next call's `after` value to continue the sweep. Protected or recent records still consume scan budget, so cleanup can advance past them without an unbounded search. Start a later sweep at `after:0` to reconsider previously protected records. The projection-reference lookup is indexed.
 
 `.env.example` lists defaults. Source config is an array of `{sourceId,token,types}`. Source identifiers and event identifiers are bounded; type names come from the five fixed schema types. `INGESTION_MAX_PENDING` includes queued and dead delivery work, so dead records require operator attention. Rate limits are per-service-process fixed windows; source writes are charged per event, including batch members.
 

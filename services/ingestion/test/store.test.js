@@ -141,3 +141,16 @@ test('history and queued delivery survive a database close and restart', (t) => 
   assert.equal(second.getEvent(input.eventId).event.eventId, input.eventId);
   assert.equal(second.pending({}).length, 1); assert.equal(second.listState({}).items.length, 1);
 });
+test('retention bounds examined records and advances beyond protected prefixes', (t) => {
+  let clock = NOW; const db = store(t, { now: () => clock });
+  const receipts = db.acceptBatch([event({ entityId: 'A' }), event({ entityId: 'B' }), event({ entityId: 'B', sequence: 2 })]);
+  for (const receipt of receipts) db.markPublished(receipt.cursor);
+  clock += 100000;
+  const first = db.purge({ before: clock, limit: 1 });
+  assert.equal(first.deleted, 0); assert.equal(first.scanned, 1); assert.equal(first.nextCursor, receipts[0].cursor);
+  const second = db.purge({ before: clock, limit: 1, after: first.nextCursor });
+  assert.equal(second.deleted, 1); assert.equal(second.scanned, 1); assert.equal(second.nextCursor, receipts[1].cursor);
+  const third = db.purge({ before: clock, limit: 1, after: second.nextCursor });
+  assert.equal(third.deleted, 0); assert.equal(third.scanned, 1); assert.equal(third.nextCursor, null);
+  assert.equal(db.listState({}).items.length, 2);
+});
