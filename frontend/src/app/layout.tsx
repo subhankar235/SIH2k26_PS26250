@@ -1,34 +1,32 @@
-import type { Metadata } from 'next';
-import './globals.css';
-import { Sidebar, Navbar } from '@/components/layout';
-
+import { DataModeBoundary } from "@/components/layout/DataModeBoundary";
+import type { Metadata } from "next";
+import "./globals.css";
+import { Sidebar, Navbar } from "@/components/layout";
 export const metadata: Metadata = {
-  title: 'AIR POWER — Decision Intelligence',
-  description: 'Operational decision intelligence, evidence autopsy, and grid resilience verification platform.',
+  title: "AERONIQ | Decision Intelligence",
+  description:
+    "Evidence, planning, and operational intelligence in one workspace.",
 };
-
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="dark">
-      <body className="bg-slate-950 text-slate-100 min-h-screen flex">
+    <html lang="en">
+      <body>
+        <a href="#main-content" className="skip-link">
+          Skip to content
+        </a>
         <Sidebar />
-        <div className="flex-1 flex flex-col min-w-0 lg:pl-64">
+        <div className="app-shell">
           <Navbar />
-          <main className="flex-1 p-4 md:p-6 lg:p-8 max-w-[1600px] w-full mx-auto">
-            {children}
+          <main id="main-content" tabIndex={-1} className="app-content">
+            <DataModeBoundary>{children}</DataModeBoundary>
           </main>
-          <footer className="border-t border-slate-800/80 px-6 py-4 text-xs text-slate-500 flex flex-col sm:flex-row items-center justify-between gap-2">
-            <div>
-              AIR POWER · Decision Intelligence Platform · Synthetic Operations Environment
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-              <span>All deterministic verification engines active</span>
-            </div>
+          <footer className="app-footer">
+            <span>AERONIQ &middot; Decision intelligence</span>
+            <span>Every decision. Clear evidence.</span>
           </footer>
         </div>
       </body>

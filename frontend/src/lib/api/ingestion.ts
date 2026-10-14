@@ -1,19 +1,10 @@
-import { api } from './client';
-import { StreamStatus, FlaggedRecord } from '@/types/ingestion';
-import { MOCK_STREAMS, MOCK_RECORDS } from '@/lib/fixtures';
+import { api } from "./client";
+import type { StreamStatus, FlaggedRecord } from "@/types/ingestion";
 
 export async function getIngestionStatus(): Promise<StreamStatus[]> {
-  try {
-    return await api<StreamStatus[]>('/ingestion/status');
-  } catch {
-    return MOCK_STREAMS;
-  }
+  return await api<StreamStatus[]>("/ingestion/status");
 }
 
 export async function getFlaggedRecords(): Promise<FlaggedRecord[]> {
-  try {
-    return await api<FlaggedRecord[]>('/ingestion/flagged');
-  } catch {
-    return MOCK_RECORDS;
-  }
+  return await api<FlaggedRecord[]>("/ingestion/flagged");
 }

@@ -11,9 +11,6 @@ export interface Schedule {
   assignments: Assignment[];
   objectives: Record<string, number>;
   verification: "verified" | "invalid" | "uncertain";
-  status?: "feasible" | "infeasible" | "optimal";
-  capacity?: number;
-  horizon?: number;
 }
 
 export interface ScheduleDiff {

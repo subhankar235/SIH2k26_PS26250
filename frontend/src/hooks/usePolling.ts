@@ -1,35 +1,60 @@
-'use client';
-import { useState, useEffect, useRef } from 'react';
+"use client";
+import { useState, useEffect, useRef, useCallback } from "react";
 
-export function usePolling<T>(fn: () => Promise<T>, intervalMs = 3000, enabled = true) {
+export function usePolling<T>(
+  fn: () => Promise<T>,
+  intervalMs = 3000,
+  enabled = true,
+) {
+  const [attempt, setAttempt] = useState(0);
   const [data, setData] = useState<T | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const activeRef = useRef(enabled);
-
+  const [loading, setLoading] = useState(enabled);
+  const [error, setError] = useState<Error | null>(null);
+  const fnRef = useRef(fn);
+  const cancelRef = useRef<() => void>(() => {});
   useEffect(() => {
-    activeRef.current = enabled;
-    if (!enabled) return;
-
-    let timer: NodeJS.Timeout;
+    fnRef.current = fn;
+  });
+  useEffect(() => {
+    if (!enabled) {
+      setLoading(false);
+      return;
+    }
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const cancel = () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+    cancelRef.current = cancel;
+    setLoading(true);
     const poll = async () => {
       try {
-        const res = await fn();
-        setData(res);
-        setError(null);
+        const result = await fnRef.current();
+        if (!cancelled) {
+          setData(result);
+          setError(null);
+        }
       } catch (err) {
-        setError((err as Error).message);
+        if (!cancelled)
+          setError(err instanceof Error ? err : new Error("Polling failed"));
       } finally {
-        setLoading(false);
-        if (activeRef.current) {
-          timer = setTimeout(poll, intervalMs);
+        if (!cancelled) {
+          setLoading(false);
+          timer = setTimeout(poll, Math.max(100, intervalMs));
         }
       }
     };
-
-    poll();
-    return () => clearTimeout(timer);
-  }, [fn, intervalMs, enabled]);
-
-  return { data, loading, error, stop: () => { activeRef.current = false; } };
+    void poll();
+    return cancel;
+  }, [intervalMs, enabled, attempt]);
+  const stop = useCallback(() => {
+    cancelRef.current();
+    setLoading(false);
+  }, []);
+  const refetch = useCallback(() => {
+    setError(null);
+    setAttempt((value) => value + 1);
+  }, []);
+  return { data, loading, error, stop, refetch };
 }

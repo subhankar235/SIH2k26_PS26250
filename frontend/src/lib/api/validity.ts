@@ -1,22 +1,19 @@
-import { api } from './client';
-import { Decision } from '@/types/validity';
-import { MOCK_DECISIONS } from '@/lib/fixtures';
+import { api } from "./client";
+import type { Decision } from "@/types/validity";
 
 export async function getDecisions(): Promise<Decision[]> {
-  try {
-    return await api<Decision[]>('/validity/decisions');
-  } catch {
-    return MOCK_DECISIONS;
-  }
+  return await api<Decision[]>("/validity/decisions");
 }
 
-export async function reverifyDecision(id: string): Promise<{ success: boolean; status: string }> {
-  try {
-    return await api<{ success: boolean; status: string }>('/validity/reverify', {
-      method: 'POST',
-      body: JSON.stringify({ id }),
-    });
-  } catch {
-    return { success: true, status: 'verified' };
-  }
+export async function reverifyDecision(
+  id: string,
+): Promise<{ success: boolean; status: string }> {
+  return await api<{ success: boolean; status: string }>("/validity/reverify", {
+    method: "POST",
+    body: JSON.stringify({ id }),
+  });
+}
+
+export function getDecision(id: string): Promise<Decision> {
+  return api<Decision>(`/validity/decisions/${encodeURIComponent(id)}`);
 }

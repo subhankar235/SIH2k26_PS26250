@@ -1,44 +1,56 @@
-'use client';
-import { useState } from 'react';
-import { submitDecision } from '@/lib/api/approvals';
-
+"use client";
+import { useRef, useState } from "react";
+import { submitDecision } from "@/lib/api/approvals";
+import type { Schedule } from "@/types/schedule";
 export function useApproval() {
   const [submitting, setSubmitting] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
-
-  const approve = async (id: string, reviewer: string, reason: string) => {
-    if (!reviewer.trim() || !reason.trim()) {
-      throw new Error('Reviewer name and approval reason are strictly required.');
+  const [error, setError] = useState<Error | null>(null);
+  const lock = useRef(false);
+  async function submit(
+    id: string,
+    decision: "approved" | "rejected",
+    reviewer: string,
+    rationale: string,
+    verification?: Schedule["verification"],
+  ) {
+    if (lock.current) return false;
+    if (!reviewer.trim() || !rationale.trim()) {
+      setFeedback("Reviewer and rationale are required.");
+      return false;
     }
+    if (decision === "approved" && verification !== "verified") {
+      setFeedback("Only verified results can be approved.");
+      return false;
+    }
+    lock.current = true;
     setSubmitting(true);
+    setFeedback(null);
+    setError(null);
     try {
-      await submitDecision(id, 'approved', reviewer, reason);
-      setFeedback(`Approved item ${id} successfully.`);
+      await submitDecision(id, decision, reviewer.trim(), rationale.trim());
+      setFeedback(`Result ${decision}.`);
       return true;
-    } catch (e) {
-      setFeedback(`Approval failed: ${(e as Error).message}`);
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error("Review failed"));
       return false;
     } finally {
+      lock.current = false;
       setSubmitting(false);
     }
+  }
+  return {
+    approve: (
+      id: string,
+      reviewer: string,
+      rationale: string,
+      verification: Schedule["verification"],
+    ) => submit(id, "approved", reviewer, rationale, verification),
+    reject: (id: string, reviewer: string, rationale: string) =>
+      submit(id, "rejected", reviewer, rationale),
+    submitting,
+    feedback,
+    error,
+    clearFeedback: () => setFeedback(null),
   };
-
-  const reject = async (id: string, reviewer: string, reason: string) => {
-    if (!reviewer.trim() || !reason.trim()) {
-      throw new Error('Reviewer name and rejection reason are strictly required.');
-    }
-    setSubmitting(true);
-    try {
-      await submitDecision(id, 'rejected', reviewer, reason);
-      setFeedback(`Rejected item ${id}.`);
-      return true;
-    } catch (e) {
-      setFeedback(`Rejection failed: ${(e as Error).message}`);
-      return false;
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  return { approve, reject, submitting, feedback, clearFeedback: () => setFeedback(null) };
 }

@@ -1,81 +1,95 @@
-'use client';
-import React, { use, useState } from 'react';
-import Link from 'next/link';
-import { PageHeader } from '@/components/layout';
-import { Card, CardHeader, CardContent, Button } from '@/components/ui';
-import { ValidityBadge, DependencyGraphView } from '@/components/validity';
-import { ArrowLeft, RefreshCw, CheckCircle2 } from 'lucide-react';
-import { MOCK_DECISIONS } from '@/lib/fixtures';
-import { reverifyDecision } from '@/lib/api/validity';
-
-export default function ValidityDetailPage({ params }: { params: Promise<{ decisionId: string }> }) {
+"use client";
+import { use, useState } from "react";
+import { PageHeader } from "@/components/layout";
+import { Card, CardHeader, CardContent, Button } from "@/components/ui";
+import { LoadState } from "@/components/ui/LoadState";
+import { ValidityBadge, DependencyGraphView } from "@/components/validity";
+import { useFetch } from "@/hooks/useFetch";
+import { getDecision, reverifyDecision } from "@/lib/api/validity";
+import { getAuditEntries } from "@/lib/api/audit";
+export default function ValidityDetailPage({
+  params,
+}: {
+  params: Promise<{ decisionId: string }>;
+}) {
   const { decisionId } = use(params);
-  const decision = MOCK_DECISIONS.find(d => d.id === decisionId) || MOCK_DECISIONS[0];
-  const [status, setStatus] = useState(decision.status);
-  const [loading, setLoading] = useState(false);
-
-  const handleReverify = async () => {
-    setLoading(true);
-    await reverifyDecision(decisionId);
-    setStatus('verified');
-    setLoading(false);
-  };
-
+  const request = useFetch(() => getDecision(decisionId), [decisionId]);
+  const history = useFetch(getAuditEntries, [decisionId]);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<Error | string | null>(null);
+  async function reverify() {
+    setBusy(true);
+    setError(null);
+    try {
+      await reverifyDecision(decisionId);
+      await Promise.all([request.refetch(), history.refetch()]);
+    } catch (err) {
+      setError(err instanceof Error ? err : "Re-verification failed");
+    } finally {
+      setBusy(false);
+    }
+  }
+  const decision = request.data;
+  const changes =
+    history.data?.filter((e) => e.entity.includes(decisionId)) ?? [];
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-2 text-xs">
-        <Link href="/validity" className="text-slate-400 hover:text-slate-200 flex items-center gap-1">
-          <ArrowLeft size={14} /> Back to Decisions
-        </Link>
-      </div>
-
       <PageHeader
-        eyebrow="VALIDITY INSPECTOR"
-        title={`Decision Detail: ${decisionId}`}
-        description="Assumptions, input versions, dependency graphs, and status transition history."
+        title={`Decision: ${decisionId}`}
+        description="Assumptions, versioned dependencies, and recorded status changes."
         actions={
-          <Button size="sm" variant="primary" loading={loading} onClick={handleReverify}>
-            <RefreshCw size={14} className="mr-1.5" /> Re-Verify
+          <Button loading={busy} disabled={!decision} onClick={reverify}>
+            Re-verify
           </Button>
         }
       />
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="md:col-span-1">
-          <CardHeader title="Current State" subtitle="Recorded validity status" />
-          <CardContent className="space-y-4 text-xs">
-            <div>
-              <span className="text-slate-400">Status:</span>
-              <div className="mt-1"><ValidityBadge status={status} /></div>
-            </div>
-            <div>
-              <span className="text-slate-400">Decision Type:</span>
-              <p className="font-medium text-slate-200 mt-0.5">{decision.type} (v{decision.version})</p>
-            </div>
-            <div>
-              <span className="text-slate-400">Timestamp:</span>
-              <p className="font-mono text-slate-300 mt-0.5">{decision.createdAt}</p>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="md:col-span-2">
-          <CardHeader title="Underlying Assumptions" subtitle="Conditions verified at generation time" />
-          <CardContent>
-            <ul className="space-y-2 text-xs">
-              {decision.assumptions.map(a => (
-                <li key={a.id} className="p-2.5 bg-slate-950/60 rounded border border-slate-800 flex items-center gap-2">
-                  <CheckCircle2 size={14} className="text-emerald-400" />
-                  <span className="font-mono text-slate-400">[{a.id}]</span>
-                  <span className="text-slate-200">{a.description}</span>
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
-      </div>
-
-      <DependencyGraphView title="Input Dependency Graph" />
+      <LoadState
+        {...request}
+        resource="Decision details"
+        error={error ?? request.error}
+      />
+      {decision && (
+        <>
+          <Card>
+            <CardHeader
+              title={decision.type}
+              action={<ValidityBadge status={decision.status} />}
+            />
+            <CardContent>
+              <p>
+                Version {decision.version} &middot; {decision.createdAt}
+              </p>
+              <h2 className="mt-4 font-semibold">Assumptions</h2>
+              <ul>
+                {decision.assumptions.map((a) => (
+                  <li key={a.id} className="py-2">
+                    {a.id}: {a.description}
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
+          <DependencyGraphView decision={decision} />
+        </>
+      )}
+      <Card>
+        <CardHeader title="Status-change history" />
+        <CardContent>
+          <LoadState
+            {...history}
+            resource="Status-change history"
+            empty={!changes.length}
+          />
+          <ul>
+            {changes.map((entry) => (
+              <li key={entry.id} className="py-2 text-sm">
+                {entry.timestamp} &middot; {entry.action} ({entry.actor})
+                {entry.details && <p>{entry.details}</p>}
+              </li>
+            ))}
+          </ul>
+        </CardContent>
+      </Card>
     </div>
   );
 }

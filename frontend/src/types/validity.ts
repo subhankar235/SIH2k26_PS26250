@@ -1,4 +1,4 @@
-export type ValidityStatus = "verified" | "stale" | "invalidated" | "invalid" | "uncertain";
+export type ValidityStatus = "verified" | "stale" | "invalidated" | "uncertain";
 
 export interface Assumption {
   id: string;
@@ -18,5 +18,4 @@ export interface Decision {
   createdAt: string;
   assumptions: Assumption[];
   dependencies: Dependency[];
-  notes?: string;
 }

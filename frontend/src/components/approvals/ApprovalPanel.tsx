@@ -1,9 +1,9 @@
-'use client';
-import React, { useState } from 'react';
-import { Card, CardHeader, CardContent, Button } from '@/components/ui';
-import { ValidityBadge } from '@/components/validity/ValidityBadge';
-import { ValidityStatus } from '@/types/validity';
-import { ShieldCheck, AlertCircle } from 'lucide-react';
+"use client";
+import React, { useState } from "react";
+import { Card, CardHeader, CardContent, Button } from "@/components/ui";
+import { VerificationBadge } from "@/components/validity/VerificationBadge";
+import type { Schedule } from "@/types/schedule";
+import { ShieldCheck, AlertCircle } from "lucide-react";
 
 export function ApprovalPanel({
   targetId,
@@ -15,20 +15,21 @@ export function ApprovalPanel({
 }: {
   targetId: string;
   title: string;
-  verification: ValidityStatus;
+  verification: Schedule["verification"];
   onApprove: (reviewer: string, reason: string) => Promise<boolean | void>;
   onReject: (reviewer: string, reason: string) => Promise<boolean | void>;
   loading?: boolean;
 }) {
-  const [reviewer, setReviewer] = useState('');
-  const [reason, setReason] = useState('');
+  const [reviewer, setReviewer] = useState("");
+  const [reason, setReason] = useState("");
   const [error, setError] = useState<string | null>(null);
 
-  const isVerified = verification === 'verified';
+  const isVerified = verification === "verified";
 
   const handleApprove = async () => {
+    if (!isVerified || loading) return;
     if (!reviewer.trim() || !reason.trim()) {
-      setError('Reviewer name and approval reason are mandatory.');
+      setError("Reviewer name and approval reason are mandatory.");
       return;
     }
     setError(null);
@@ -37,7 +38,7 @@ export function ApprovalPanel({
 
   const handleReject = async () => {
     if (!reviewer.trim() || !reason.trim()) {
-      setError('Reviewer name and rejection reason are mandatory.');
+      setError("Reviewer name and rejection reason are mandatory.");
       return;
     }
     setError(null);
@@ -49,20 +50,27 @@ export function ApprovalPanel({
       <CardHeader
         title={`Review & Approval Gate: ${targetId}`}
         subtitle={title}
-        action={<ValidityBadge status={verification} />}
+        action={<VerificationBadge status={verification} />}
       />
       <CardContent className="space-y-4">
         {!isVerified && (
           <div className="p-3 bg-rose-950/40 border border-rose-900/60 rounded flex items-center gap-2.5 text-xs text-rose-300">
             <AlertCircle size={16} className="text-rose-400 flex-shrink-0" />
-            <span>Strict Rule: Only results with <strong>verified</strong> status can be approved. Resolve validation checks first.</span>
+            <span>
+              Strict Rule: Only results with <strong>verified</strong> status
+              can be approved. Resolve validation checks first.
+            </span>
           </div>
         )}
 
         <div className="space-y-3">
           <div>
-            <label className="block text-xs font-medium text-slate-300 mb-1">Reviewer Name / ID</label>
+            <label className="block text-xs font-medium text-slate-300 mb-1">
+              Reviewer Name / ID
+            </label>
             <input
+              aria-label="Reviewer name"
+              required
               type="text"
               value={reviewer}
               onChange={(e) => setReviewer(e.target.value)}
@@ -72,8 +80,12 @@ export function ApprovalPanel({
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-slate-300 mb-1">Decision Rationale</label>
+            <label className="block text-xs font-medium text-slate-300 mb-1">
+              Decision Rationale
+            </label>
             <textarea
+              aria-label="Decision rationale"
+              required
               rows={3}
               value={reason}
               onChange={(e) => setReason(e.target.value)}
@@ -82,7 +94,11 @@ export function ApprovalPanel({
             />
           </div>
 
-          {error && <p className="text-xs text-rose-400">{error}</p>}
+          {error && (
+            <p role="alert" className="text-xs text-rose-400">
+              {error}
+            </p>
+          )}
 
           <div className="flex gap-2 justify-end pt-2">
             <Button

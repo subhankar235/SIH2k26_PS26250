@@ -1,142 +1,194 @@
-'use client';
-import React, { useState, useEffect } from 'react';
-import { PageHeader } from '@/components/layout/PageHeader';
-import { Card, CardHeader, CardContent, Button, Spinner, Badge } from '@/components/ui';
-import { ValidityBadge } from '@/components/validity/ValidityBadge';
-import { ApprovalPanel } from '@/components/approvals/ApprovalPanel';
-import { getApprovals, submitDecision, ApprovalItem } from '@/lib/api/approvals';
-import { ShieldCheck, ShieldAlert, CheckCircle2, XCircle } from 'lucide-react';
-
+"use client";
+import { useState } from "react";
+import Link from "next/link";
+import { PageHeader } from "@/components/layout";
+import { Button, Card, CardHeader, CardContent } from "@/components/ui";
+import { LoadState } from "@/components/ui/LoadState";
+import { ApprovalPanel } from "@/components/approvals/ApprovalPanel";
+import { VerificationBadge } from "@/components/validity/VerificationBadge";
+import { ScheduleGantt } from "@/components/charts";
+import { useFetch } from "@/hooks/useFetch";
+import { useApproval } from "@/hooks/useApproval";
+import { getApprovals, type ApprovalItem } from "@/lib/api/approvals";
+import { getSchedule } from "@/lib/api/planning";
+import { checkVerification } from "@/lib/api/verification";
 export default function ApprovalsPage() {
-  const [items, setItems] = useState<ApprovalItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [activeItem, setActiveItem] = useState<ApprovalItem | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
-
-  useEffect(() => {
-    getApprovals().then((data) => {
-      setItems(data);
-      setLoading(false);
-    });
-  }, []);
-
-  const handleApprove = async (reviewer: string, reason: string) => {
-    if (!activeItem) return;
-    await submitDecision(activeItem.id, 'approved', reviewer, reason);
-    setItems((prev) =>
-      prev.map((it) => (it.id === activeItem.id ? { ...it, status: 'approved' } : it))
-    );
-    setMessage(`Successfully approved ${activeItem.targetId}. Recorded in audit log.`);
-    setActiveItem(null);
-  };
-
-  const handleReject = async (reviewer: string, reason: string) => {
-    if (!activeItem) return;
-    await submitDecision(activeItem.id, 'rejected', reviewer, reason);
-    setItems((prev) =>
-      prev.map((it) => (it.id === activeItem.id ? { ...it, status: 'rejected' } : it))
-    );
-    setMessage(`Successfully rejected ${activeItem.targetId}. Review recorded.`);
-    setActiveItem(null);
-  };
-
+  const request = useFetch(getApprovals);
+  const [active, setActive] = useState<ApprovalItem | null>(null);
+  const pending =
+    request.data?.filter((item) => item.status === "pending") ?? [];
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Human-in-the-Loop Approvals (F9)"
-        description="Strict safety review queue for mission schedules, replanning proposals, and operational interventions"
-        actions={
-          <Badge variant="outline" className="border-emerald-800 text-emerald-300">
-            <ShieldCheck size={12} className="mr-1 inline" /> Strict Verification Gate Active
-          </Badge>
-        }
+        title="Approval queue"
+        description="Review evidence and verification before approving a result. Rationale is required for every decision."
       />
-
-      {message && (
-        <div className="p-3 bg-emerald-950/40 border border-emerald-800 text-xs text-emerald-300 rounded flex items-center justify-between">
-          <span>{message}</span>
-          <button onClick={() => setMessage(null)} className="text-slate-400 hover:text-white">✕</button>
-        </div>
-      )}
-
-      {/* Active Modal / Gate Drawer */}
-      {activeItem && (
-        <ApprovalPanel
-          targetId={activeItem.targetId}
-          title={`${activeItem.type}: ${activeItem.summary}`}
-          verification={activeItem.verification}
-          onApprove={handleApprove}
-          onReject={handleReject}
+      <LoadState
+        {...request}
+        resource="Approval queue"
+        empty={!!request.data && !pending.length}
+      />
+      {active && (
+        <Review
+          key={active.id}
+          item={active}
+          done={() => {
+            setActive(null);
+            void request.refetch();
+          }}
         />
       )}
-
-      {/* Queue Table */}
-      <Card className="border-slate-800">
-        <CardHeader
-          title="Review Queue"
-          subtitle="Mandatory rule: Only verified items may be approved into execution"
-        />
+      {request.data && pending.length > 0 && (
+        <>
+          <Card>
+            <CardHeader title="Results awaiting review" />
+            <CardContent>
+              <ul className="space-y-4">
+                {pending.map((item) => (
+                  <li
+                    key={item.id}
+                    className="flex flex-wrap gap-4 items-center border-b border-slate-800 pb-4"
+                  >
+                    <div className="flex-1">
+                      <p>
+                        {item.targetId} &middot; {item.type}
+                      </p>
+                      <p className="text-sm text-slate-400">{item.summary}</p>
+                      <p className="text-xs text-slate-400">
+                        {item.submittedBy} &middot; {item.submittedAt}
+                      </p>
+                    </div>
+                    <VerificationBadge status={item.verification} />
+                    <Button onClick={() => setActive(item)}>Review</Button>
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
+        </>
+      )}
+    </div>
+  );
+}
+function Review({ item, done }: { item: ApprovalItem; done: () => void }) {
+  const approval = useApproval();
+  const verification = useFetch(
+    () =>
+      checkVerification({
+        target_type: item.targetId.startsWith("SCH") ? "schedule" : "decision",
+        target_id: item.targetId,
+      }),
+    [item.id],
+  );
+  const schedule = useFetch(
+    () =>
+      item.targetId.startsWith("SCH")
+        ? getSchedule(item.targetId)
+        : Promise.resolve(null),
+    [item.id],
+  );
+  const result = verification.data;
+  return (
+    <div className="space-y-4 border border-slate-700 p-4 rounded">
+      <Button variant="ghost" disabled={approval.submitting} onClick={done}>
+        Close review
+      </Button>
+      <Card>
+        <CardHeader title="Schedule, evidence & verifier output" />
         <CardContent>
-          {loading ? (
-            <div className="py-12 flex justify-center"><Spinner /></div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs text-left">
-                <thead className="bg-slate-900/90 text-slate-400 border-b border-slate-800 uppercase font-semibold">
-                  <tr>
-                    <th className="px-4 py-2.5">Approval ID</th>
-                    <th className="px-4 py-2.5">Target</th>
-                    <th className="px-4 py-2.5">Type</th>
-                    <th className="px-4 py-2.5">Verification</th>
-                    <th className="px-4 py-2.5">Submitted By</th>
-                    <th className="px-4 py-2.5">Submitted At</th>
-                    <th className="px-4 py-2.5">Status</th>
-                    <th className="px-4 py-2.5 text-right">Action</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-800/60 font-mono">
-                  {items.map((it) => (
-                    <tr key={it.id} className="hover:bg-slate-800/30">
-                      <td className="px-4 py-3 font-semibold text-sky-400">{it.id}</td>
-                      <td className="px-4 py-3 text-slate-200">{it.targetId}</td>
-                      <td className="px-4 py-3 font-sans text-slate-300">{it.type}</td>
-                      <td className="px-4 py-3">
-                        <ValidityBadge status={it.verification} />
-                      </td>
-                      <td className="px-4 py-3 font-sans text-slate-400">{it.submittedBy}</td>
-                      <td className="px-4 py-3 text-slate-400">{it.submittedAt}</td>
-                      <td className="px-4 py-3">
-                        <Badge
-                          variant="outline"
-                          className={
-                            it.status === 'approved'
-                              ? 'border-emerald-800 text-emerald-300'
-                              : it.status === 'rejected'
-                              ? 'border-rose-800 text-rose-300'
-                              : 'border-amber-800 text-amber-300'
-                          }
-                        >
-                          {it.status.toUpperCase()}
-                        </Badge>
-                      </td>
-                      <td className="px-4 py-3 text-right font-sans">
-                        <Button
-                          size="sm"
-                          variant="secondary"
-                          onClick={() => setActiveItem(it)}
-                          className="bg-slate-800 hover:bg-slate-700 text-slate-200"
-                        >
-                          Review Gate
-                        </Button>
-                      </td>
-                    </tr>
+          <LoadState {...schedule} resource="Schedule details" />
+          <LoadState {...verification} resource="Verifier results" />
+          {schedule.data && (
+            <ScheduleGantt
+              assignments={schedule.data.assignments}
+              horizon={Math.max(
+                1,
+                ...schedule.data.assignments.map((a) => a.end),
+              )}
+            />
+          )}
+          {result && (
+            <div className="space-y-3">
+              <p>
+                Verifier outcome: <VerificationBadge status={result.outcome} />
+              </p>
+              <h3>Uncertainty flags</h3>
+              <ul>
+                {result.uncertainty_flags.map((flag) => (
+                  <li key={flag}>{flag}</li>
+                ))}
+              </ul>
+              {!result.uncertainty_flags.length && (
+                <p className="text-sm text-slate-400">
+                  No uncertainty flags reported.
+                </p>
+              )}
+              <h3>Violations & evidence</h3>
+              {result.violations.map((violation, i) => (
+                <div key={i}>
+                  <p>
+                    {violation.rule}: {violation.message}
+                  </p>
+                  {violation.refs.map((ref) => (
+                    <Link
+                      key={ref}
+                      className="text-sky-300 mr-3"
+                      href={`/evidence/${encodeURIComponent(ref)}`}
+                    >
+                      {ref}
+                    </Link>
                   ))}
-                </tbody>
-              </table>
+                </div>
+              ))}
+              {!result.violations.length && (
+                <p className="text-sm text-slate-400">
+                  No violations reported.
+                </p>
+              )}
             </div>
           )}
+          <Link
+            href={`/audit?entity=${encodeURIComponent(item.targetId)}`}
+            className="text-sky-300"
+          >
+            Related evidence and audit history
+          </Link>
         </CardContent>
       </Card>
+      <ApprovalPanel
+        targetId={item.targetId}
+        title={item.summary}
+        verification={
+          verification.error || verification.loading
+            ? "uncertain"
+            : (result?.outcome ?? "uncertain")
+        }
+        loading={approval.submitting}
+        onApprove={async (reviewer, rationale) => {
+          const ok = await approval.approve(
+            item.id,
+            reviewer,
+            rationale,
+            result?.outcome ?? "uncertain",
+          );
+          if (ok) done();
+          return ok;
+        }}
+        onReject={async (reviewer, rationale) => {
+          const ok = await approval.reject(item.id, reviewer, rationale);
+          if (ok) done();
+          return ok;
+        }}
+      />
+      {approval.error && (
+        <LoadState
+          loading={false}
+          error={approval.error}
+          resource="Review submission"
+          action
+        />
+      )}
+      {approval.feedback && <p role="status">{approval.feedback}</p>}
     </div>
   );
 }
