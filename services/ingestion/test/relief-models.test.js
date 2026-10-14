@@ -15,6 +15,32 @@ test('synthetic OLS training is reproducible with an independent held-out evalua
   assert.deepEqual(JSON.parse(JSON.stringify(model)), model);
 });
 
+test('OLS coefficients fit training records only and evaluation excludes their targets', () => {
+  const model = trainDemandModel();
+  // Reconstruct the published dataset, not the implementation's fitting algorithm.
+  let state = model.seed;
+  const records = Array.from({ length: model.samples }, (_, day) => {
+    state = (1664525 * state + 1013904223) % (2 ** 32);
+    const angle = 2 * Math.PI * day / 7;
+    return { day, x: [1, day / 30, Math.sin(angle), Math.cos(angle)],
+      demand: Math.round(250 + 2 * day + 50 * Math.sin(angle) + 15 * Math.cos(angle) + 30 * (state / (2 ** 32) - 0.5)) };
+  });
+  const training = model.split.trainingDays.map(day => records[day]);
+  const heldOut = model.split.testDays.map(day => records[day]);
+  const prediction = record => record.x.reduce((sum, feature, index) => sum + feature * model.coefficients[index], 0);
+  // Necessary OLS condition: the training residual is orthogonal to every column.
+  // Fitting all rows instead leaks test targets and violates these four conditions.
+  for (let feature = 0; feature < 4; feature++) {
+    const gradient = training.reduce((sum, record) => sum + (record.demand - prediction(record)) * record.x[feature], 0);
+    assert.ok(Math.abs(gradient) < 1e-6, `Training residual gradient ${feature} is ${gradient}`);
+  }
+  const mean = training.reduce((sum, record) => sum + record.demand, 0) / training.length;
+  const mae = heldOut.reduce((sum, record) => sum + Math.abs(record.demand - prediction(record)), 0) / heldOut.length;
+  const baselineMae = heldOut.reduce((sum, record) => sum + Math.abs(record.demand - mean), 0) / heldOut.length;
+  assert.ok(Math.abs(model.evaluation.mae - mae) < 1e-10);
+  assert.ok(Math.abs(model.evaluation.baselineMae - baselineMae) < 1e-10);
+});
+
 test('forecasts remain finite and bounded, including extreme finite extrapolation', () => {
   const model = trainDemandModel();
   for (const day of [0, 30, 121, -1e200, 1e200]) {
