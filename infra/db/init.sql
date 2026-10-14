@@ -203,6 +203,14 @@ CREATE TABLE IF NOT EXISTS benchmark_results (
     UNIQUE (experiment_id, metric)
 );
 
+-- Persist create/solve responses so retries with the same request key do no new work.
+CREATE TABLE IF NOT EXISTS idempotency_record (
+    key              VARCHAR(255) PRIMARY KEY,
+    request_hash     CHAR(64) NOT NULL,
+    response_payload JSON NOT NULL,
+    created_at       TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
 CREATE INDEX IF NOT EXISTS idx_grid_assets_type_status ON grid_assets(asset_type, status);
 CREATE INDEX IF NOT EXISTS idx_grid_assets_region ON grid_assets(region);
 CREATE INDEX IF NOT EXISTS idx_grid_events_asset_observed ON grid_events(asset_id, observed_at DESC);
