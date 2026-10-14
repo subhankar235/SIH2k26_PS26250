@@ -21,6 +21,8 @@
     "relief:train": "node scripts/train-relief-models.js",
     "relief:test:models": "node scripts/relief-model-smoke.js",
     "relief:test:ui": "python scripts/relief-ui-fixture.py",
+    "relief:smoke": "node --env-file-if-exists=.env scripts/relief-smoke.js",
+    "relief:test:browser": "python scripts/relief-browser-smoke.py",
     "consumer": "node --env-file-if-exists=.env src/consumer-cli.js",
     "test:consumer:kafka": "node --test integration/consumer.test.js",
     "test:browser": "python scripts/browser-smoke.py",

@@ -6,6 +6,10 @@ This module records observations. It does not create flight assignments, optimis
 
 [Verification evidence for the monitoring increment](docs/validation-monitoring.md).
 
+The complete fixed **civilian relief simulation** now adds five constraint specialists, bounded multi-objective optimization, independent verification, automatic replanning, a trained synthetic demand forecast, and two optional real local language models for validated evidence highlighting. [Detailed implementation guide](docs/CIVILIAN_ENGINE_GUIDE.md) covers architecture, models/datasets, algorithms, JavaScript/Kafka, persistence, setup and testing. This is a separate fictional engine; it does not optimize real gateway data or fulfil combat-planning requirements.
+
+After starting the API and signing into the monitor, run `npm run relief:demo` in another terminal. The dashboard shows fictional proposals, unmet reasons, specialist reports, budget status, independent checks, forecast evaluation, model status and revision history. Use `npm run relief:train` for the synthetic model artifact; the guide explains installing/testing local Gemma/Qwen via `compose.ai.yaml` and enabling `RELIEF_AI_MODE=ollama`.
+
 ## Quick start
 
 Requirements: Node **24.19.0 or later**, npm **11.17.0**. Run these commands from this directory:

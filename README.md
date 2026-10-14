@@ -4,6 +4,8 @@ The new noncombat administrative logistics system is in [services/ingestion](ser
 
 Implementation/design: [ingestion design](docs/logistics-ingestion-design.md), [monitoring modules](docs/logistics-monitoring-plan.md), [module map and demo](services/ingestion/docs/monitoring.md). This work does not implement military operational planning or weapons allocation.
 
+A separate fixed civilian relief engine now demonstrates specialist agents, deterministic optimization and replanning, independent checking, synthetic model training and optional local Gemma/Qwen evidence selectors. Start with the [detailed engine guide](services/ingestion/docs/CIVILIAN_ENGINE_GUIDE.md). Its inputs and outputs are explicitly fictional; it does not plan combat operations.
+
 The earlier grid platform below is historical scaffolding and is not wired into the standalone ingestion module.
 
 ## Earlier grid scaffolding
