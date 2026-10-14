@@ -166,7 +166,10 @@ export class EventStore {
   pending({ limit = 50 } = {}) {
     pageOptions({ limit });
     return this.db.prepare(`SELECT o.*,e.event_id,e.event_json FROM outbox o JOIN events e ON e.id=o.event_cursor
-      WHERE o.status='queued' AND o.next_attempt_ms<=? ORDER BY o.event_cursor LIMIT ?`).all(this.now(), limit)
+      WHERE o.status='queued' AND o.next_attempt_ms<=?
+        AND NOT EXISTS(SELECT 1 FROM outbox earlier WHERE earlier.topic=o.topic AND earlier.message_key=o.message_key
+          AND earlier.status='queued' AND earlier.event_cursor<o.event_cursor)
+      ORDER BY o.event_cursor LIMIT ?`).all(this.now(), limit)
       .map((row) => ({ cursor: row.event_cursor, eventId: row.event_id, topic: row.topic,
         key: row.message_key, attempts: row.attempts, event: JSON.parse(row.event_json) }));
   }

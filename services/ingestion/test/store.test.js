@@ -82,7 +82,8 @@ test('cursor pagination and filters replay immutable history without publishing 
   assert.equal(first.items.length, 1); assert.equal(first.nextCursor, first.items[0].cursor);
   const second = db.listEvents({ after: first.nextCursor, limit: 1, sourceId: 'fleet-feed' });
   assert.equal(second.items.length, 1); assert.equal(second.nextCursor, null);
-  assert.equal(db.pending({}).length, 3);
+  assert.equal(db.metrics().outbox.queued, 3);
+  assert.equal(db.pending({}).length, 2); // Only each stream's oldest queued event is eligible.
 });
 test('latest state reports expiry using current clock without changing history', (t) => {
   let clock = NOW; const db = store(t, { now: () => clock }); const input = event(); db.acceptBatch([input]);
@@ -109,6 +110,13 @@ test('only dead work can be retried', (t) => {
   const db = store(t); const input = event(); db.acceptBatch([input]);
   assert.throws(() => db.retryDead(input.eventId), { code: 'OUTBOX_NOT_DEAD' });
   assert.throws(() => db.retryDead(randomUUID()), { status: 404 });
+});
+test('a delayed queued predecessor blocks later work in the same Kafka stream', (t) => {
+  const db = store(t); const [first, second] = db.acceptBatch([event(), event({ sequence: 2 })]);
+  db.markFailed(first.cursor, { maxAttempts: 2, baseDelayMs: 100, maxDelayMs: 1000 });
+  assert.equal(db.pending({}).length, 0);
+  db.markPublished(first.cursor);
+  assert.equal(db.pending({})[0].cursor, second.cursor);
 });
 test('retention preserves latest state and queued/dead work while purging old settled history', (t) => {
   let clock = NOW; const db = store(t, { now: () => clock });
