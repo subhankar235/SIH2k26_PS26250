@@ -256,7 +256,7 @@ These values are asserted by tests, not hardcoded plan outputs. The optimizer mu
 
 ## 15. Testing and evaluation discipline
 
-Run the baseline suite and source checks:
+[Validation record](validation-relief-engine.md) documents the checks actually run, installed model digests and evidence limits. Run the baseline suite and source checks:
 
 ```powershell
 npm test
@@ -274,6 +274,8 @@ $env:KAFKA_TEST_BROKERS='localhost:29092'
 npm run test:kafka
 npm run test:consumer:kafka
 npm run smoke:pipeline
+npm run relief:smoke
+npm run relief:test:browser
 ```
 
 The tests intentionally include malformed broker records; test helpers isolate their own unique keys before parsing unrelated history. Production readers durably quarantine malformed records with safe metadata. Kafka delivery remains at least once, with event ID/content dedupe and source/type/entity sequence checks.
