@@ -82,6 +82,50 @@ try:
         state['sim']['history']=[dict(revision=0,phase='start',servedPriority=5,assignedCount=1,changedAssignments=0)]
         refresh()
         expect(page.locator('#relief-content')).to_contain_text('Initial scenario')
+        # Poll while keyboard inspection remains in a horizontally scrolled table.
+        page.set_viewport_size(dict(width=320,height=900))
+        unmet_region=page.get_by_role('region',name='Unmet relief requests; scroll for more columns',exact=True)
+        unmet_region.focus()
+        unmet_region.evaluate('(element) => { element.scrollLeft=320; }')
+        left=unmet_region.evaluate('(element) => element.scrollLeft')
+        assert left > 0
+        def background_refresh():
+            # A dispatched refresh leaves keyboard focus in the table, just like the timer.
+            page.evaluate('document.querySelector("#refresh").dispatchEvent(new Event("click"))')
+            expect(page.locator('#refresh')).to_be_enabled()
+        background_refresh()
+        assert unmet_region.evaluate('(element) => document.activeElement === element'), 'Same-revision poll lost table focus'
+        assert unmet_region.evaluate('(element) => element.scrollLeft')==left, 'Same-revision poll lost table scroll'
+        with page.expect_response(lambda response: '/monitor/api/simulation' in response.url):
+            page.wait_for_timeout(5200)
+        expect(page.locator('#refresh')).to_be_enabled()
+        assert unmet_region.evaluate('(element) => document.activeElement === element'), 'Automatic timer poll lost table focus'
+        assert unmet_region.evaluate('(element) => element.scrollLeft')==left, 'Automatic timer poll lost table scroll'
+        state['sim']['world'].update(revision=1,tick=1)
+        state['sim']['annotations'].update(revision=1)
+        background_refresh()
+        assert unmet_region.evaluate('(element) => document.activeElement === element'), 'New-revision poll lost table focus'
+        assert unmet_region.evaluate('(element) => element.scrollLeft')==left, 'New-revision poll lost table scroll'
+        state['sim']['plan']['unserved']=[]
+        background_refresh()
+        assert page.evaluate('document.activeElement.textContent')=='No unmet requests in this plan.', 'Removed table needs a meaningful focus fallback'
+        state['sim']['plan']['unserved']=[dict(requestId='SIM-R',reasonCodes=['NO_ELIGIBLE_AIRCRAFT'])]
+        background_refresh()
+        # Table focus nested in the world disclosure must not be replaced by summary focus.
+        state['sim']['world']['aircraft']=[dict(id='SIM-A',airportId='SIM-HUB',capacityKg=500,coldStorage=True,status='available',validThroughTick=5)]
+        background_refresh()
+        world=page.locator('[data-relief-detail="world"]')
+        world.locator('summary').click()
+        aircraft_region=page.get_by_role('region',name='Fictional aircraft; scroll for more columns',exact=True)
+        aircraft_region.focus(); aircraft_region.evaluate('(element) => { element.scrollLeft=200; }')
+        background_refresh()
+        expect(world).to_have_attribute('open','')
+        assert aircraft_region.evaluate('(element) => document.activeElement === element'), 'Nested table focus became disclosure focus'
+        assert aircraft_region.evaluate('(element) => element.scrollLeft')==200
+        fleet.focus()
+        background_refresh()
+        assert fleet.evaluate('(element) => document.activeElement === element'), 'Disclosure summary lost keyboard focus'
+        assert aircraft_region.evaluate('(element) => element.scrollLeft')==200, 'Unfocused table scroll was not retained'
         for width in (320,768,1024,1440):
             page.set_viewport_size(dict(width=width,height=900))
             assert page.evaluate('document.documentElement.scrollWidth <= innerWidth'), f'Overflow at {width}'
@@ -90,8 +134,10 @@ try:
         page.set_viewport_size(dict(width=320,height=900))
         page.screenshot(path=str(artifact/'ui-mobile.png'),full_page=True)
         state['sim_status']=404
-        refresh()
+        aircraft_region.focus()
+        background_refresh()
         expect(page.locator('#relief-state')).to_contain_text('not available')
+        assert page.evaluate('document.activeElement.id')=='relief-title', 'Unavailable view needs a meaningful focus fallback'
         expect(page.locator('#connection-text')).to_contain_text('Updated')
         assert page.locator('#relief-content').text_content()==''
         state['sim_status']=200; state['sim']=dict(status='idle')
@@ -143,4 +189,4 @@ try:
         browser.close()
 finally:
     server.shutdown()
-print('Relief browser fixtures passed: proposed assignments, exact/budget labels, safe evidence, keyboard disclosure persistence, local/deterministic/fallback models, stale/pending annotations, checker errors, empty plan/history, four viewports, idle/404 isolation, simulation 401, failed/successful logout clearing, nonoverlap and delayed-response discard.')
+print('Relief browser fixtures passed: proposed assignments, exact/budget labels, safe evidence, table focus/scroll across same/new revisions and timer polls, nested tables, empty/unavailable focus fallbacks, keyboard disclosure persistence, local/deterministic/fallback models, stale/pending annotations, checker errors, empty plan/history, four viewports, idle/404 isolation, simulation 401, failed/successful logout clearing, nonoverlap and delayed-response discard.')

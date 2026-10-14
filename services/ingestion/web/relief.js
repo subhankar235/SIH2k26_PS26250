@@ -22,9 +22,14 @@ function definition(fields) {
   for (const [label, content] of fields) result.append(node('dt', label), node('dd', value(content)));
   return result;
 }
-function table(caption, headings, rows, empty) {
-  if (!rows.length) return node('p', empty, 'relief-empty');
+function table(id, caption, headings, rows, empty) {
+  if (!rows.length) {
+    const fallback = node('p', empty, 'relief-empty');
+    fallback.id = id; fallback.dataset.reliefTable = ''; fallback.tabIndex = -1;
+    return fallback;
+  }
   const scroll = node('div', undefined, 'table-scroll relief-table');
+  scroll.id = id; scroll.dataset.reliefTable = '';
   scroll.tabIndex = 0; scroll.setAttribute('role', 'region'); scroll.setAttribute('aria-label', `${caption}; scroll for more columns`);
   const result = node('table'); result.append(node('caption', caption, 'sr-only'));
   const head = node('thead'), header = node('tr'), body = node('tbody');
@@ -88,15 +93,17 @@ function worldDetails(world) {
   const details = node('details', undefined, 'relief-world relief-report'); details.dataset.reliefDetail = 'world';
   details.append(node('summary', 'Inspect fictional world and scenario metadata'));
   details.append(node('p', `Departure slots: ${joined(world.policy?.slots)} · ${value(world.policy?.slotMinutes)} logical minutes per slot. Scenario limits: visibility at least ${value(world.policy?.minVisibilityM)} m; wind at most ${value(world.policy?.maxWindSpeedMps)} m/s. These fixed educational limits are not aviation guidance.`, 'muted small'));
-  details.append(table('Fictional aircraft', ['Aircraft', 'Airport', 'Capacity (kg)', 'Cold storage', 'Status', 'Valid through tick'], list(world.aircraft).map((item) => [item.id,item.airportId,item.capacityKg,item.coldStorage === true ? 'Yes' : 'No',item.status,item.validThroughTick]), 'No aircraft reported.'));
-  details.append(table('Fictional crews', ['Crew', 'Status', 'Qualifications', 'From slot', 'Through slot', 'Valid through tick'], list(world.crews).map((item) => [item.id,item.status,joined(item.qualifications),item.fromSlot,item.toSlot,item.validThroughTick]), 'No crews reported.'));
-  details.append(table('Fictional airports', ['Airport', 'Status', 'Arrivals / slot', 'Departures / slot', 'Valid through tick'], list(world.airports).map((item) => [item.id,item.status,item.arrivalsPerSlot,item.departuresPerSlot,item.validThroughTick]), 'No airports reported.'));
-  details.append(table('Fictional weather', ['Airport', 'Condition', 'Wind (m/s)', 'Visibility (m)', 'Valid through tick'], list(world.weather).map((item) => [item.airportId,item.condition,item.windSpeedMps,item.visibilityM,item.validThroughTick]), 'No weather reported.'));
-  details.append(table('Fictional routes', ['Origin', 'Destination', 'Duration (slots)'], list(world.routes).map((item) => [item.originId,item.destinationId,item.durationSlots]), 'No routes reported.'));
+  details.append(table('relief-table-aircraft', 'Fictional aircraft', ['Aircraft', 'Airport', 'Capacity (kg)', 'Cold storage', 'Status', 'Valid through tick'], list(world.aircraft).map((item) => [item.id,item.airportId,item.capacityKg,item.coldStorage === true ? 'Yes' : 'No',item.status,item.validThroughTick]), 'No aircraft reported.'));
+  details.append(table('relief-table-crews', 'Fictional crews', ['Crew', 'Status', 'Qualifications', 'From slot', 'Through slot', 'Valid through tick'], list(world.crews).map((item) => [item.id,item.status,joined(item.qualifications),item.fromSlot,item.toSlot,item.validThroughTick]), 'No crews reported.'));
+  details.append(table('relief-table-airports', 'Fictional airports', ['Airport', 'Status', 'Arrivals / slot', 'Departures / slot', 'Valid through tick'], list(world.airports).map((item) => [item.id,item.status,item.arrivalsPerSlot,item.departuresPerSlot,item.validThroughTick]), 'No airports reported.'));
+  details.append(table('relief-table-weather', 'Fictional weather', ['Airport', 'Condition', 'Wind (m/s)', 'Visibility (m)', 'Valid through tick'], list(world.weather).map((item) => [item.airportId,item.condition,item.windSpeedMps,item.visibilityM,item.validThroughTick]), 'No weather reported.'));
+  details.append(table('relief-table-routes', 'Fictional routes', ['Origin', 'Destination', 'Duration (slots)'], list(world.routes).map((item) => [item.originId,item.destinationId,item.durationSlots]), 'No routes reported.'));
   return details;
 }
 export function reliefClear() {
+  const hadFocus = get('relief-content').contains(document.activeElement);
   get('relief-content').replaceChildren(); get('relief-state').textContent = '';
+  if (hadFocus) { get('relief-title').tabIndex = -1; get('relief-title').focus({ preventScroll: true }); }
 }
 export function reliefUnavailable(unimplemented = false) {
   reliefClear();
@@ -107,7 +114,9 @@ export function reliefRender(snapshot) {
   if (snapshot?.status !== 'ready' || snapshot.world?.simulation !== true || !snapshot.plan || !snapshot.validation) throw new Error('Invalid simulation snapshot');
   const content = get('relief-content');
   const open = new Set([...content.querySelectorAll('details[open]')].map((item) => item.dataset.reliefDetail));
-  const focused = document.activeElement?.closest('[data-relief-detail]')?.dataset.reliefDetail;
+  const focusedTable = document.activeElement?.closest('[data-relief-table]')?.id;
+  const focusedDetail = document.activeElement?.closest('[data-relief-detail]')?.dataset.reliefDetail;
+  const scrollPositions = new Map([...content.querySelectorAll('[data-relief-table]')].map((item) => [item.id, { left: item.scrollLeft, top: item.scrollTop }]));
   const { world, plan, validation, demand } = snapshot;
   const revision = section('Current revision');
   revision.append(definition([['Run', world.runId], ['Revision / logical tick', `${value(world.revision)} / ${value(world.tick)}`], ['Next fixed phase', snapshot.nextPhase === null ? 'Scenario complete' : phases[snapshot.nextPhase] || value(snapshot.nextPhase)], ['Snapshot generated', timestamp(snapshot.generatedAt)]]));
@@ -115,23 +124,28 @@ export function reliefRender(snapshot) {
   const status = plan.status === 'optimal' ? 'Exact optimum within the bounded scenario' : plan.status === 'feasible_budget' ? 'Budget-limited feasible result · Optimality not established' : 'Planner status not reported';
   proposal.append(node('p', status, 'relief-label'));
   proposal.append(definition([['Served priority', plan.objective?.servedPriority], ['Changed surviving assignments', plan.objective?.changedAssignments], ['Total arrival slots', plan.objective?.totalArrivalSlots], ['Search nodes explored / limit', `${value(plan.diagnostics?.explored)} / ${value(plan.diagnostics?.limit)}`]]));
-  proposal.append(table('Proposed relief assignments', ['Request', 'Aircraft', 'Crew', 'Departure slot', 'Arrival slot'], list(plan.assignments).map((item) => [item.requestId,item.aircraftId,item.crewId,item.departureSlot,item.arrivalSlot]), 'No feasible assignments proposed. Review unmet requests and specialist findings.'));
+  proposal.append(table('relief-table-assignments', 'Proposed relief assignments', ['Request', 'Aircraft', 'Crew', 'Departure slot', 'Arrival slot'], list(plan.assignments).map((item) => [item.requestId,item.aircraftId,item.crewId,item.departureSlot,item.arrivalSlot]), 'No feasible assignments proposed. Review unmet requests and specialist findings.'));
   const unmet = section('Unmet requests');
-  unmet.append(table('Unmet relief requests', ['Request', 'Reason codes'], list(plan.unserved).map((item) => [item.requestId, joined(item.reasonCodes)]), 'No unmet requests in this plan.'));
+  unmet.append(table('relief-table-unmet', 'Unmet relief requests', ['Request', 'Reason codes'], list(plan.unserved).map((item) => [item.requestId, joined(item.reasonCodes)]), 'No unmet requests in this plan.'));
   const checker = section('Independent checker', 'Checks IDs, resource use, hard constraints and the reported objective independently of the search.');
   checker.append(node('p', validation.valid === true ? 'Passed · Plan satisfies the fictional scenario constraints' : 'Failed · Do not treat this proposal as a valid scenario plan', `relief-label ${validation.valid === true ? 'relief-pass' : 'relief-warning'}`));
   for (const error of list(validation.errors)) checker.append(node('p', error, 'small mono relief-warning'));
   const forecast = section('Synthetic demand forecast', 'Trained and evaluated on seeded synthetic data only. It does not create requests or change hard constraints; no real-world accuracy claim.');
   forecast.append(definition([['Model', demand?.modelId], ['Synthetic day', demand?.forecastDay], ['Predicted request count', demand?.predictedRequests], ['Training / held-out samples', `${value(demand?.trainingCount)} / ${value(demand?.testCount)}`], ['Held-out MAE / baseline MAE', `${value(demand?.evaluation?.mae)} / ${value(demand?.evaluation?.baselineMae)}`]]));
   const requests = section('Fictional relief requests', 'Priority, cold storage and logical validity are scenario metadata.');
-  requests.append(table('Fictional request metadata', ['Request / category', 'Route', 'Mass (kg)', 'Priority', 'Cold chain', 'Deadline slot', 'Valid through tick'], list(world.requests).map((item) => [`${value(item.id)} / ${value(item.category)}`,`${value(item.originId)} → ${value(item.destinationId)}`,item.massKg,item.priority,item.temperatureControlled === true ? 'Required' : 'No',item.deadlineSlot,item.validThroughTick]), 'No fictional requests reported.'));
+  requests.append(table('relief-table-requests', 'Fictional request metadata', ['Request / category', 'Route', 'Mass (kg)', 'Priority', 'Cold chain', 'Deadline slot', 'Valid through tick'], list(world.requests).map((item) => [`${value(item.id)} / ${value(item.category)}`,`${value(item.originId)} → ${value(item.destinationId)}`,item.massKg,item.priority,item.temperatureControlled === true ? 'Required' : 'No',item.deadlineSlot,item.validThroughTick]), 'No fictional requests reported.'));
   const history = section('Prior revisions', 'Current run only. Up to six retained revision summaries.');
-  history.append(table('Relief revision history', ['Revision', 'Phase', 'Served priority', 'Assignments', 'Changed assignments'], list(snapshot.history).map((item) => [item.revision,phases[item.phase] || item.phase,item.servedPriority,item.assignedCount,item.changedAssignments]), 'No prior revisions reported.'));
+  history.append(table('relief-table-history', 'Relief revision history', ['Revision', 'Phase', 'Served priority', 'Assignments', 'Changed assignments'], list(snapshot.history).map((item) => [item.revision,phases[item.phase] || item.phase,item.servedPriority,item.assignedCount,item.changedAssignments]), 'No prior revisions reported.'));
   const overview = node('div', undefined, 'relief-overview'); overview.append(revision, checker, forecast);
   content.replaceChildren(overview, proposal, unmet, requests, worldDetails(world), annotations(snapshot), reports(snapshot), history);
   get('relief-state').textContent = `Revision ${value(world.revision)} · Logical tick ${value(world.tick)} · Fictional scenario`;
   for (const details of content.querySelectorAll('[data-relief-detail]')) {
     details.open = open.has(details.dataset.reliefDetail);
-    if (details.dataset.reliefDetail === focused) details.querySelector('summary').focus();
+    if (!focusedTable && details.dataset.reliefDetail === focusedDetail) details.querySelector('summary').focus({ preventScroll: true });
   }
+  for (const region of content.querySelectorAll('[data-relief-table]')) {
+    const position = scrollPositions.get(region.id);
+    if (position) { region.scrollLeft = position.left; region.scrollTop = position.top; }
+  }
+  if (focusedTable) get(focusedTable)?.focus({ preventScroll: true });
 }
