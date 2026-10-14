@@ -114,11 +114,11 @@ Each specialist reads the same immutable world revision and returns `{agentId, f
 
 | Specialist | Checks |
 | --- | --- |
-| Fleet | Reported available status, logical validity, location, capacity and cold-storage metadata |
-| Crew | Available status, logical validity, relief-pilot qualification and full duty-window coverage |
-| Weather | Fresh weather record for each endpoint, fixed fictional wind/visibility limits and blocking condition |
-| Airport | Fresh capacity/status record, closure and per-slot arrival/departure capacity |
-| Cargo | Ordinary category, positive mass, route, priority, deadline, cold-chain metadata and validity |
+| Fleet | Reported available status and logical validity; joint candidate checks additionally enforce location, capacity and cold storage |
+| Crew | Available status, logical validity and relief-pilot qualification; joint candidates enforce full duty-window coverage |
+| Weather | Fresh weather record for each endpoint and fixed fictional wind/visibility limits; condition is displayed metadata, not a separate blocking predicate |
+| Airport | Fresh status/capacity record, closure and nonzero slot capacity; search/checker also enforce aggregate per-slot counts |
+| Cargo | Logical validity and route presence; strict world validation and joint candidates additionally check ordinary category, positive mass, priority bounds, deadline and cold-chain metadata |
 
 Findings are visible even if a language model does not highlight them. Source messages are rendered as text. Eligibility lists serve as structured communication to the candidate generator and search supervisor. This acyclic graph is easier to test than an all-to-all LLM discussion: the only paths are world → reports → candidates → optimizer → checker → evidence annotations → viewer.
 
@@ -160,7 +160,7 @@ The objective is lexicographic, rather than one opaque weighted sum:
 
 For example, keeping an old assignment cannot justify losing a higher-priority ordinary relief request, because priority is evaluated first. Similarly, an earlier arrival does not outweigh service priority or the defined stability criterion. A request that cannot be served remains unmet with reason codes; constraints are not relaxed to make the dashboard look successful.
 
-`diagnostics.explored` and `diagnostics.limit` explain computational bounds. The plan is labelled `optimal` only when the finite search completed. If the budget interrupted it, the label is `feasible_budget`. An empty feasible plan is legitimate when all routes/resources are blocked. The search's label is not an aviation safety certificate.
+`diagnostics.nodesExplored` and `diagnostics.nodeLimit` explain computational bounds; `budgetExhausted` and `candidateCount` provide additional context. The plan is labelled `optimal` only when the finite search completed. If the budget interrupted it, the label is `feasible_budget`. An empty feasible plan is legitimate when all routes/resources are blocked. The search's label is not an aviation safety certificate.
 
 The mathematical size is deliberately small: at most five requests, three aircraft, three crews and three departure slots. Larger real logistics networks need a different specification, performance experiments and an appropriate solver; increasing a limit without those changes would invalidate the current quality contract. This guide does not supply instructions for operational military adaptation.
 
@@ -212,11 +212,11 @@ npm run relief:train -- --seed 26250 --samples 120 --output var/demand-model.jso
 
 The output file must be new: exclusive creation protects earlier experiments from accidental overwrite. The artifact records model kind/version, simulation flag, seed, sample count, feature definition, coefficients, training/test counts, exact split day IDs, evaluation and forecast bounds. Without `--output`, the JSON is printed. It contains no credentials.
 
-The implemented generator creates a synthetic daily count series with a known trend, weekly components and bounded noise. Features are intercept, day/30, sin(2πday/7) and cos(2πday/7). Ordinary least squares fits only the training prefix. The last20% is held out chronologically, so a default120-sample experiment fits96 points and evaluates24 unseen points. The baseline predicts the training mean, not the held-out mean.
+The implemented generator creates a synthetic daily count series with a known trend, weekly components and bounded noise. Features are intercept, day/30, sin(2πday/7) and cos(2πday/7). A seeded shuffle reserves20% of rows as an independent random holdout. Ordinary least squares fits only the remaining training rows, so a default120-sample experiment fits96 points and evaluates24 unseen points. The baseline predicts the training mean, not the held-out mean. This evaluates held-out synthetic regression/interpolation, not chronological forecasting. The displayed next-day prediction is an illustrative extrapolation; no forward-in-time accuracy has been established.
 
 MAE is the mean absolute difference between predicted and actual synthetic counts on held-out days. For the default seed, observed MAE was approximately7.14 versus76.23 for the training-mean baseline. These numbers characterize this deliberately generated series; they are not evidence of real relief-demand accuracy. Forecasts are bounded finite nonnegative integers and do not create jobs or alter optimization constraints.
 
-Regression tests verify more than an attractive error number. Training-only residual normal equations detect accidentally fitting held-out rows, and held-out error/baseline are recomputed independently. Keep chronology, provenance and evaluation targets explicit when changing the synthetic generator. Never use a low MAE from a leaked split as a selection-demo claim.
+Regression tests verify more than an attractive error number. Training-only residual normal equations detect accidentally fitting held-out rows, and held-out error/baseline are recomputed independently. Keep split IDs, provenance and evaluation targets explicit when changing the synthetic generator. A future civilian temporal forecasting experiment needs chronological or rolling-origin evaluation instead of this random split. Never use a low MAE from a leaked split as a selection-demo claim.
 
 The world `demandHistory` is fictional scenario metadata. The displayed fitted forecast comes from the separately seeded training artifact, not from pretending that four cargo requests constitute a meaningful training dataset. The implementation deliberately does not fine-tune the local language models; their evidence-selection task uses constrained prompting and post-validation.
 
