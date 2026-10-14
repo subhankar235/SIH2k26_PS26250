@@ -196,8 +196,15 @@ class PlanActionRead(PlanActionCreate):
 class PlanRead(PlanCreate):
     plan_id: UUID
     status: Literal[
-        "draft", "validating", "pending_approval", "approved", "rejected", "active",
-        "completed", "cancelled", "invalidated",
+        "draft",
+        "validating",
+        "pending_approval",
+        "approved",
+        "rejected",
+        "active",
+        "completed",
+        "cancelled",
+        "invalidated",
     ]
     objective_value: float | None = None
     created_at: datetime
