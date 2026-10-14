@@ -20,6 +20,7 @@
     "consumer": "node --env-file-if-exists=.env src/consumer-cli.js",
     "test:consumer:kafka": "node --test integration/consumer.test.js",
     "test:browser": "python scripts/browser-smoke.py",
+    "smoke:pipeline": "node --env-file-if-exists=.env scripts/pipeline-smoke.js",
     "smoke": "node --env-file-if-exists=.env scripts/smoke.js",
     "kafka:topics": "node --env-file-if-exists=.env scripts/kafka-topics.js",
     "test:kafka": "node --test integration/kafka.test.js"

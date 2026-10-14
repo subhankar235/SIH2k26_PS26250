@@ -60,6 +60,7 @@ Additional verification commands (browser smoke needs a running local server, `.
 
 ```powershell
 npm run test:consumer:kafka
+npm run smoke:pipeline
 python -m pip install playwright
 python -m playwright install chromium
 npm run test:browser

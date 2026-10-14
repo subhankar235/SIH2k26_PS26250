@@ -72,8 +72,33 @@ with sync_playwright() as p:
     assert page.evaluate('document.activeElement.id') == 'download'
     assert not errors, 'Browser runtime error'
     assert page.evaluate('Object.keys(localStorage).length') == 0
+    # Failure fixtures exercise report clearing against the real assembled UI.
+    row.get_by_role('button', name='Inspect '+entity+' from '+source['sourceId'], exact=True).click()
+    page.route('**/monitor/api/snapshot*', lambda route: route.fulfill(status=401, content_type='application/json', body='{"error":{"code":"UNAUTHORIZED"}}'))
+    expect(page.locator('#login-panel')).to_be_visible(timeout=12000)
+    assert page.locator('#inspector-title').text_content() == 'Record details'
+    assert page.locator('#inspector').get_attribute('data-inspection-id') is None
+    assert page.locator('#inspector-content').text_content() == ''
+    assert page.locator('#records').text_content() == ''
+    page.unroute('**/monitor/api/snapshot*')
+    page.get_by_label('Viewer token', exact=True).fill(viewer)
+    page.get_by_role('button', name='Open session', exact=True).click()
+    expect(row).to_be_visible()
+    row.get_by_role('button', name='Inspect '+entity+' from '+source['sourceId'], exact=True).click()
+    page.get_by_role('button', name='Close', exact=True).click()
+    page.route('**/monitor/logout', lambda route: route.fulfill(status=503, content_type='application/json', body='{"error":{"code":"UNAVAILABLE"}}'))
+    page.get_by_role('button', name='Sign out', exact=True).click()
+    expect(page.locator('#connection-text')).to_contain_text('Sign out failed')
+    assert page.locator('#inspector-title').text_content() == 'Record details'
+    assert page.locator('#inspector').get_attribute('data-inspection-id') is None
+    assert page.locator('#inspector-content').text_content() == ''
+    assert page.locator('#records').text_content() == ''
+    assert page.locator('#download').is_disabled()
+    page.unroute('**/monitor/logout')
     page.get_by_role('button', name='Sign out', exact=True).click()
     expect(page.locator('#login-panel')).to_be_visible()
     assert context.request.get(base+'/monitor/api/snapshot').status == 401
+    assert page.locator('#inspector-title').text_content() == 'Record details'
+    assert page.locator('#inspector').get_attribute('data-inspection-id') is None
     browser.close()
-print('Browser smoke passed: real session, ingestion updates, expiry polling, provenance, download, keyboard, 4 viewports and logout. Screenshots in var/.')
+print('Browser smoke passed: real session, ingestion updates, expiry polling, provenance, download, keyboard, 4 viewports/logout; failure fixtures verify auth-loss/failed-logout clearing. Screenshots in var/.')

@@ -21,8 +21,10 @@ test('credential generator creates separate secrets without printing them and re
   const sourceLine = contents.split('\n').find((line) => line.startsWith('INGESTION_SOURCES_JSON='));
   const sources = JSON.parse(sourceLine.slice('INGESTION_SOURCES_JSON='.length));
   const admin = contents.split('\n').find((line) => line.startsWith('INGESTION_ADMIN_TOKEN=')).split('=')[1];
-  assert.equal(sources.length, 5); assert.equal(new Set([admin, ...sources.map((s) => s.token)]).size, 6);
-  assert.ok(![admin, ...sources.map((s) => s.token)].some((token) => result.stdout.includes(token)));
+  const viewer = contents.split('\n').find((line) => line.startsWith('MONITOR_VIEWER_TOKEN=')).split('=')[1];
+  assert.match(viewer, /^[A-Za-z0-9_-]{48}$/);
+  assert.equal(sources.length, 5); assert.equal(new Set([admin, viewer, ...sources.map((s) => s.token)]).size, 7);
+  assert.ok(![admin, viewer, ...sources.map((s) => s.token)].some((token) => result.stdout.includes(token)));
   const again = spawnSync(process.execPath, ['scripts/credentials.js', '--write', path], { encoding: 'utf8' });
   assert.notEqual(again.status, 0); assert.equal(readFileSync(path, 'utf8') === contents, true);
 });
