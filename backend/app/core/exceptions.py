@@ -74,3 +74,10 @@ class ServiceUnavailableError(AirPowerError):
 
     code = "SERVICE_UNAVAILABLE"
     http_status = 503
+
+
+class ForecastModelUnavailableError(AirPowerError):
+    """Indicate that a requested forecast model cannot be loaded."""
+
+    code = "FORECAST_MODEL_UNAVAILABLE"
+    http_status = 503

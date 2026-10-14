@@ -95,6 +95,9 @@ def validate_event(source: SourceType, payload: dict[str, Any]) -> ValidationRes
 
     Returns:
         Validation status, formatted errors, and the validated source model on success.
+
+    Raises:
+        None for invalid event data; validation failures are returned in the result.
     """
     schema = SCHEMAS[source]
     try:

@@ -25,6 +25,9 @@ def is_stale(rec: Record, now: datetime, thresholds: dict[SourceType, int]) -> b
 
     Returns:
         True if the record age exceeds its configured threshold.
+
+    Raises:
+        ValueError: If the record has an unsupported source type.
     """
     source_type = SourceType(rec.source_type)
     threshold = thresholds.get(source_type)
@@ -42,6 +45,9 @@ def find_stale(db: Session, now: datetime) -> list[Issue]:
 
     Returns:
         Open stale issues corresponding to active stale records.
+
+    Raises:
+        SQLAlchemyError: If records or issues cannot be queried or persisted.
     """
     settings = get_settings()
     thresholds = {
@@ -55,7 +61,6 @@ def find_stale(db: Session, now: datetime) -> list[Issue]:
     for record in records:
         if not is_stale(record, current, thresholds):
             continue
-        age_seconds = max(0, int((current - to_utc(record.event_time)).total_seconds()))
         found.append(
             create_issue_if_missing(
                 db,
@@ -66,7 +71,7 @@ def find_stale(db: Session, now: datetime) -> list[Issue]:
                     "record_id": str(record.id),
                     "entity_id": record.entity_id,
                     "source_type": record.source_type,
-                    "age_seconds": age_seconds,
+                    "event_time": to_utc(record.event_time).isoformat(),
                     "threshold_seconds": thresholds[SourceType(record.source_type)],
                 },
             )

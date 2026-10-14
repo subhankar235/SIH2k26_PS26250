@@ -4,10 +4,10 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 
-from sqlalchemy import JSON, DateTime, String, func
+from sqlalchemy import JSON, String, func
 from sqlalchemy.orm import Mapped, mapped_column
 
-from backend.app.db.base import Base
+from backend.app.db.base import Base, UTCDateTime
 
 
 class IdempotencyRecord(Base):
@@ -19,7 +19,7 @@ class IdempotencyRecord(Base):
     request_hash: Mapped[str] = mapped_column(String(64), nullable=False)
     response_payload: Mapped[object] = mapped_column(JSON, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
+        UTCDateTime(),
         default=lambda: datetime.now(UTC),
         server_default=func.now(),
         nullable=False,

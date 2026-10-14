@@ -43,6 +43,9 @@ def build_graph(db: Session, entity_ids: list[str] | None = None) -> nx.MultiDiG
 
     Returns:
         A directed multigraph with record, claim, source, and entity nodes.
+
+    Raises:
+        SQLAlchemyError: If graph source data cannot be queried.
     """
     graph = nx.MultiDiGraph()
     record_query = select(Record)

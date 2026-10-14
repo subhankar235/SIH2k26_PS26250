@@ -277,6 +277,9 @@ def get_status(db: Session) -> IngestStatusOut:
 
     Returns:
         A status entry for every source type.
+
+    Raises:
+        SQLAlchemyError: If the source lookup fails.
     """
     configured = set(db.scalars(select(Source.source_type)).all())
     return IngestStatusOut(
@@ -301,6 +304,10 @@ def list_flagged(db: Session, limit: int, offset: int) -> Page[FlaggedRecordOut]
 
     Returns:
         A page of flagged records with human-readable review reasons.
+
+    Raises:
+        ValueError: If limit or offset is invalid.
+        SQLAlchemyError: If the record query fails.
     """
     if limit < 1 or offset < 0:
         raise ValueError("limit must be positive and offset must not be negative")

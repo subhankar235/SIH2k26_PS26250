@@ -45,3 +45,4 @@ class ForecastOut(APIModel):
     input_versions: dict[str, Any]
     version: int = Field(ge=1)
     high_uncertainty: bool
+    created_at: AwareDatetime

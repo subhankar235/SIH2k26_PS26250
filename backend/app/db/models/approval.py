@@ -6,11 +6,11 @@ import uuid
 from datetime import UTC, datetime
 from typing import Any
 
-from sqlalchemy import JSON, DateTime, String, Uuid
+from sqlalchemy import JSON, String, Uuid
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
-from backend.app.db.base import Base, UUIDPk
+from backend.app.db.base import Base, UTCDateTime, UUIDPk
 
 JSON_VALUE = JSON().with_variant(JSONB(), "postgresql")
 
@@ -30,7 +30,7 @@ class VerificationResult(Base, UUIDPk):
         JSON_VALUE, default=list, nullable=False
     )
     checked_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False
+        UTCDateTime(), default=lambda: datetime.now(UTC), nullable=False
     )
 
 
@@ -45,5 +45,5 @@ class Approval(Base, UUIDPk):
     decision: Mapped[str] = mapped_column(String(32), nullable=False)
     rationale: Mapped[str] = mapped_column(String(4000), nullable=False)
     decided_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False
+        UTCDateTime(), default=lambda: datetime.now(UTC), nullable=False
     )

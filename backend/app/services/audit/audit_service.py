@@ -33,6 +33,9 @@ def record(
 
     Returns:
         The flushed append-only audit entry.
+
+    Raises:
+        SQLAlchemyError: If the audit row cannot be flushed.
     """
     entry = AuditEntry(
         entity_type=entity_type,

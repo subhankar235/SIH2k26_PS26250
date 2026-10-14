@@ -8,7 +8,6 @@ from typing import Any
 
 from sqlalchemy import (
     JSON,
-    DateTime,
     ForeignKey,
     Index,
     String,
@@ -18,7 +17,7 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
-from backend.app.db.base import Base, UUIDPk, Versioned
+from backend.app.db.base import Base, UTCDateTime, UUIDPk, Versioned
 
 JSON_VALUE = JSON().with_variant(JSONB(), "postgresql")
 
@@ -36,9 +35,9 @@ class RawEvent(Base, UUIDPk):
     )
     source_event_id: Mapped[str] = mapped_column(String(255), nullable=False)
     payload: Mapped[dict[str, Any]] = mapped_column(JSON_VALUE, nullable=False)
-    event_time: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    event_time: Mapped[datetime] = mapped_column(UTCDateTime(), nullable=False)
     ingest_time: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False
+        UTCDateTime(), default=lambda: datetime.now(UTC), nullable=False
     )
 
 
@@ -57,9 +56,9 @@ class Record(Base, UUIDPk, Versioned):
     raw_event_id: Mapped[uuid.UUID] = mapped_column(
         Uuid(as_uuid=True), ForeignKey("raw_event.id"), nullable=False
     )
-    event_time: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    event_time: Mapped[datetime] = mapped_column(UTCDateTime(), nullable=False)
     ingest_time: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False
+        UTCDateTime(), default=lambda: datetime.now(UTC), nullable=False
     )
     flags: Mapped[list[str]] = mapped_column(JSON_VALUE, default=list, nullable=False)
     superseded_by: Mapped[uuid.UUID | None] = mapped_column(
