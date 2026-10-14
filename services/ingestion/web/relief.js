@@ -39,6 +39,57 @@ function table(id, caption, headings, rows, empty) {
   result.append(head, body); scroll.append(result); return scroll;
 }
 function joined(items) { return list(items).map(value).join(', ') || 'None'; }
+function reportedTime(input) { return typeof input === 'string' ? timestamp(input) : 'Not reported'; }
+function inputDetails(inputs) {
+  const gateway = inputs.mode === 'gateway';
+  const result = section(gateway ? 'Gateway inputs' : 'Scripted scenario inputs', gateway ? 'Only designated sources and known entities in this run namespace affect the fictional scenario. Input TTL follows wall-clock validity, independently of logical ticks.' : 'This run uses the fixed scripted scenario.');
+  result.append(definition([['Input mode', gateway ? 'Gateway' : inputs.mode === 'scripted' ? 'Scripted' : value(inputs.mode)]]));
+  if (!gateway) return result;
+  result.append(definition([['Input namespace', inputs.namespace]]));
+  const authorities = inputs.authorities && typeof inputs.authorities === 'object' && !Array.isArray(inputs.authorities) ? Object.entries(inputs.authorities) : [];
+  result.append(table('relief-table-authorities', 'Gateway input authority', ['Fact type', 'Designated source'], authorities, 'No designated sources reported.'));
+  result.append(table('relief-table-bindings', 'Gateway input bindings and validity', ['Fact type', 'Gateway entity / scenario entity', 'Source / event', 'Observed (UTC)', 'Valid until (UTC)', 'TTL state'], list(inputs.bindings).map((item) => [item.type, `${value(item.entityId)} / ${value(item.scenarioEntityId)}`, `${value(item.sourceId)} / ${value(item.eventId)}`, reportedTime(item.observedAt), reportedTime(item.validUntil), item.expired === true ? 'Expired' : item.expired === false ? 'Current' : 'Not reported']), 'No gateway facts bound to this run.'));
+  return result;
+}
+function coordination(snapshot) {
+  const result = section('Deterministic specialist coordination', 'Deterministic evidence exchange between bounded specialists and a supervisor. Messages describe constraint findings and a verified decision; they do not dispatch deliveries.');
+  const exchange = snapshot.coordination;
+  if (snapshot.planUsable === false || snapshot.inputFreshness?.replanPending === true) result.append(node('p', 'Retained coordination for the historical plan.', 'small relief-warning'));
+  if (exchange.version !== 1 || exchange.topology !== 'specialists-supervisor') {
+    result.append(node('p', 'Coordination format not supported by this viewer.', 'relief-empty')); return result;
+  }
+  const decision = exchange.decision;
+  result.append(definition([['Topology', 'Specialists → Supervisor'], ['Decision status', decision?.status], ['Served priority', decision?.servedPriority], ['Assigned requests', decision?.assignedCount]]));
+  const known = new Set(list(snapshot.plan.agentReports).flatMap((report) => list(report.findings).map((finding) => finding.id)));
+  let omitted = false;
+  const rows = list(exchange.messages).map((message) => {
+    const ids = list(message.findingIds).filter((id) => known.has(id));
+    if (ids.length !== list(message.findingIds).length) omitted = true;
+    return [message.id, `${value(labels[message.from] || message.from)} → ${value(labels[message.to] || message.to)}`, message.kind, joined(message.entityIds), joined(ids), message.summary];
+  });
+  if (omitted) result.append(node('p', 'References outside the current specialist reports were omitted.', 'small relief-warning'));
+  const details = node('details', undefined, 'relief-report relief-coordination'); details.dataset.reliefDetail = 'coordination';
+  details.append(node('summary', `Inspect coordination messages · ${rows.length}`), table('relief-table-coordination', 'Deterministic coordination messages', ['Message ID', 'From → To', 'Kind', 'Entity IDs', 'Grounded finding IDs', 'Evidence summary'], rows, 'No coordination messages reported.'));
+  result.append(details); return result;
+}
+function weatherFeed(snapshot) {
+  const result = section('Weather feed', 'Shows the most recent administrator-requested provider refresh. Monitor polling reads this status; it does not request live weather.');
+  const feed = snapshot.weatherFeed;
+  if (feed.runId !== snapshot.world.runId) {
+    result.append(node('p', 'No weather feed result for this run.', 'relief-empty')); return result;
+  }
+  const state = ({ ready: 'Weather feed ready', degraded: 'Weather feed degraded', pending: 'Weather refresh pending' })[feed.status] || 'Weather feed state not reported';
+  result.append(node('p', state, `relief-label${feed.status === 'degraded' ? ' relief-warning' : ''}`));
+  if (feed.revision !== snapshot.world.revision) result.append(node('p', 'Feed result from earlier revision. Inspect its timestamp and binding TTL before interpreting current scenario weather.', 'small relief-warning'));
+  result.append(definition([['Feed revision', feed.revision], ['Command', feed.commandId], ['Scenario airport', feed.airportId], ['Provider location', feed.location], ['Feed updated', reportedTime(feed.generatedAt)]]));
+  if (feed.status === 'pending') result.append(node('p', 'Awaiting a provider response. Current scenario inputs remain in effect.', 'small'));
+  if (feed.status === 'degraded') result.append(node('p', `Refresh failed: ${value(feed.errorCode)}. This attempt did not replace scenario weather.`, 'small relief-warning'));
+  if (feed.provenance && typeof feed.provenance === 'object') {
+    const source = feed.provenance;
+    result.append(definition([['Provider', source.provider], ['Provenance location', source.location], ['Latitude / longitude', `${value(source.latitude)} / ${value(source.longitude)}`], ['Fetched', reportedTime(source.fetchedAt)], ['Weather observation', reportedTime(source.weatherTime)], ['Visibility observation', reportedTime(source.visibilityTime)]]));
+  } else result.append(node('p', 'Provider provenance not reported for this attempt.', 'relief-empty'));
+  return result;
+}
 function annotationLabel(status) {
   return ({ deterministic: 'Deterministic evidence selection', model: 'Local LLM evidence selection', 'deterministic-fallback': 'Deterministic fallback', disabled: 'Annotation disabled', pending: 'Annotation pending' })[status] || value(status);
 }
@@ -118,17 +169,23 @@ export function reliefRender(snapshot) {
   const focusedDetail = document.activeElement?.closest('[data-relief-detail]')?.dataset.reliefDetail;
   const scrollPositions = new Map([...content.querySelectorAll('[data-relief-table]')].map((item) => [item.id, { left: item.scrollLeft, top: item.scrollTop }]));
   const { world, plan, validation, demand } = snapshot;
+  const historical = snapshot.planUsable === false || snapshot.inputFreshness?.replanPending === true;
   const revision = section('Current revision');
-  revision.append(definition([['Run', world.runId], ['Revision / logical tick', `${value(world.revision)} / ${value(world.tick)}`], ['Next fixed phase', snapshot.nextPhase === null ? 'Scenario complete' : phases[snapshot.nextPhase] || value(snapshot.nextPhase)], ['Snapshot generated', timestamp(snapshot.generatedAt)]]));
-  const proposal = section('Proposed assignments', 'Read-only proposals in a toy horizon. Nothing is dispatched or executed.');
+  revision.append(definition([['Run', world.runId], ['Revision / logical tick', `${value(world.revision)} / ${value(world.tick)}`], ['Next fixed phase', snapshot.inputs?.mode === 'gateway' ? 'Gateway events and input expiry' : snapshot.nextPhase === null ? 'Scenario complete' : phases[snapshot.nextPhase] || value(snapshot.nextPhase)], ['Snapshot generated', timestamp(snapshot.generatedAt)]]));
+  if (snapshot.inputFreshness) {
+    revision.append(definition([['Input freshness', snapshot.inputFreshness.status], ['Expired bindings', snapshot.inputFreshness.expiredCount]]));
+    revision.append(node('p', snapshot.inputFreshness.replanPending === true ? 'Expiry replan pending' : 'Expiry replan not pending', 'small'));
+  }
+  if (historical) revision.append(node('p', 'Historical plan only. Input validity has changed; this plan is unavailable as a current proposal until a verified replan completes.', 'relief-label relief-warning'));
+  const proposal = section(historical ? 'Historical assignments' : 'Proposed assignments', historical ? 'Retained assignments for inspection of the prior input state.' : 'Read-only proposals in a toy horizon. Nothing is dispatched or executed.');
   const status = plan.status === 'optimal' ? 'Exact optimum within the bounded scenario' : plan.status === 'feasible_budget' ? 'Budget-limited feasible result · Optimality not established' : 'Planner status not reported';
-  proposal.append(node('p', status, 'relief-label'));
+  proposal.append(node('p', historical ? `Historical search result: ${status}` : status, 'relief-label'));
   proposal.append(definition([['Served priority', plan.objective?.servedPriority], ['Changed surviving assignments', plan.objective?.changedAssignments], ['Total arrival slots', plan.objective?.totalArrivalSlots], ['Search nodes explored / limit', `${value(plan.diagnostics?.nodesExplored)} / ${value(plan.diagnostics?.nodeLimit)}`]]));
-  proposal.append(table('relief-table-assignments', 'Proposed relief assignments', ['Request', 'Aircraft', 'Crew', 'Departure slot', 'Arrival slot'], list(plan.assignments).map((item) => [item.requestId,item.aircraftId,item.crewId,item.departureSlot,item.arrivalSlot]), 'No feasible assignments proposed. Review unmet requests and specialist findings.'));
+  proposal.append(table('relief-table-assignments', historical ? 'Historical relief assignments' : 'Proposed relief assignments', ['Request', 'Aircraft', 'Crew', 'Departure slot', 'Arrival slot'], list(plan.assignments).map((item) => [item.requestId,item.aircraftId,item.crewId,item.departureSlot,item.arrivalSlot]), historical ? 'No assignments retained for this historical input state.' : 'No feasible assignments proposed. Review unmet requests and specialist findings.'));
   const unmet = section('Unmet requests');
   unmet.append(table('relief-table-unmet', 'Unmet relief requests', ['Request', 'Reason codes'], list(plan.unserved).map((item) => [item.requestId, joined(item.reasonCodes)]), 'No unmet requests in this plan.'));
   const checker = section('Independent checker', 'Checks IDs, resource use, hard constraints and the reported objective independently of the search.');
-  checker.append(node('p', validation.valid === true ? 'Passed · Plan satisfies the fictional scenario constraints' : 'Failed · Do not treat this proposal as a valid scenario plan', `relief-label ${validation.valid === true ? 'relief-pass' : 'relief-warning'}`));
+  checker.append(node('p', validation.valid === true ? historical ? 'Passed for the retained input state. Current inputs require a verified replan.' : 'Passed · Plan satisfies the fictional scenario constraints' : 'Failed · Do not treat this proposal as a valid scenario plan', `relief-label ${validation.valid === true && !historical ? 'relief-pass' : 'relief-warning'}`));
   for (const error of list(validation.errors)) checker.append(node('p', error, 'small mono relief-warning'));
   const forecast = section('Synthetic demand forecast', 'Trained and evaluated on seeded synthetic data only. It does not create requests or change hard constraints; no real-world accuracy claim.');
   forecast.append(definition([['Model', demand?.modelId], ['Synthetic day', demand?.forecastDay], ['Predicted request count', demand?.predictedRequests], ['Training / held-out samples', `${value(demand?.trainingCount)} / ${value(demand?.testCount)}`], ['Held-out MAE / baseline MAE', `${value(demand?.evaluation?.mae)} / ${value(demand?.evaluation?.baselineMae)}`]]));
@@ -137,7 +194,11 @@ export function reliefRender(snapshot) {
   const history = section('Prior revisions', 'Current run only. Up to six retained revision summaries.');
   history.append(table('relief-table-history', 'Relief revision history', ['Revision', 'Phase', 'Served priority', 'Assignments', 'Changed assignments'], list(snapshot.history).map((item) => [item.revision,phases[item.phase] || item.phase,item.servedPriority,item.assignedCount,item.changedAssignments]), 'No prior revisions reported.'));
   const overview = node('div', undefined, 'relief-overview'); overview.append(revision, checker, forecast);
-  content.replaceChildren(overview, proposal, unmet, requests, worldDetails(world), annotations(snapshot), reports(snapshot), history);
+  const inputSections = [];
+  if (snapshot.inputs) inputSections.push(inputDetails(snapshot.inputs));
+  if (snapshot.weatherFeed) inputSections.push(weatherFeed(snapshot));
+  if (snapshot.coordination) inputSections.push(coordination(snapshot));
+  content.replaceChildren(overview, ...inputSections, proposal, unmet, requests, worldDetails(world), annotations(snapshot), reports(snapshot), history);
   get('relief-state').textContent = `Revision ${value(world.revision)} · Logical tick ${value(world.tick)} · Fictional scenario`;
   for (const details of content.querySelectorAll('[data-relief-detail]')) {
     details.open = open.has(details.dataset.reliefDetail);
@@ -147,5 +208,8 @@ export function reliefRender(snapshot) {
     const position = scrollPositions.get(region.id);
     if (position) { region.scrollLeft = position.left; region.scrollTop = position.top; }
   }
-  if (focusedTable) get(focusedTable)?.focus({ preventScroll: true });
+  if (focusedTable && get(focusedTable)) get(focusedTable).focus({ preventScroll: true });
+  else if (focusedTable || (focusedDetail && ![...content.querySelectorAll('[data-relief-detail]')].some((details) => details.dataset.reliefDetail === focusedDetail))) {
+    get('relief-title').tabIndex = -1; get('relief-title').focus({ preventScroll: true });
+  }
 }

@@ -29,5 +29,10 @@
 .relief-findings li { padding:12px; margin-top:8px; background:var(--canvas); border:1px solid var(--line); border-radius:4px; }
 .relief-findings p + p { margin-top:4px; }
 .relief-panel p { overflow-wrap:anywhere; }
+.relief-coordination table { table-layout:fixed; min-width:960px; }
+.relief-coordination th:last-child { width:32%; }
+.relief-coordination td { white-space:normal; }
+.relief-coordination summary { min-height:44px; }
+.relief-definition dt { overflow-wrap:anywhere; }
 @media(max-width:1100px) { .relief-overview { grid-template-columns:1fr; }.relief-overview .relief-block { border-right:none; border-bottom:1px solid var(--line); }.relief-overview .relief-block:last-child { border-bottom:none; } }
 @media(max-width:640px) { .relief-definition { grid-template-columns:1fr; gap:4px; }.relief-definition dd { margin-bottom:8px; } }
