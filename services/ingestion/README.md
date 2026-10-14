@@ -4,6 +4,8 @@ A standalone JavaScript ingestion service for aircraft maintenance status, crew 
 
 This module records observations. It does not create flight assignments, optimise military operations, process adversary intelligence, or allocate weapons. Sample data is fictional.
 
+[Verification evidence for the monitoring increment](docs/validation-monitoring.md).
+
 ## Quick start
 
 Requirements: Node **24.19.0 or later**, npm **11.17.0**. Run these commands from this directory:
