@@ -1,5 +1,5 @@
 import { safeSnapshot } from './format.js';
-import { element, connection, summary, table, inspector, clearData, restoreInspectionFocus } from './render.js';
+import { element, connection, summary, table, inspector, clearData, clearInspector, restoreInspectionFocus } from './render.js';
 
 const PAGE_SIZE = 100;
 let snapshot = null, page = 0, authenticated = true, timer, activeRequest, generation = 0;
@@ -117,8 +117,9 @@ element('previous').addEventListener('click', () => { page--; render(); });
 element('next').addEventListener('click', () => { page++; render(); });
 element('close-inspector').addEventListener('click', () => element('inspector').close());
 element('inspector').addEventListener('close', () => {
-  element('inspector-content').replaceChildren();
-  if (authenticated && snapshot) restoreInspectionFocus(element('inspector').dataset.inspectionId);
+  const eventId = element('inspector').dataset.inspectionId;
+  clearInspector();
+  if (authenticated && snapshot && eventId) restoreInspectionFocus(eventId);
 });
 element('download').addEventListener('click', () => {
   if (!snapshot) return;

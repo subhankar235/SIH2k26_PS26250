@@ -86,9 +86,15 @@ export function inspector(record, generatedAt) {
   element('inspector').showModal(); element('close-inspector').focus();
 }
 
+export function clearInspector() {
+  element('inspector-content').replaceChildren();
+  element('inspector-title').textContent = 'Record details';
+  delete element('inspector').dataset.inspectionId;
+}
+
 export function clearData() {
   if (element('inspector').open) element('inspector').close();
-  element('inspector-content').replaceChildren();
+  clearInspector();
   element('summary').replaceChildren(); element('records').replaceChildren(); element('delivery').replaceChildren();
   element('scope-note').textContent = 'No snapshot loaded'; element('snapshot-time').textContent = '';
   element('table-state').hidden = false; element('table-state').textContent = 'Loading source reports…';
