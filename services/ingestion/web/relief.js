@@ -123,7 +123,7 @@ export function reliefRender(snapshot) {
   const proposal = section('Proposed assignments', 'Read-only proposals in a toy horizon. Nothing is dispatched or executed.');
   const status = plan.status === 'optimal' ? 'Exact optimum within the bounded scenario' : plan.status === 'feasible_budget' ? 'Budget-limited feasible result · Optimality not established' : 'Planner status not reported';
   proposal.append(node('p', status, 'relief-label'));
-  proposal.append(definition([['Served priority', plan.objective?.servedPriority], ['Changed surviving assignments', plan.objective?.changedAssignments], ['Total arrival slots', plan.objective?.totalArrivalSlots], ['Search nodes explored / limit', `${value(plan.diagnostics?.explored)} / ${value(plan.diagnostics?.limit)}`]]));
+  proposal.append(definition([['Served priority', plan.objective?.servedPriority], ['Changed surviving assignments', plan.objective?.changedAssignments], ['Total arrival slots', plan.objective?.totalArrivalSlots], ['Search nodes explored / limit', `${value(plan.diagnostics?.nodesExplored)} / ${value(plan.diagnostics?.nodeLimit)}`]]));
   proposal.append(table('relief-table-assignments', 'Proposed relief assignments', ['Request', 'Aircraft', 'Crew', 'Departure slot', 'Arrival slot'], list(plan.assignments).map((item) => [item.requestId,item.aircraftId,item.crewId,item.departureSlot,item.arrivalSlot]), 'No feasible assignments proposed. Review unmet requests and specialist findings.'));
   const unmet = section('Unmet requests');
   unmet.append(table('relief-table-unmet', 'Unmet relief requests', ['Request', 'Reason codes'], list(plan.unserved).map((item) => [item.requestId, joined(item.reasonCodes)]), 'No unmet requests in this plan.'));

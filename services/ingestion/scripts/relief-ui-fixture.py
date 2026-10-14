@@ -21,7 +21,7 @@ threading.Thread(target=server.serve_forever, daemon=True).start()
 origin = f'http://127.0.0.1:{server.server_port}'
 FACTS = dict(generatedAt='2026-10-15T06:00:00Z', records=[], summary=dict(total=0, current=0, expired=0, sequenceGaps=0, disagreements=0), scope=dict(limit=1000, shown=0, truncated=False), delivery=dict(queued=0, dead=0, published=0))
 REPORTS = [dict(agentId=agent, eligibleIds=['SIM-A'], findings=[dict(id=f'{agent}-finding', code='AVAILABLE', message='<img src=x onerror="window.injected=true">', entityIds=['SIM-A'])]) for agent in ['fleet', 'crew', 'weather', 'airport', 'cargo']]
-READY = dict(status='ready', world=dict(simulation=True, runId='fixture-run', revision=0, tick=0, policy=dict(slots=[0,1,2],slotMinutes=30), aircraft=[], crews=[], airports=[], routes=[], weather=[], requests=[dict(id='SIM-R', category='medical', massKg=100, originId='SIM-HUB', destinationId='SIM-CLINIC', priority=5, deadlineSlot=2, temperatureControlled=True)]), plan=dict(status='optimal', assignments=[dict(requestId='SIM-R', aircraftId='SIM-A', crewId='SIM-C', departureSlot=0, arrivalSlot=1)], unserved=[], objective=dict(servedPriority=5,changedAssignments=0,totalArrivalSlots=1), diagnostics=dict(explored=100,limit=100000), agentReports=REPORTS), validation=dict(valid=True,errors=[]), demand=dict(forecast=dict(day=121,demand=42), evaluation=dict(mae=2, baselineMae=5)), annotations=dict(status='ready',mode='deterministic',runId='fixture-run',revision=0,modelsUsed=[], highlights=[dict(agentId='fleet',findingIds=['fleet-finding'],status='deterministic')]), nextPhase='weather-change',history=[], generatedAt='2026-10-15T06:00:00Z')
+READY = dict(status='ready', world=dict(simulation=True, runId='fixture-run', revision=0, tick=0, policy=dict(slots=[0,1,2],slotMinutes=30), aircraft=[], crews=[], airports=[], routes=[], weather=[], requests=[dict(id='SIM-R', category='medical', massKg=100, originId='SIM-HUB', destinationId='SIM-CLINIC', priority=5, deadlineSlot=2, temperatureControlled=True)]), plan=dict(status='optimal', assignments=[dict(requestId='SIM-R', aircraftId='SIM-A', crewId='SIM-C', departureSlot=0, arrivalSlot=1)], unserved=[], objective=dict(servedPriority=5,changedAssignments=0,totalArrivalSlots=1), diagnostics=dict(nodesExplored=100,nodeLimit=100000,budgetExhausted=False,candidateCount=1), agentReports=REPORTS), validation=dict(valid=True,errors=[]), demand=dict(forecast=dict(day=121,demand=42), evaluation=dict(mae=2, baselineMae=5)), annotations=dict(status='ready',mode='deterministic',runId='fixture-run',revision=0,modelsUsed=[], highlights=[dict(agentId='fleet',findingIds=['fleet-finding'],status='deterministic')]), nextPhase='weather-change',history=[], generatedAt='2026-10-15T06:00:00Z')
 READY['demand']=dict(modelId='synthetic-demand-ols',simulation=True,forecastDay=120,predictedRequests=42,trainingCount=96,testCount=24,evaluation=dict(mae=2,baselineMae=5))
 READY['world']['requests'][0]['validThroughTick']=5
 state = dict(sim=copy.deepcopy(READY), sim_status=200, facts_status=200, logout_status=200)
@@ -43,6 +43,8 @@ try:
         page.wait_for_load_state('networkidle')
         expect(page.get_by_role('heading',name='Civilian relief simulation',exact=True)).to_be_visible()
         expect(page.locator('#relief-content')).to_contain_text('Exact optimum')
+        search_nodes=page.locator('#relief-content').get_by_text('Search nodes explored / limit',exact=True).locator('xpath=following-sibling::dd[1]')
+        expect(search_nodes).to_have_text('100 / 100000')
         expect(page.locator('#relief-content')).to_contain_text('fleet-finding')
         expect(page.locator('#relief-content')).to_contain_text('synthetic-demand-ols')
         fleet=page.locator('[data-relief-detail="fleet"] summary')
@@ -54,8 +56,10 @@ try:
             page.get_by_role('button',name='Refresh',exact=True).click()
             expect(page.locator('#refresh')).to_be_enabled()
         state['sim']['plan']['status']='feasible_budget'
+        state['sim']['plan']['diagnostics'].update(nodesExplored=4,nodeLimit=4,budgetExhausted=True)
         refresh()
         expect(page.locator('#relief-content')).to_contain_text('Budget-limited feasible')
+        expect(search_nodes).to_have_text('4 / 4')
         expect(page.locator('[data-relief-detail="fleet"]')).to_have_attribute('open','')
         state['sim']['annotations'].update(mode='ollama',modelsUsed=['fixture-local-model'])
         state['sim']['annotations']['highlights'][0].update(status='model',model='fixture-local-model')

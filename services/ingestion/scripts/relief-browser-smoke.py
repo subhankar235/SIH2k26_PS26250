@@ -34,6 +34,9 @@ with sync_playwright() as p:
     page.get_by_label('Viewer token',exact=True).fill(env['MONITOR_VIEWER_TOKEN'])
     page.get_by_role('button',name='Open session',exact=True).click()
     expect(page.locator('#relief-state')).to_contain_text('Revision 0')
+    diagnostics=state['plan']['diagnostics']
+    search_nodes=page.locator('#relief-content').get_by_text('Search nodes explored / limit',exact=True).locator('xpath=following-sibling::dd[1]')
+    expect(search_nodes).to_have_text(f"{diagnostics['nodesExplored']} / {diagnostics['nodeLimit']}")
     expect(page.locator('#relief-content')).to_contain_text('Independent checker')
     expect(page.locator('#relief-content')).to_contain_text('Synthetic demand forecast')
     expect(page.locator('#relief-content')).to_contain_text('Specialist reports')
