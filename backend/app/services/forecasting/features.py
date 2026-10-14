@@ -28,16 +28,31 @@ def build_features(
     Raises:
         ValueError: If target, lags, windows, or target values are invalid.
     """
+    if not isinstance(df, pd.DataFrame):
+        raise ValueError("df must be a pandas DataFrame")
+    if not isinstance(lags, list) or not isinstance(windows, list):
+        raise ValueError("lags and windows must be lists")
     if df.empty:
         raise ValueError("feature input must not be empty")
     if not df.columns.is_unique:
         raise ValueError("feature input must not have duplicate columns")
+    if not isinstance(target, str) or not target:
+        raise ValueError("target must be a non-empty column name")
     if target not in df.columns:
         raise ValueError(f"target column {target!r} is missing")
-    if any(lag < 1 for lag in lags) or any(window < 1 for window in windows):
-        raise ValueError("lags and windows must contain positive integers")
-    if isinstance(df.index, pd.DatetimeIndex) and not df.index.is_monotonic_increasing:
-        raise ValueError("datetime index must be in chronological order")
+    if any(not isinstance(lag, int) or isinstance(lag, bool) or lag < 1 for lag in lags):
+        raise ValueError("lags must contain positive integers")
+    if any(
+        not isinstance(window, int) or isinstance(window, bool) or window < 1 for window in windows
+    ):
+        raise ValueError("windows must contain positive integers")
+    if isinstance(df.index, pd.DatetimeIndex):
+        if df.index.tz is None:
+            raise ValueError("datetime index must be timezone-aware")
+        if not df.index.is_monotonic_increasing:
+            raise ValueError("datetime index must be in chronological order")
+        if not df.index.is_unique:
+            raise ValueError("datetime index must not contain duplicate timestamps")
     ordered = df.copy()
     values = pd.to_numeric(ordered[target], errors="coerce")
     if values.isna().any() or not np.isfinite(values.to_numpy(dtype=float)).all():
@@ -50,7 +65,7 @@ def build_features(
     for window in sorted(set(windows)):
         rolling = prior.rolling(window=window, min_periods=1)
         features[f"{target}_rolling_mean_{window}"] = rolling.mean()
-        features[f"{target}_rolling_std_{window}"] = rolling.std(ddof=0).fillna(0.0)
+        features[f"{target}_rolling_std_{window}"] = rolling.std(ddof=0)
 
     if isinstance(ordered.index, pd.DatetimeIndex):
         hour = ordered.index.hour.to_numpy(dtype=float)

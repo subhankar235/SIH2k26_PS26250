@@ -8,6 +8,7 @@ from uuid import UUID
 import numpy as np
 import pandas as pd
 import pytest
+from pandas.testing import assert_frame_equal
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session
 
@@ -26,6 +27,7 @@ from backend.app.db.models import (
 )
 from backend.app.schemas.forecast import ForecastOut
 from backend.app.schemas.validity import AssumptionIn, ChangeEvent, CheckResult, InputRef
+from backend.app.services.forecasting import predictor as forecast_predictor
 from backend.app.services.forecasting.calibration import (
     coverage,
     ece,
@@ -44,6 +46,77 @@ from backend.app.services.validity.dependency_graph import (
 )
 from backend.app.services.validity.reverifier import reverify, reverify_full
 from backend.app.services.validity.status import evaluate, transition
+
+
+def _forecast_engine_with_history(values: tuple[float, ...] = (1.0, 2.0, 3.0, 4.0)):
+    """Create synthetic, time-ordered forecast observations in a SQLite database."""
+    engine = create_engine("sqlite://")
+    Base.metadata.create_all(engine)
+    start = datetime(2026, 1, 1, tzinfo=UTC)
+    with Session(engine) as db:
+        source = Source(
+            name="forecast-fixture-source",
+            source_type="resource",
+            reliability_prior=0.8,
+        )
+        db.add(source)
+        db.flush()
+        for index, value in enumerate(values):
+            timestamp = start + timedelta(hours=index)
+            raw = RawEvent(
+                source_id=source.id,
+                source_event_id=f"forecast-fixture-{index}",
+                payload={"entity_id": "resource:forecast-fixture", "load_mw": value},
+                event_time=timestamp,
+                ingest_time=timestamp,
+            )
+            db.add(raw)
+            db.flush()
+            db.add(
+                Record(
+                    entity_id="resource:forecast-fixture",
+                    source_type="resource",
+                    normalised_payload={
+                        "entity_id": "resource:forecast-fixture",
+                        "load_mw": value,
+                    },
+                    source_id=source.id,
+                    raw_event_id=raw.id,
+                    event_time=timestamp,
+                    ingest_time=timestamp,
+                    version=index + 1,
+                )
+            )
+        db.commit()
+    return engine
+
+
+class _StubForecastModel:
+    """Deterministic recursive model used to exercise fallback integration."""
+
+    received_seeds: list[int] = []
+
+    def __init__(self, invalid_interval: bool = False, invalid_dimension: bool = False) -> None:
+        self.invalid_interval = invalid_interval
+        self.invalid_dimension = invalid_dimension
+
+    def clone(self) -> _StubForecastModel:
+        """Create a clean model for one rolling-origin calibration fold."""
+        return _StubForecastModel(self.invalid_interval, self.invalid_dimension)
+
+    def fit(self, values: list[float], seed: int) -> None:
+        """Record the local seed supplied to the model fit protocol."""
+        self.received_seeds.append(seed)
+
+    def predict(self, X: pd.DataFrame) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """Forecast one step beyond the most recent lag."""
+        latest = next(column for column in X if column.endswith("_lag_1"))
+        mean = X[latest].fillna(0.0).to_numpy(dtype=float) + 1.0
+        if self.invalid_dimension:
+            mean = mean[:, None]
+        if self.invalid_interval:
+            return mean, mean + 1.0, mean - 1.0
+        return mean, mean - 1.0, mean + 1.0
 
 
 def _engine_and_record() -> tuple[object, UUID, UUID]:
@@ -588,9 +661,19 @@ def test_forecast_features_are_past_only_and_end_to_end_fallback_persists_versio
     )
     features = build_features(frame, "load", lags=[1, 2], windows=[3])
     assert "load" not in features
+    assert np.isnan(features.iloc[0]["load_lag_1"])
+    assert np.isnan(features.iloc[0]["load_rolling_std_3"])
     assert features.iloc[2]["load_lag_1"] == 2.0
     assert features.iloc[2]["load_rolling_mean_3"] == 1.5
+    assert features.iloc[3]["load_lag_1"] == 3.0
+    assert features.iloc[3]["load_rolling_mean_3"] == 2.0
+    assert features.iloc[3]["load_rolling_std_3"] == pytest.approx(np.sqrt(2.0 / 3.0))
     assert features.iloc[3]["temperature_c_lag_1"] == 30.0
+    changed_future = frame.copy()
+    changed_future.iloc[-1, changed_future.columns.get_loc("load")] = -5000.0
+    changed_future.iloc[-1, changed_future.columns.get_loc("temperature_c")] = 8000.0
+    future_changed_features = build_features(changed_future, "load", lags=[1, 2], windows=[3])
+    assert_frame_equal(features.iloc[:-1], future_changed_features.iloc[:-1])
     with pytest.raises(ValueError, match="chronological"):
         build_features(frame.iloc[::-1], "load", lags=[1], windows=[1])
     with pytest.raises(ValueError, match="duplicate columns"):
@@ -600,6 +683,24 @@ def test_forecast_features_are_past_only_and_end_to_end_fallback_persists_versio
             lags=[1],
             windows=[1],
         )
+    with pytest.raises(ValueError, match="timezone-aware"):
+        build_features(
+            pd.DataFrame(
+                {"load": [1.0, 2.0]},
+                index=pd.date_range("2026-01-01", periods=2, freq="h"),
+            ),
+            "load",
+            lags=[1],
+            windows=[1],
+        )
+    with pytest.raises(ValueError, match="target column"):
+        build_features(frame, "missing", lags=[1], windows=[1])
+    with pytest.raises(ValueError, match="finite numeric"):
+        build_features(frame.assign(load=[1.0, 2.0, np.nan, 4.0]), "load", [1], [1])
+    with pytest.raises(ValueError, match="lags"):
+        build_features(frame, "load", lags=[0], windows=[1])
+    with pytest.raises(ValueError, match="windows"):
+        build_features(frame, "load", lags=[1], windows=[1.5])
 
     engine = create_engine("sqlite://")
     Base.metadata.create_all(engine)
@@ -654,7 +755,7 @@ def test_forecast_features_are_past_only_and_end_to_end_fallback_persists_versio
             target="probe",
             horizon=1,
             points=[{"t": "2026-01-01T00:00:00Z", "mean": 0, "lower": -1, "upper": 1}],
-            calibration_meta={},
+            calibration_meta={"target_scale": 1.0},
             input_versions={},
             high_uncertainty=True,
         )
@@ -688,5 +789,237 @@ def test_forecast_calibration_metrics() -> None:
         coverage(observed, means + 1, means)
     with pytest.raises(ValueError, match="finite"):
         coverage(np.array([np.nan]), np.array([0.0]), np.array([1.0]))
+    with pytest.raises(ValueError, match="non-zero shape"):
+        coverage(np.array([]), np.array([]), np.array([]))
     with pytest.raises(ValueError, match="same non-zero shape"):
         coverage(np.array([[1.0]]), np.array([0.0]), np.array([1.0]))
+    manual_nll = float(
+        np.mean(np.log(std) + (observed - means) ** 2 / (2 * std**2) + 0.5 * np.log(2 * np.pi))
+    )
+    assert nll(observed, means, std) == pytest.approx(manual_nll)
+    assert ece(np.array([0.5, -0.5]), np.zeros(2), np.full(2, 0.5), bins=1) == pytest.approx(0.0)
+    with pytest.raises(ValueError, match="strictly positive"):
+        nll(observed, means, np.array([0.5, 0.0, 1.0]))
+    assert np.isfinite(nll(np.array([1e-200]), np.array([0.0]), np.array([1e-200])))
+    with pytest.raises(ValueError, match="bins"):
+        ece(observed, means, std, bins=0)
+
+
+def test_predictor_fallback_chain_seed_horizon_and_provenance(monkeypatch) -> None:
+    """Use the requested model, propagate its seed, recurse horizons, and persist inputs."""
+    engine = _forecast_engine_with_history()
+    _StubForecastModel.received_seeds.clear()
+    loaded: list[str] = []
+
+    def load_model(name: str):
+        loaded.append(name)
+        if name == "ds_dgp":
+            raise forecast_predictor.ForecastModelUnavailableError("not trained")
+        if name == "sparse_gp":
+            return _StubForecastModel()
+        raise AssertionError("fallback chain should stop at the available sparse GP")
+
+    monkeypatch.setattr(forecast_predictor, "load_model", load_model)
+    with Session(engine) as db:
+        forecast = create_forecast(
+            db,
+            "resource:forecast-fixture.load_mw",
+            horizon=4,
+            seed=731,
+        )
+        db.flush()
+        records = db.scalars(select(Record).order_by(Record.event_time)).all()
+
+        assert loaded == ["ds_dgp", "sparse_gp"]
+        assert forecast.calibration_meta["selected_model"] == "sparse_gp"
+        assert forecast.calibration_meta["fallback_reasons"] == ["ds_dgp: not trained"]
+        assert forecast.calibration_meta["seed"] == 731
+        assert set(_StubForecastModel.received_seeds) == {731}
+        assert len(forecast.points) == 4
+        assert [point["mean"] for point in forecast.points] == [5.0, 6.0, 7.0, 8.0]
+        assert all(point["lower"] <= point["mean"] <= point["upper"] for point in forecast.points)
+        assert forecast.input_versions == {str(record.id): record.version for record in records}
+    engine.dispose()
+
+
+def test_predictor_uses_requested_ds_dgp_when_available(monkeypatch) -> None:
+    """Do not fall back when the preferred DS-DGP model succeeds."""
+    engine = _forecast_engine_with_history()
+    attempted: list[str] = []
+
+    def load_model(name: str):
+        attempted.append(name)
+        return _StubForecastModel()
+
+    monkeypatch.setattr(forecast_predictor, "load_model", load_model)
+    with Session(engine) as db:
+        forecast = create_forecast(
+            db,
+            "resource:forecast-fixture.load_mw",
+            horizon=2,
+            seed=71,
+            model="ds_dgp",
+        )
+        assert attempted == ["ds_dgp"]
+        assert forecast.calibration_meta["selected_model"] == "ds_dgp"
+        assert forecast.calibration_meta["fallback_reasons"] == []
+    engine.dispose()
+
+
+def test_predictor_rejects_unsupported_models_and_reports_all_model_failures(monkeypatch) -> None:
+    """Reject unsupported selectors and preserve fallback failure context."""
+    engine = _forecast_engine_with_history()
+    attempted: list[str] = []
+
+    def load_model(name: str):
+        attempted.append(name)
+        raise forecast_predictor.ForecastModelUnavailableError(
+            "external model unavailable", {"model": name}
+        )
+
+    monkeypatch.setattr(forecast_predictor, "load_model", load_model)
+    with Session(engine) as db:
+        with pytest.raises(RequestValidationFailed, match="Unknown preferred"):
+            create_forecast(db, "resource:forecast-fixture.load_mw", 1, seed=1, model="fake")
+        assert attempted == []
+
+        with pytest.raises(forecast_predictor.ForecastModelUnavailableError) as error:
+            create_forecast(db, "resource:forecast-fixture.load_mw", 1, seed=1)
+        assert attempted == ["ds_dgp", "sparse_gp", "arima"]
+        assert error.value.details == {
+            "requested_model": "ds_dgp",
+            "attempts": [
+                "ds_dgp: external model unavailable; context={'model': 'ds_dgp'}",
+                "sparse_gp: external model unavailable; context={'model': 'sparse_gp'}",
+                "arima: external model unavailable; context={'model': 'arima'}",
+            ],
+        }
+    engine.dispose()
+
+
+def test_predictor_falls_back_after_bad_model_outputs(monkeypatch) -> None:
+    """Reject a model whose interval does not contain its mean and continue fallback."""
+    engine = _forecast_engine_with_history()
+    attempted: list[str] = []
+
+    def load_model(name: str):
+        attempted.append(name)
+        if name == "ds_dgp":
+            return _StubForecastModel(invalid_interval=True)
+        if name == "sparse_gp":
+            return _StubForecastModel()
+        raise AssertionError("fallback should stop after sparse_gp succeeds")
+
+    monkeypatch.setattr(forecast_predictor, "load_model", load_model)
+    with Session(engine) as db:
+        forecast = create_forecast(db, "resource:forecast-fixture.load_mw", 2, seed=4)
+        assert attempted == ["ds_dgp", "sparse_gp"]
+        assert forecast.calibration_meta["selected_model"] == "sparse_gp"
+        assert (
+            "Forecast intervals must contain their means"
+            in forecast.calibration_meta["fallback_reasons"][0]
+        )
+    engine.dispose()
+
+
+def test_predictor_rejects_multidimensional_outputs_and_validates_horizon(monkeypatch) -> None:
+    """Fallback on malformed tensor shape and reject non-positive/non-integer horizons."""
+    engine = _forecast_engine_with_history()
+    attempted: list[str] = []
+
+    def load_model(name: str):
+        attempted.append(name)
+        if name == "ds_dgp":
+            return _StubForecastModel(invalid_dimension=True)
+        if name == "sparse_gp":
+            return _StubForecastModel()
+        raise AssertionError("fallback should stop after sparse_gp succeeds")
+
+    monkeypatch.setattr(forecast_predictor, "load_model", load_model)
+    with Session(engine) as db:
+        for horizon in (0, True, 1.5):
+            with pytest.raises(RequestValidationFailed, match="horizon"):
+                create_forecast(db, "resource:forecast-fixture.load_mw", horizon, seed=1)
+        forecast = create_forecast(db, "resource:forecast-fixture.load_mw", 1, seed=1)
+        assert attempted == ["ds_dgp", "sparse_gp"]
+        assert forecast.calibration_meta["selected_model"] == "sparse_gp"
+        assert "one-dimensional" in forecast.calibration_meta["fallback_reasons"][0]
+    engine.dispose()
+
+
+def test_requested_sparse_gp_starts_at_sparse_then_falls_back_to_arima(monkeypatch) -> None:
+    """Respect the configured model chain suffix when a non-default is requested."""
+    engine = _forecast_engine_with_history()
+    attempted: list[str] = []
+
+    def load_model(name: str):
+        attempted.append(name)
+        if name == "sparse_gp":
+            raise RuntimeError("sparse implementation failed")
+        if name == "arima":
+            return _StubForecastModel()
+        raise AssertionError("fallback must not move backwards to ds_dgp")
+
+    monkeypatch.setattr(forecast_predictor, "load_model", load_model)
+    with Session(engine) as db:
+        forecast = create_forecast(
+            db,
+            "resource:forecast-fixture.load_mw",
+            horizon=2,
+            seed=82,
+            model="sparse_gp",
+        )
+        assert attempted == ["sparse_gp", "arima"]
+        assert forecast.calibration_meta["selected_model"] == "arima"
+        assert (
+            "RuntimeError: sparse implementation failed"
+            in forecast.calibration_meta["fallback_reasons"][0]
+        )
+    engine.dispose()
+
+
+def test_predictor_rolls_back_forecast_if_audit_persistence_fails(monkeypatch) -> None:
+    """Use the caller's transaction to roll back forecast and audit atomically."""
+    engine = _forecast_engine_with_history()
+    monkeypatch.setattr(forecast_predictor, "load_model", lambda _name: _StubForecastModel())
+
+    def fail_audit(*_args: object, **_kwargs: object) -> None:
+        raise RuntimeError("audit backend failed")
+
+    monkeypatch.setattr(forecast_predictor, "audit_record", fail_audit)
+    with Session(engine) as db:
+        with pytest.raises(RuntimeError, match="audit backend"):
+            with db.begin():
+                create_forecast(db, "resource:forecast-fixture.load_mw", 2, seed=55)
+
+    with Session(engine) as db:
+        assert db.scalars(select(Forecast)).all() == []
+        assert db.scalars(select(AuditEntry)).all() == []
+    engine.dispose()
+
+
+def test_forecast_validates_minimum_history_and_uncertainty_boundaries() -> None:
+    """Reject insufficient target history and use strict normalized-width thresholds."""
+    engine = _forecast_engine_with_history(values=(4.0, 4.0))
+    with Session(engine) as db:
+        with pytest.raises(RequestValidationFailed, match="three historical"):
+            create_forecast(db, "resource:forecast-fixture.load_mw", 1, seed=1)
+    engine.dispose()
+
+    probe = Forecast(
+        target="probe",
+        horizon=1,
+        points=[{"t": "2026-01-01T00:00:00Z", "mean": 2, "lower": 1, "upper": 3}],
+        calibration_meta={"target_scale": 2.0},
+        input_versions={},
+        high_uncertainty=False,
+    )
+    assert flag_high_uncertainty(probe, threshold=1.0) is False
+    assert flag_high_uncertainty(probe, threshold=0.99) is True
+    probe.calibration_meta = {}
+    with pytest.raises(ValueError, match="target scale"):
+        flag_high_uncertainty(probe, threshold=1.0)
+    probe.calibration_meta = {"target_scale": 2.0}
+    probe.points = []
+    with pytest.raises(ValueError, match="no prediction intervals"):
+        flag_high_uncertainty(probe, threshold=1.0)

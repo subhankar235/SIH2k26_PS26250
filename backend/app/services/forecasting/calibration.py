@@ -12,7 +12,10 @@ def _aligned_arrays(
     *arrays: np.ndarray,
 ) -> tuple[np.ndarray, ...]:
     """Convert metric inputs to aligned finite one-dimensional float arrays."""
-    converted = tuple(np.asarray(values, dtype=float) for values in (y, *arrays))
+    try:
+        converted = tuple(np.asarray(values, dtype=float) for values in (y, *arrays))
+    except (TypeError, ValueError) as error:
+        raise ValueError("metric inputs must be numeric arrays") from error
     if (
         converted[0].ndim != 1
         or not converted[0].size
@@ -33,7 +36,10 @@ def coverage(y: np.ndarray, lower: np.ndarray, upper: np.ndarray) -> float:
         upper: Prediction interval upper bounds.
 
     Returns:
-        Fraction of observations contained within their intervals.
+        Fraction of observations contained within their intervals. Empty samples and
+        non-finite inputs raise ValueError instead of returning a misleading score.
+        Coverage alone is not evidence of calibration; interpret it against the
+        interval's nominal confidence level and an independent evaluation sample.
 
     Raises:
         ValueError: If arrays do not align, are empty, non-finite, or contain invalid intervals.
@@ -45,7 +51,7 @@ def coverage(y: np.ndarray, lower: np.ndarray, upper: np.ndarray) -> float:
 
 
 def ece(y: np.ndarray, mean: np.ndarray, std: np.ndarray, bins: int = 10) -> float:
-    """Compute regression expected calibration error over uncertainty bins.
+    """Measure regression scale calibration by binned RMSE versus predicted RMS scale.
 
     Args:
         y: Observed values.
@@ -54,13 +60,17 @@ def ece(y: np.ndarray, mean: np.ndarray, std: np.ndarray, bins: int = 10) -> flo
         bins: Maximum number of equal-count uncertainty groups.
 
     Returns:
-        Weighted absolute difference between empirical RMSE and predicted RMS scale.
+        Weighted absolute difference, in target units, between empirical RMSE and
+        predicted RMS standard deviation. Samples are stably sorted by predicted
+        standard deviation and split into at most ``bins`` equal-count groups; ties may
+        straddle groups in stable input order. This evaluates scale calibration, not
+        bias calibration or every predictive-distribution property.
 
     Raises:
         ValueError: If arrays are empty, non-finite, misaligned, or scales/bins are invalid.
     """
     actual, predicted, deviations = _aligned_arrays(y, mean, std)
-    if bins < 1 or np.any(deviations < 0):
+    if not isinstance(bins, int) or isinstance(bins, bool) or bins < 1 or np.any(deviations < 0):
         raise ValueError("bins must be positive and standard deviations non-negative")
     order = np.argsort(deviations, kind="stable")
     groups = np.array_split(order, min(bins, len(order)))
@@ -81,41 +91,68 @@ def nll(y: np.ndarray, mean: np.ndarray, std: np.ndarray) -> float:
         std: Predicted standard deviations.
 
     Returns:
-        Average negative log likelihood in nats per observation.
+        Average Gaussian negative log likelihood in nats per valid (finite) observation.
 
     Raises:
-        ValueError: If arrays are empty/non-finite/misaligned or standard deviations are negative.
+        ValueError: If arrays are empty/non-finite/misaligned or standard deviations
+            are not positive.
     """
     actual, predicted, deviations = _aligned_arrays(y, mean, std)
-    if np.any(deviations < 0):
-        raise ValueError("standard deviations must be non-negative")
-    safe_std = np.maximum(deviations, 1e-12)
-    losses = 0.5 * np.log(2.0 * np.pi * safe_std**2) + 0.5 * ((actual - predicted) / safe_std) ** 2
+    if np.any(deviations <= 0):
+        raise ValueError("standard deviations must be strictly positive")
+    with np.errstate(over="ignore", divide="ignore", invalid="ignore"):
+        standardized_residual = (actual - predicted) / deviations
+        losses = np.log(deviations) + 0.5 * standardized_residual**2 + 0.5 * np.log(2.0 * np.pi)
     return float(np.mean(losses))
 
 
 def flag_high_uncertainty(forecast: Forecast, threshold: float) -> bool:
-    """Flag forecasts whose relative interval width exceeds a threshold.
+    """Flag forecast intervals wider than a normalized target-scale threshold.
 
     Args:
         forecast: Persisted forecast containing mean/lower/upper points.
-        threshold: Maximum acceptable relative interval width.
+        threshold: Dimensionless maximum ratio ``(upper-lower) / target_scale``.
+            The predictor defines target_scale as max(history standard deviation,
+            absolute history mean); equality to threshold is not flagged.
 
     Returns:
         True when any forecast point exceeds the threshold.
 
     Raises:
-        ValueError: If threshold is negative or point values are malformed.
+        ValueError: If threshold/target scale is invalid or intervals are missing/malformed.
     """
+    if not isinstance(threshold, (int, float, np.number)) or isinstance(threshold, bool):
+        raise ValueError("uncertainty threshold must be numeric")
     if not np.isfinite(threshold) or threshold < 0:
         raise ValueError("uncertainty threshold must be finite and non-negative")
+    target_scale = forecast.calibration_meta.get("target_scale")
+    if target_scale is None:
+        raise ValueError(
+            "forecast does not contain the target scale needed for normalized uncertainty"
+        )
+    try:
+        target_scale = float(target_scale)
+    except (TypeError, ValueError) as error:
+        raise ValueError("forecast target_scale must be numeric") from error
+    if not np.isfinite(target_scale) or target_scale < 0:
+        raise ValueError("forecast target_scale must be finite and non-negative")
+    if not forecast.points:
+        raise ValueError("forecast has no prediction intervals to assess")
     for point in forecast.points:
-        mean = float(point["mean"])
-        lower = float(point["lower"])
-        upper = float(point["upper"])
-        if lower > upper:
-            raise ValueError("forecast lower bound must not exceed upper bound")
-        relative_width = (upper - lower) / max(abs(mean), 1e-8)
+        try:
+            mean = float(point["mean"])
+            lower = float(point["lower"])
+            upper = float(point["upper"])
+        except (KeyError, TypeError, ValueError) as error:
+            raise ValueError(
+                "forecast point is missing valid mean/lower/upper uncertainty data"
+            ) from error
+        if not np.isfinite([mean, lower, upper]).all() or lower > mean or mean > upper:
+            raise ValueError("forecast interval must be finite and contain its mean")
+        width = upper - lower
+        relative_width = (
+            width / target_scale if target_scale > 0 else (0.0 if width == 0 else float("inf"))
+        )
         if relative_width > threshold:
             return True
     return False

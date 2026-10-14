@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import importlib
+import inspect
 import os
 from datetime import datetime, timedelta
 from math import ceil
@@ -38,19 +39,60 @@ class ForecastModel(Protocol):
         ...
 
 
+def _validate_prediction_outputs(
+    outputs: tuple[Any, Any, Any],
+    expected_length: int,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Validate one-dimensional predictive arrays and ordered finite intervals."""
+    arrays = tuple(np.asarray(output, dtype=float) for output in outputs)
+    if any(array.ndim != 1 for array in arrays):
+        raise ForecastModelUnavailableError("Forecast model outputs must be one-dimensional")
+    if any(len(array) != expected_length for array in arrays):
+        raise ForecastModelUnavailableError("Forecast model returned the wrong output length")
+    means, lowers, uppers = arrays
+    if (
+        not np.isfinite(means).all()
+        or not np.isfinite(lowers).all()
+        or not np.isfinite(uppers).all()
+    ):
+        raise ForecastModelUnavailableError("Forecast model returned non-finite values")
+    if np.any(lowers > means) or np.any(means > uppers):
+        raise ForecastModelUnavailableError("Forecast intervals must contain their means")
+    return means, lowers, uppers
+
+
 class _ExternalForecastModel:
     """Adapt a loaded ML module's ``predict(model, X)`` callable."""
 
     def __init__(self, module: Any, model: Any) -> None:
         self._module = module
         self._model = model
+        self._seed = 0
+
+    def set_seed(self, seed: int) -> None:
+        """Pass a local seed to model implementations that expose a seed setter."""
+        self._seed = seed
+        setter = getattr(self._model, "set_seed", None) or getattr(
+            self._model, "set_random_seed", None
+        )
+        if callable(setter):
+            setter(seed)
 
     def predict(self, X: pd.DataFrame) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """Call the loaded model and normalize outputs to NumPy arrays."""
-        result = self._module.predict(self._model, X)
+        prediction = self._module.predict
+        try:
+            supports_seed = "seed" in inspect.signature(prediction).parameters
+        except (TypeError, ValueError):
+            supports_seed = False
+        result = (
+            prediction(self._model, X, seed=self._seed)
+            if supports_seed
+            else prediction(self._model, X)
+        )
         if not isinstance(result, tuple) or len(result) != 3:
             raise ForecastModelUnavailableError("Forecast model must return mean/lower/upper")
-        return tuple(np.asarray(value, dtype=float).reshape(-1) for value in result)  # type: ignore[return-value]
+        return _validate_prediction_outputs(result, len(X))
 
 
 class _FitPredictAdapter:
@@ -85,7 +127,7 @@ class _FitPredictAdapter:
             outputs = result
         else:
             outputs = (result.mean, result.lower, result.upper)
-        return tuple(np.asarray(value, dtype=float).reshape(-1) for value in outputs)  # type: ignore[return-value]
+        return _validate_prediction_outputs(outputs, len(X))
 
 
 def load_model(name: str) -> ForecastModel:
@@ -110,8 +152,11 @@ def load_model(name: str) -> ForecastModel:
         raise ForecastModelUnavailableError(f"Unknown forecast model {name!r}")
     try:
         module = importlib.import_module(module_name)
-    except ImportError as error:
-        raise ForecastModelUnavailableError(f"Model {name!r} is unavailable") from error
+    except Exception as error:
+        raise ForecastModelUnavailableError(
+            f"Model {name!r} module could not be loaded",
+            {"module": module_name, "error_type": type(error).__name__, "error": str(error)},
+        ) from error
 
     fit_predict = getattr(module, "fit_predict", None)
     if callable(fit_predict) and name in {"sparse_gp", "arima"}:
@@ -128,8 +173,13 @@ def load_model(name: str) -> ForecastModel:
                 f"Model {name!r} is not trained or its model path is not configured"
             )
         model = loader(Path(model_path))
-    except (ImportError, FileNotFoundError, OSError) as error:
-        raise ForecastModelUnavailableError(f"Model {name!r} is unavailable") from error
+    except ForecastModelUnavailableError:
+        raise
+    except Exception as error:
+        raise ForecastModelUnavailableError(
+            f"Model {name!r} could not be initialized",
+            {"module": module_name, "error_type": type(error).__name__, "error": str(error)},
+        ) from error
     return _ExternalForecastModel(module, model)
 
 
@@ -234,12 +284,8 @@ def _forecast_points(
     for step, timestamp in enumerate(future_timestamps, start=1):
         features = _future_features(values, value_times, target, timestamp)
         features["forecast_horizon_step"] = float(step)
-        means, lowers, uppers = model.predict(features)
-        if len(means) != 1 or len(lowers) != 1 or len(uppers) != 1:
-            raise ForecastModelUnavailableError("Forecast model returned the wrong output length")
+        means, lowers, uppers = _validate_prediction_outputs(model.predict(features), 1)
         mean, lower, upper = float(means[0]), float(lowers[0]), float(uppers[0])
-        if not np.isfinite([mean, lower, upper]).all() or lower > upper:
-            raise ForecastModelUnavailableError("Forecast model returned invalid values")
         if calibration_radius is not None:
             conformal_radius = calibration_radius * float(np.sqrt(step))
             lower = min(lower, mean - conformal_radius)
@@ -273,18 +319,20 @@ def _calibration_radius(
     """
     if not 0 < coverage_level < 1:
         raise ValueError("coverage_level must be in (0, 1)")
+    clone = getattr(model, "clone", None)
+    if not callable(clone) or not callable(getattr(model, "fit", None)):
+        # A pre-trained external model cannot be safely calibrated on the same
+        # history without a held-out calibration set.
+        return None
     residuals: list[float] = []
     for index in range(2, len(values)):
         features = _future_features(values[:index], timestamps[:index], target, timestamps[index])
-        clone = getattr(model, "clone", None)
-        fold_model = clone() if callable(clone) else model
+        fold_model = clone()
         fitter = getattr(fold_model, "fit", None)
         if callable(fitter):
             fitter(values[:index], seed=seed)
         features["forecast_horizon_step"] = 1.0
-        means, _, _ = fold_model.predict(features)
-        if len(means) != 1 or not np.isfinite(means[0]):
-            raise ForecastModelUnavailableError("Model returned invalid calibration predictions")
+        means, _, _ = _validate_prediction_outputs(fold_model.predict(features), 1)
         residuals.append(abs(values[index] - float(means[0])))
     if not residuals:
         return None
@@ -318,9 +366,24 @@ def create_forecast(
         ServiceUnavailableError: If all fallback models are unavailable.
         SQLAlchemyError: If the forecast or audit entry cannot be persisted.
     """
-    if horizon < 1:
+    if not isinstance(target, str) or not target.strip():
+        raise RequestValidationFailed("Forecast target must be a non-empty string")
+    if not isinstance(horizon, int) or isinstance(horizon, bool) or horizon < 1:
         raise RequestValidationFailed("Forecast horizon must be positive")
+    if not isinstance(seed, int) or isinstance(seed, bool):
+        raise RequestValidationFailed("Forecast seed must be an integer")
+    fallback_chain = ("ds_dgp", "sparse_gp", "arima")
+    if model not in fallback_chain:
+        raise RequestValidationFailed(
+            "Unknown preferred forecast model",
+            {"model": model, "supported_models": list(fallback_chain)},
+        )
     field, timestamps, history, input_versions = _history(db, target)
+    if len(history) < 3:
+        raise RequestValidationFailed(
+            "At least three historical observations are required for forecasting",
+            {"target": target, "observations": len(history), "minimum": 3},
+        )
     if len(timestamps) >= 2:
         deltas = [
             (right - left).total_seconds()
@@ -335,12 +398,6 @@ def create_forecast(
         timestamps[-1] + timedelta(seconds=cadence_seconds * step) for step in range(1, horizon + 1)
     ]
 
-    fallback_chain = ("ds_dgp", "sparse_gp", "arima")
-    if model not in fallback_chain:
-        raise RequestValidationFailed(
-            "Unknown preferred forecast model",
-            {"model": model, "supported_models": list(fallback_chain)},
-        )
     preferred = list(fallback_chain[fallback_chain.index(model) :])
     selected_model: ForecastModel | None = None
     selected_name = ""
@@ -350,6 +407,9 @@ def create_forecast(
     for model_name in preferred:
         try:
             candidate = load_model(model_name)
+            seed_setter = getattr(candidate, "set_seed", None)
+            if callable(seed_setter):
+                seed_setter(seed)
             fitter = getattr(candidate, "fit", None)
             if callable(fitter):
                 fitter(history, seed=seed)
@@ -369,10 +429,14 @@ def create_forecast(
                 calibration_radius,
             )
         except ForecastModelUnavailableError as error:
-            fallback_reasons.append(f"{model_name}: {error.message}")
+            context = f"; context={error.details!r}" if error.details else ""
+            fallback_reasons.append(f"{model_name}: {error.message}{context}")
             continue
         except ValueError as error:
             fallback_reasons.append(f"{model_name}: {error}")
+            continue
+        except Exception as error:
+            fallback_reasons.append(f"{model_name}: {type(error).__name__}: {error}")
             continue
         selected_model = candidate
         selected_name = model_name
@@ -380,7 +444,10 @@ def create_forecast(
         selected_calibration_radius = calibration_radius
         break
     if selected_model is None or points is None:
-        raise ForecastModelUnavailableError("No forecasting model is available")
+        raise ForecastModelUnavailableError(
+            "All permitted forecasting models failed",
+            {"requested_model": model, "attempts": fallback_reasons},
+        )
 
     previous_version = db.scalar(
         select(Forecast.version)
@@ -390,7 +457,15 @@ def create_forecast(
     )
     version = (previous_version or 0) + 1
     uncertainty_threshold = get_settings().uncertainty_threshold
-    relative_widths = [(point.upper - point.lower) / max(abs(point.mean), 1e-8) for point in points]
+    target_scale = max(float(np.std(history)), abs(float(np.mean(history))))
+    relative_widths = [
+        (
+            (point.upper - point.lower) / target_scale
+            if target_scale > 0
+            else (0.0 if point.upper == point.lower else float("inf"))
+        )
+        for point in points
+    ]
     high_uncertainty = any(width > uncertainty_threshold for width in relative_widths)
     forecast = Forecast(
         target=target,
@@ -404,6 +479,7 @@ def create_forecast(
             "training_observations": len(history),
             "cadence_seconds": cadence_seconds,
             "target_field": field,
+            "target_scale": target_scale,
             "calibration_method": (
                 "rolling_origin_conformal_90"
                 if selected_calibration_radius is not None

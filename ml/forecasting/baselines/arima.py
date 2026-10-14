@@ -60,8 +60,8 @@ def fit_predict(
     if lag_one is None:
         raise ValueError("ARIMA test features must include a lag-1 column")
     lag_two = next((name for name in test.columns if name.endswith("_lag_2")), None)
-    latest = test[lag_one].fillna(0.0).to_numpy(dtype=float)
-    previous = test[lag_two].fillna(0.0).to_numpy(dtype=float) if lag_two is not None else latest
+    latest = test[lag_one].to_numpy(dtype=float)
+    previous = test[lag_two].to_numpy(dtype=float) if lag_two is not None else latest
     if not np.isfinite(latest).all() or not np.isfinite(previous).all():
         raise ValueError("ARIMA lag inputs must be finite")
     predicted_difference = intercept + autoregressive * (latest - previous)
