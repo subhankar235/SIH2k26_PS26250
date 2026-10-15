@@ -8,6 +8,8 @@
   },
   "packageManager": "npm@11.17.0",
   "scripts": {
+    "system:offline": "node --test test/system.test.js",
+    "relief:test:negotiation-ui": "python scripts/negotiation-ui-fixture.py",
     "setup": "node scripts/patch-kafkajs.js",
     "start": "node --env-file-if-exists=.env src/server.js",
     "test": "node --test test/*.test.js",
@@ -25,7 +27,7 @@
     "relief:test:ui": "python scripts/relief-ui-fixture.py",
     "relief:smoke": "node --env-file-if-exists=.env scripts/relief-smoke.js",
     "relief:test:browser": "python scripts/relief-browser-smoke.py",
-    "consumer": "node --env-file-if-exists=.env src/consumer-cli.js",
+    "consumer": "node --env-file-if-exists=.env src/transport/consumer-cli.js",
     "test:consumer:kafka": "node --test integration/consumer.test.js",
     "test:browser": "python scripts/browser-smoke.py",
     "smoke:pipeline": "node --env-file-if-exists=.env scripts/pipeline-smoke.js",

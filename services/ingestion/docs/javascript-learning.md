@@ -1,6 +1,6 @@
 # Reading and extending the JavaScript ingestion service
 
-Start with `src/app.js`, then `src/ingestion.js`, then `src/store.js`. These separate HTTP handling, domain validation/authorisation, and durable storage.
+Start with `src/app.js`, then `src/ingestion/service.js`, then `src/ingestion/store.js`. These separate HTTP handling, domain validation/authorisation, and durable storage.
 
 ## Follow a request
 

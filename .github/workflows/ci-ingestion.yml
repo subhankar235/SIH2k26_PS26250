@@ -24,6 +24,5 @@ jobs:
           cache-dependency-path: services/ingestion/package-lock.json
       - run: npm ci --ignore-scripts
       - run: npm run setup
-      - run: npm run check
-      - run: npm run contracts:check
-      - run: npm test
+      - run: npm run verify
+        working-directory: .

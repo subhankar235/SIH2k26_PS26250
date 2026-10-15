@@ -1,10 +1,10 @@
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { loadConfig } from './config.js';
+import { loadConfig } from '../platform/config.js';
 import { ConsumerStore } from './consumer-store.js';
 import { createKafkaConsumer, KafkaReadModelWorker } from './consumer.js';
 
-const moduleRoot = fileURLToPath(new URL('../', import.meta.url));
+const moduleRoot = fileURLToPath(new URL('../../', import.meta.url));
 const invalid = (name) => { throw new Error(`Invalid consumer configuration: ${name}.`); };
 function integer(env, name, fallback, min, max) {
   const raw = env[name]; if (raw === undefined || raw === '') return fallback;

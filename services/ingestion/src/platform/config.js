@@ -1,10 +1,10 @@
 import { createHash } from 'node:crypto';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { EVENT_TYPES } from './contracts.js';
+import { EVENT_TYPES } from '../contracts/events.js';
 
 export function tokenHash(token) { return createHash('sha256').update(token).digest(); }
-const moduleRoot = fileURLToPath(new URL('../', import.meta.url));
+const moduleRoot = fileURLToPath(new URL('../../', import.meta.url));
 const identifier = /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/;
 const tokenPattern = /^[A-Za-z0-9_-]{32,128}$/;
 function fail(field) { throw new Error(`Invalid configuration: ${field}.`); }

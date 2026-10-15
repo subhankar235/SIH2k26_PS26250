@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { optimizeReliefWorld, validateReliefPlan } from '../src/relief-planner.js';
-import { createReliefWorld, advanceReliefWorld, RELIEF_PHASES } from '../src/relief-world.js';
+import { optimizeReliefWorld, validateReliefPlan } from '../src/planning/planner.js';
+import { createReliefWorld, advanceReliefWorld, RELIEF_PHASES } from '../src/planning/world.js';
 
 function world() {
   return {

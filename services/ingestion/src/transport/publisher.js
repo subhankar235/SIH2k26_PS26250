@@ -1,5 +1,5 @@
 import kafkajs from 'kafkajs';
-import { canonicalJson } from './contracts.js';
+import { canonicalJson } from '../contracts/events.js';
 
 const { Kafka, logLevel } = kafkajs;
 

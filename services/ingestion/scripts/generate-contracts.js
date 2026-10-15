@@ -1,9 +1,9 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { eventSchemas, EVENT_TYPES } from '../src/contracts.js';
-import { sampleEvent } from '../src/sample-events.js';
+import { eventSchemas, EVENT_TYPES } from '../src/contracts/events.js';
+import { sampleEvent } from '../src/ingestion/sample-events.js';
 import { z } from 'zod';
-import { weatherCommandSchema } from '../src/relief-weather.js';
-import { reliefStartSchema, reliefStepSchema } from '../src/relief-service.js';
+import { weatherCommandSchema } from '../src/integrations/weather.js';
+import { reliefStartSchema, reliefStepSchema } from '../src/planning/service.js';
 
 const schemas = eventSchemas();
 const event = { oneOf: EVENT_TYPES.map((type) => ({ $ref: `#/components/schemas/${type}` })) };

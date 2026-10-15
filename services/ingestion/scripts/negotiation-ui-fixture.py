@@ -12,7 +12,7 @@ parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--mutate-grounding', action='store_true', help='Serve a bypassed finding filter; this negative control must fail.')
 args = parser.parse_args()
 ROOT = Path(__file__).resolve().parents[3]
-WEB = ROOT / 'services/ingestion/web'
+WEB = ROOT / 'services/ingestion/dashboard'
 ARTIFACT = ROOT / '.superpowers/sdd/civilian-negotiation-plan'
 NOW = '2026-10-15T06:00:00Z'
 HTML = '<img src=x onerror="window.injected=true">'

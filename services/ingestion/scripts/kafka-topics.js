@@ -1,6 +1,6 @@
 import kafkajs from 'kafkajs';
-import { loadConfig } from '../src/config.js';
-import { TOPICS } from '../src/contracts.js';
+import { loadConfig } from '../src/platform/config.js';
+import { TOPICS } from '../src/contracts/events.js';
 const config = loadConfig();
 if (!config.kafka.brokers.length) throw new Error('Set KAFKA_BROKERS before creating topics.');
 const kafka = new kafkajs.Kafka({ ...config.kafka, clientId: 'logistics-topic-setup',

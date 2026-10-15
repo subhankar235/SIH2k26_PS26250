@@ -1,7 +1,7 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { randomUUID } from 'node:crypto';
-import { EVENT_TYPES } from '../src/contracts.js';
-import { sampleEvent } from '../src/sample-events.js';
+import { EVENT_TYPES } from '../src/contracts/events.js';
+import { sampleEvent } from '../src/ingestion/sample-events.js';
 
 const base = new URL(process.env.INGESTION_DEMO_URL ?? 'http://127.0.0.1:3100');
 if (!['http:', 'https:'].includes(base.protocol) || !['127.0.0.1', 'localhost', '[::1]'].includes(base.hostname) || base.username || base.password) {

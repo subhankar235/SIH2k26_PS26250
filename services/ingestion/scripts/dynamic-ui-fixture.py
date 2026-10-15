@@ -8,7 +8,7 @@ from pathlib import Path
 from playwright.sync_api import sync_playwright, expect
 
 ROOT = Path(__file__).resolve().parents[3]
-WEB = ROOT / 'services/ingestion/web'
+WEB = ROOT / 'services/ingestion/dashboard'
 ARTIFACT = ROOT / '.superpowers/sdd/civilian-dynamic-extensions-plan'
 UNTRUSTED = '<img src=x onerror="window.injected=true">'
 NOW = '2026-10-15T06:00:00Z'

@@ -2,9 +2,9 @@ import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { setTimeout as delay } from 'node:timers/promises';
 import { startServer } from '../src/server.js';
-import { runConsumer } from '../src/consumer-cli.js';
-import { EVENT_TYPES } from '../src/contracts.js';
-import { sampleEvent } from '../src/sample-events.js';
+import { runConsumer } from '../src/transport/consumer-cli.js';
+import { EVENT_TYPES } from '../src/contracts/events.js';
+import { sampleEvent } from '../src/ingestion/sample-events.js';
 
 const brokers = process.env.KAFKA_TEST_BROKERS || process.env.KAFKA_BROKERS;
 if (!brokers) throw new Error('Real pipeline smoke requires KAFKA_TEST_BROKERS or KAFKA_BROKERS.');

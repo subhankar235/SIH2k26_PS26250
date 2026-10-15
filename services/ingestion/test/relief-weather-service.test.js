@@ -1,9 +1,9 @@
 ﻿import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
-import {EventStore} from '../src/store.js';
-import {ReliefSimulationService} from '../src/relief-service.js';
-import {EVENT_TYPES} from '../src/contracts.js';
+import {EventStore} from '../src/ingestion/store.js';
+import {ReliefSimulationService} from '../src/planning/service.js';
+import {EVENT_TYPES} from '../src/contracts/events.js';
 const NOW=Date.parse('2026-10-15T06:00:00Z');
 const sources=EVENT_TYPES.map(type=>({sourceId:`relief-${type.split('.')[0]}`,types:[type]}));
 function setup(t,provider){const store=new EventStore({path:':memory:',now:()=>NOW});const service=new ReliefSimulationService({store,sources,now:()=>NOW,weatherProvider:provider,annotator:{annotate:async x=>({...x,mode:'deterministic'}),close:async()=>{}}});t.after(async()=>{await service.close();store.close();});const initial=service.start({scenario:'civilian-relief',inputMode:'gateway',commandId:randomUUID()});return{store,service,initial};}

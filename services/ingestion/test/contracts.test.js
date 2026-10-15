@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { z } from 'zod';
-import { EVENT_TYPES, TOPICS, eventSchema, validateEvent, canonicalJson, eventSchemas } from '../src/contracts.js';
-import { ApiError } from '../src/errors.js';
+import { EVENT_TYPES, TOPICS, eventSchema, validateEvent, canonicalJson, eventSchemas } from '../src/contracts/events.js';
+import { ApiError } from '../src/platform/errors.js';
 import { event } from './fixtures.js';
 
 const now = Date.parse('2026-10-15T12:00:00Z');

@@ -1,6 +1,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { loadConsumerConfig } from '../src/consumer-cli.js';
+import { loadConsumerConfig } from '../src/transport/consumer-cli.js';
+import { fileURLToPath } from 'node:url';
+
+test('relocated reader preserves its independent service database root', () => {
+  assert.equal(loadConsumerConfig({}).path, fileURLToPath(new URL('../var/read-model.sqlite', import.meta.url)));
+});
 
 test('consumer config is independent, bounded, and uses a separate database', () => {
   const config = loadConsumerConfig({});

@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { EVENT_TYPES, validateEvent } from './contracts.js';
+import { EVENT_TYPES, validateEvent } from '../contracts/events.js';
 
 export const RELIEF_PHASES = Object.freeze(['weather-change', 'maintenance-change', 'airport-closure', 'new-request', 'validity-expiry']);
 export function createReliefWorld({ runId = randomUUID(), now = Date.now() } = {}) {

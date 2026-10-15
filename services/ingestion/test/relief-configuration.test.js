@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { configurationSchema, configuredReliefWorld } from '../src/relief-configuration.js';
-import { createReliefWorld, reliefEvents } from '../src/relief-world.js';
-import { optimizeReliefWorld, validateReliefPlan } from '../src/relief-planner.js';
+import { configurationSchema, configuredReliefWorld } from '../src/planning/configuration.js';
+import { createReliefWorld, reliefEvents } from '../src/planning/world.js';
+import { optimizeReliefWorld, validateReliefPlan } from '../src/planning/planner.js';
 
 const runId = '00000000-0000-4000-8000-000000000001';
 function configuration() {

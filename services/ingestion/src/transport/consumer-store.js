@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto';
 import { mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { TextDecoder } from 'node:util';
-import { TOPICS, canonicalJson, validateEvent } from './contracts.js';
+import { TOPICS, canonicalJson, validateEvent } from '../contracts/events.js';
 
 const topics = new Set(Object.values(TOPICS));
 const decoder = new TextDecoder('utf-8', { fatal: true });

@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { EventEmitter } from 'node:events';
-import { installShutdownHandlers } from '../src/shutdown.js';
+import { installShutdownHandlers } from '../src/platform/shutdown.js';
 
 test('a broker cleanup that never settles triggers the overall shutdown failure deadline', (t) => {
   t.mock.timers.enable({ apis: ['setTimeout'] });

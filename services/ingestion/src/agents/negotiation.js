@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import { canonicalJson } from './contracts.js';
-import { getReliefNegotiationContext, validateReliefAssignmentSeed } from './relief-planner.js';
+import { canonicalJson } from '../contracts/events.js';
+import { getReliefNegotiationContext, validateReliefAssignmentSeed } from '../planning/planner.js';
 
 export const negotiationSettingsSchema = z.strictObject({
   enabled: z.boolean().default(true),

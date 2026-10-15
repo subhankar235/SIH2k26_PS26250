@@ -8,7 +8,7 @@ from pathlib import Path
 from playwright.sync_api import sync_playwright, expect
 
 ROOT = Path(__file__).resolve().parents[3]
-WEB = ROOT / 'services/ingestion/web'
+WEB = ROOT / 'services/ingestion/dashboard'
 class Handler(SimpleHTTPRequestHandler):
     def do_GET(self):
         self.path = self.path.removeprefix('/monitor') or '/'

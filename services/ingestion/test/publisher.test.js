@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { EventStore } from '../src/store.js';
-import { OutboxPublisher } from '../src/publisher.js';
+import { EventStore } from '../src/ingestion/store.js';
+import { OutboxPublisher } from '../src/transport/publisher.js';
 import { event } from './fixtures.js';
 
 const NOW = Date.parse('2026-10-15T06:00:00Z');

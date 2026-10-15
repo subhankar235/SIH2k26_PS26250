@@ -1,5 +1,5 @@
-import { ApiError } from './errors.js';
-import { validateEvent } from './contracts.js';
+import { ApiError } from '../platform/errors.js';
+import { validateEvent } from '../contracts/events.js';
 
 /** Boundary validation and source authorization precede the atomic write. */
 export class IngestionService {

@@ -1,9 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildScenario } from '../src/scenario.js';
-import { EVENT_TYPES, validateEvent } from '../src/contracts.js';
-import { EventStore } from '../src/store.js';
-import { monitoringSnapshot } from '../src/monitoring.js';
+import { buildScenario } from '../src/ingestion/scenario.js';
+import { EVENT_TYPES, validateEvent } from '../src/contracts/events.js';
+import { EventStore } from '../src/ingestion/store.js';
+import { monitoringSnapshot } from '../src/dashboard/monitoring.js';
 const NOW = Date.parse('2026-10-15T06:00:00Z');
 const sources = EVENT_TYPES.map((type) => ({ sourceId: type.split('.')[0], types: [type] }));
 

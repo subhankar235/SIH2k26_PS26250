@@ -2,9 +2,9 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import kafkajs from 'kafkajs';
-import { EventStore } from '../src/store.js';
-import { createKafkaAdapter, OutboxPublisher } from '../src/publisher.js';
-import { TOPICS, validateEvent } from '../src/contracts.js';
+import { EventStore } from '../src/ingestion/store.js';
+import { createKafkaAdapter, OutboxPublisher } from '../src/transport/publisher.js';
+import { TOPICS, validateEvent } from '../src/contracts/events.js';
 import { event } from '../test/fixtures.js';
 
 const { Kafka, logLevel } = kafkajs;

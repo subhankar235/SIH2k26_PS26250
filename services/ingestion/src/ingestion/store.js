@@ -2,8 +2,8 @@ import { DatabaseSync } from 'node:sqlite';
 import { createHash } from 'node:crypto';
 import { mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
-import { ApiError } from './errors.js';
-import { canonicalJson, TOPICS } from './contracts.js';
+import { ApiError } from '../platform/errors.js';
+import { canonicalJson, TOPICS } from '../contracts/events.js';
 
 const MAX_PAGE = 100;
 function pageOptions({ after = 0, limit = 50 } = {}) {

@@ -1,16 +1,16 @@
 import { randomUUID, createHash } from 'node:crypto';
 import { z } from 'zod';
-import { ApiError } from './errors.js';
-import { canonicalJson, EVENT_TYPES, validateEvent } from './contracts.js';
-import { createReliefWorld, advanceReliefWorld, RELIEF_PHASES } from './relief-world.js';
-import { optimizeReliefWorld, validateReliefPlan } from './relief-planner.js';
-import { trainDemandModel, forecastDemand } from './relief-models.js';
+import { ApiError } from '../platform/errors.js';
+import { canonicalJson, EVENT_TYPES, validateEvent } from '../contracts/events.js';
+import { createReliefWorld, advanceReliefWorld, RELIEF_PHASES } from './world.js';
+import { optimizeReliefWorld, validateReliefPlan } from './planner.js';
+import { trainDemandModel, forecastDemand } from '../forecasting/demand.js';
 
-import { configurationSchema, configuredReliefWorld } from './relief-configuration.js';
-import { buildReliefCoordination } from './relief-coordination.js';
-import { boundEntity, applyBoundObservation, expireBoundObservations, mirroredReliefEvents } from './relief-inputs.js';
-import { negotiationSettingsSchema, runReliefNegotiation, validateReliefNegotiationReport, finishReliefNegotiation } from './relief-negotiation.js';
-import { weatherCommandSchema } from './relief-weather.js';
+import { configurationSchema, configuredReliefWorld } from './configuration.js';
+import { buildReliefCoordination } from '../agents/coordination.js';
+import { boundEntity, applyBoundObservation, expireBoundObservations, mirroredReliefEvents } from './inputs.js';
+import { negotiationSettingsSchema, runReliefNegotiation, validateReliefNegotiationReport, finishReliefNegotiation } from '../agents/negotiation.js';
+import { weatherCommandSchema } from '../integrations/weather.js';
 export const reliefStartSchema = z.strictObject({ scenario: z.literal('civilian-relief'), commandId: z.uuid(), replaceRunId: z.uuid().optional(), inputMode: z.enum(['scripted','gateway']).optional(), configuration: configurationSchema.optional(), negotiation: negotiationSettingsSchema.optional() }).refine(c => !c.configuration || c.inputMode === 'gateway', 'Configuration requires gateway mode');
 export const reliefStepSchema = z.strictObject({ commandId: z.uuid(), runId: z.uuid(), expectedRevision: z.number().int().min(0).max(5), phase: z.enum(RELIEF_PHASES) });
 function parse(schema, input) {

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { EventStore } from '../src/store.js';
-import { IngestionService } from '../src/ingestion.js';
+import { EventStore } from '../src/ingestion/store.js';
+import { IngestionService } from '../src/ingestion/service.js';
 import { event } from './fixtures.js';
 
 const NOW = Date.parse('2026-10-15T06:00:00Z');

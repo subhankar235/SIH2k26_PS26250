@@ -4,7 +4,7 @@ import { randomUUID } from 'node:crypto';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { EventStore } from '../src/store.js';
+import { EventStore } from '../src/ingestion/store.js';
 
 const NOW = Date.parse('2026-10-15T06:00:00.000Z');
 function event(overrides = {}) {

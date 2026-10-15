@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { buildReliefCoordination } from '../src/relief-coordination.js';
-import { createReliefWorld, advanceReliefWorld } from '../src/relief-world.js';
-import { optimizeReliefWorld, validateReliefPlan } from '../src/relief-planner.js';
+import { buildReliefCoordination } from '../src/agents/coordination.js';
+import { createReliefWorld, advanceReliefWorld } from '../src/planning/world.js';
+import { optimizeReliefWorld, validateReliefPlan } from '../src/planning/planner.js';
 
 function evidence() {
   const world = createReliefWorld({ runId: '00000000-0000-4000-8000-000000000001', now: 0 });

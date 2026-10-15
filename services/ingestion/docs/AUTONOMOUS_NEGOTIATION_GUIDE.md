@@ -71,10 +71,10 @@ The viewer shows status, limits, rounds, agent activity, request results, seed a
 
 ## Validation and code map
 
-- src/relief-planner.js: bounded candidate context, independent seed validation and checked warm starts.
-- src/relief-negotiation.js: local specialist policies, inboxes, routing, budgets, bid intersection, audit and final outcome.
-- src/relief-service.js: persisted settings, automatic per-revision execution, isolation/fallback and atomic state.
-- web/relief.js: grounded read-only negotiation inspection.
+- src/planning/planner.js: bounded candidate context, independent seed validation and checked warm starts.
+- src/agents/negotiation.js: local specialist policies, inboxes, routing, budgets, bid intersection, audit and final outcome.
+- src/planning/service.js: persisted settings, automatic per-revision execution, isolation/fallback and atomic state.
+- dashboard/relief.js: grounded read-only negotiation inspection.
 - test/relief-seed.test.js, relief-negotiation.test.js and relief-negotiation-service.test.js: meaningful safety, optimality, budget, mutation and rollback checks.
 
 Run `npm test`, `npm run contracts:check`, `npm run check`, `python scripts/negotiation-ui-fixture.py`, and `npm run relief:test:dynamic -- --browser`. The latter verifies real HTTP updates, Kafka/durable reader, automatic TTL expiry, service/consumer restart with persisted negotiation and actual browser counterproposals. Fixtures cover malicious strings, known-but-contradictory references, stale/historical reports, all statuses, keyboard/scroll preservation and four viewports. Validation evidence: [validation-negotiation.md](validation-negotiation.md).

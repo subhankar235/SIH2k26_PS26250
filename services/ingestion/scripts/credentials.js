@@ -1,7 +1,7 @@
 import { randomBytes } from 'node:crypto';
 import { writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { EVENT_TYPES } from '../src/contracts.js';
+import { EVENT_TYPES } from '../src/contracts/events.js';
 
 const arguments_ = process.argv.slice(2);
 if (arguments_.length > 2 || (arguments_.length && arguments_[0] !== '--write') || arguments_.length === 1) {

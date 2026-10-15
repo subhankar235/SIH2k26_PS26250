@@ -4,8 +4,8 @@ import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { EVENT_TYPES, validateEvent } from '../src/contracts.js';
-import { sampleEvent } from '../src/sample-events.js';
+import { EVENT_TYPES, validateEvent } from '../src/contracts/events.js';
+import { sampleEvent } from '../src/ingestion/sample-events.js';
 
 test('fictional sample generators satisfy all runtime contracts', () => {
   const now = Date.parse('2026-10-15T06:00:00Z');

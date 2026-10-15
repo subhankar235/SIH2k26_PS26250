@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { loadConfig } from '../src/config.js';
+import { loadConfig } from '../src/platform/config.js';
+import { fileURLToPath } from 'node:url';
 
 export function environment(overrides = {}) {
   return { INGESTION_ADMIN_TOKEN: 'test-admin-'.padEnd(48, 'A'),
@@ -17,6 +18,11 @@ test('safe defaults bind to localhost and disable broker delivery', () => {
   assert.equal(config.kafka.brokers.length, 0); assert.equal(config.maxPending, 10000);
   assert.equal(config.sources[0].sourceId, 'test-source');
   assert.ok(!JSON.stringify(config).includes('test-source-B'));
+});
+
+test('relocated configuration preserves the service database root', () => {
+  const config = loadConfig(environment({ INGESTION_DB_PATH: 'var/events.sqlite' }));
+  assert.equal(config.dbPath, fileURLToPath(new URL('../var/events.sqlite', import.meta.url)));
 });
 test('invalid limits, boolean switches, duplicate credentials, and unknown types fail at startup', () => {
   for (const overrides of [{ PORT: 'not-a-port' }, { PORT: '0' }, { INGESTION_MAX_PENDING: '-1' }, { KAFKA_TLS: 'maybe' },

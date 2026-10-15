@@ -5,7 +5,7 @@ The standalone reader projects reported administrative facts into its own SQLite
 Run from `services/ingestion` after configuring the existing `.env`:
 
 ```powershell
-node --env-file-if-exists=.env src/consumer-cli.js
+node --env-file-if-exists=.env src/transport/consumer-cli.js
 ```
 
 The CLI reuses `loadConfig` for broker/TLS/SASL validation, so existing `INGESTION_ADMIN_TOKEN` and `INGESTION_SOURCES_JSON` configuration must be valid even though the reader does not use bearer credentials. `KAFKA_BROKERS` is required. Plaintext brokers must be loopback; remote brokers require TLS; SASL also requires TLS. Logs contain only static lifecycle codes, never broker error text or credentials.

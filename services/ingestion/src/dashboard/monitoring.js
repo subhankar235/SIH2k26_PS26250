@@ -2,9 +2,9 @@ import express from 'express';
 import { randomBytes, timingSafeEqual } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { z } from 'zod';
-import { canonicalJson, EVENT_TYPES } from './contracts.js';
-import { tokenHash } from './config.js';
-import { ApiError } from './errors.js';
+import { canonicalJson, EVENT_TYPES } from '../contracts/events.js';
+import { tokenHash } from '../platform/config.js';
+import { ApiError } from '../platform/errors.js';
 
 /** Data quality indicators only; no inferred readiness, assignment or recommendations. */
 export function monitoringSnapshot(store, filters = {}, now = Date.now()) {
@@ -107,6 +107,6 @@ export function mountMonitoring(app, { config, store, simulation, now = Date.now
     parse(z.strictObject({}), req.query);
     res.json(simulation?.snapshot() ?? { status: 'idle' });
   });
-  router.use(express.static(fileURLToPath(new URL('../web/', import.meta.url)), { index: 'index.html', dotfiles: 'deny', fallthrough: true }));
+  router.use(express.static(fileURLToPath(new URL('../../dashboard/', import.meta.url)), { index: 'index.html', dotfiles: 'deny', fallthrough: true }));
   app.use('/monitor', router);
 }

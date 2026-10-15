@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { trainDemandModel, forecastDemand } from '../src/relief-models.js';
+import { trainDemandModel, forecastDemand } from '../src/forecasting/demand.js';
 
 test('synthetic OLS training is reproducible with an independent held-out evaluation', () => {
   const model = trainDemandModel();

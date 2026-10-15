@@ -1,6 +1,6 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { setTimeout as delay } from 'node:timers/promises';
-import { buildScenario } from '../src/scenario.js';
+import { buildScenario } from '../src/ingestion/scenario.js';
 
 const base = new URL(process.env.INGESTION_DEMO_URL ?? 'http://127.0.0.1:3100');
 if (!['http:', 'https:'].includes(base.protocol) || !['127.0.0.1', 'localhost', '[::1]'].includes(base.hostname) || base.username || base.password) throw new Error('Scenario credentials may only be sent to a loopback API.');

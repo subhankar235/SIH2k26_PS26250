@@ -2,12 +2,12 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { once } from 'node:events';
 import { randomUUID } from 'node:crypto';
-import { EventStore } from '../src/store.js';
+import { EventStore } from '../src/ingestion/store.js';
 import { createApp } from '../src/app.js';
-import { loadConfig } from '../src/config.js';
-import { createReliefAnnotator, loadReliefAIConfig } from '../src/relief-ai.js';
-import { ReliefSimulationService } from '../src/relief-service.js';
-import { EVENT_TYPES } from '../src/contracts.js';
+import { loadConfig } from '../src/platform/config.js';
+import { createReliefAnnotator, loadReliefAIConfig } from '../src/agents/annotations.js';
+import { ReliefSimulationService } from '../src/planning/service.js';
+import { EVENT_TYPES } from '../src/contracts/events.js';
 
 test('simulation mutations require admin, viewers only read, and strict command contracts guard revisions', async (t) => {
   const admin = 'a'.repeat(48), viewer = 'v'.repeat(48);

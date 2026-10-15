@@ -1,13 +1,13 @@
-import { loadConfig } from './config.js';
-import { EventStore } from './store.js';
-import { createKafkaAdapter, OutboxPublisher } from './publisher.js';
+import { loadConfig } from './platform/config.js';
+import { EventStore } from './ingestion/store.js';
+import { createKafkaAdapter, OutboxPublisher } from './transport/publisher.js';
 import { createApp } from './app.js';
 import { pathToFileURL } from 'node:url';
 import { resolve } from 'node:path';
-import { installShutdownHandlers } from './shutdown.js';
-import { ReliefSimulationService } from './relief-service.js';
-import { createReliefWeatherProvider } from './relief-weather.js';
-import { loadReliefAIConfig, createReliefAnnotator } from './relief-ai.js';
+import { installShutdownHandlers } from './platform/shutdown.js';
+import { ReliefSimulationService } from './planning/service.js';
+import { createReliefWeatherProvider } from './integrations/weather.js';
+import { loadReliefAIConfig, createReliefAnnotator } from './agents/annotations.js';
 
 function logger(message, fields = {}) {
   process.stdout.write(`${JSON.stringify({ timestamp: new Date().toISOString(), message, ...fields })}\n`);

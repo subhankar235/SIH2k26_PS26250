@@ -5,9 +5,9 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import kafkajs from 'kafkajs';
-import { ConsumerStore } from '../src/consumer-store.js';
-import { createKafkaConsumer, KafkaReadModelWorker } from '../src/consumer.js';
-import { TOPICS } from '../src/contracts.js';
+import { ConsumerStore } from '../src/transport/consumer-store.js';
+import { createKafkaConsumer, KafkaReadModelWorker } from '../src/transport/consumer.js';
+import { TOPICS } from '../src/contracts/events.js';
 import { event } from '../test/fixtures.js';
 
 async function until(predicate) {

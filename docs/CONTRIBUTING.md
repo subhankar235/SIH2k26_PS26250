@@ -2,6 +2,8 @@
 
 The application lives in `services/ingestion`. Keep changes scoped to that system; the unrelated legacy grid scaffold has been retired. Root-level design documents explain prior decisions; the service guides describe current behavior.
 
+Use the [module map](../services/ingestion/docs/SYSTEM_MODULES.md) for source locations and the [feature blueprint](PROJECT_BLUEPRINT.md) for decisions/status. The root package delegates to the existing service install; `npm run verify` from the root runs all required offline checks. `npm run demo:offline` runs the isolated integrated journey.
+
 ## Setup
 
 Use Node.js 24.19.0+ and npm 11.17.0. From `services/ingestion`, run `npm ci --ignore-scripts`, then `npm run setup`. The setup command applies the explicitly checked KafkaJS compatibility patch. Generate credentials with `npm run credentials` only when no `.env` exists; do not commit credentials, databases, model downloads or local logs.

@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import { mkdirSync, writeFileSync } from 'node:fs';
-import { createReliefWorld } from '../src/relief-world.js';
-import { optimizeReliefWorld } from '../src/relief-planner.js';
-import { loadReliefAIConfig, createReliefAnnotator } from '../src/relief-ai.js';
+import { createReliefWorld } from '../src/planning/world.js';
+import { optimizeReliefWorld } from '../src/planning/planner.js';
+import { loadReliefAIConfig, createReliefAnnotator } from '../src/agents/annotations.js';
 const config = loadReliefAIConfig({ ...process.env, RELIEF_AI_MODE: 'ollama', RELIEF_AI_TIMEOUT_MS: '60000' });
 const annotator = createReliefAnnotator(config); const world = createReliefWorld();
 try {

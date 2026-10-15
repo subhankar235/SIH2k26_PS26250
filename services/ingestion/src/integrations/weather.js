@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { ApiError } from './errors.js';
+import { ApiError } from '../platform/errors.js';
 
 export const weatherCommandSchema = z.strictObject({
   commandId: z.uuid(), runId: z.uuid(), expectedRevision: z.number().int().min(0).max(18),

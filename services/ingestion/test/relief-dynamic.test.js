@@ -1,10 +1,10 @@
 ﻿import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
-import { EventStore } from '../src/store.js';
-import { ReliefSimulationService } from '../src/relief-service.js';
-import { IngestionService } from '../src/ingestion.js';
-import { EVENT_TYPES } from '../src/contracts.js';
+import { EventStore } from '../src/ingestion/store.js';
+import { ReliefSimulationService } from '../src/planning/service.js';
+import { IngestionService } from '../src/ingestion/service.js';
+import { EVENT_TYPES } from '../src/contracts/events.js';
 const NOW = Date.parse('2026-10-15T06:00:00Z');
 const sources = EVENT_TYPES.map(type => ({ sourceId: `relief-${type.split('.')[0]}`, types: [type] }));
 function setup(t, options = {}) {

@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { EVENT_TYPES } from './contracts.js';
+import { EVENT_TYPES } from '../contracts/events.js';
 import { sampleEvent } from './sample-events.js';
 
 /** A finite fictional fact-update scenario, without flight plans or decisions. */

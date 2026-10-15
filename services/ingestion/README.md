@@ -1,4 +1,6 @@
-# Administrative logistics event gateway and monitor
+# Logistics decision-support system
+
+This service contains the whole current modular application: ingestion, transport, planning, agents, forecasting, integrations and dashboard. See the [module map and root commands](docs/SYSTEM_MODULES.md) and the [project blueprint/feature ledger](../../docs/PROJECT_BLUEPRINT.md). The deployment directory retains its historical name to preserve local state and configuration.
 
 A standalone JavaScript ingestion service for aircraft maintenance status, crew availability, weather observations, airport capacity, and ordinary relief cargo. It maintains an authenticated event history and source-specific latest observations, then delivers eligible changes to Kafka through a durable transactional outbox.
 

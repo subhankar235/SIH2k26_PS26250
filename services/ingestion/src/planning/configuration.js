@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { createReliefWorld } from './relief-world.js';
+import { createReliefWorld } from './world.js';
 
 // The UUID namespace adds 44 characters at the gateway boundary.
 const id = z.string().regex(/^SIM-[A-Za-z0-9_-]{1,16}$/);

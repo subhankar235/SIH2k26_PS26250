@@ -1,10 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { once } from 'node:events';
-import { EventStore } from '../src/store.js';
-import { loadConfig } from '../src/config.js';
+import { EventStore } from '../src/ingestion/store.js';
+import { loadConfig } from '../src/platform/config.js';
 import { createApp } from '../src/app.js';
-import { monitoringSnapshot } from '../src/monitoring.js';
+import { monitoringSnapshot } from '../src/dashboard/monitoring.js';
 import { event } from './fixtures.js';
 
 const NOW = Date.parse('2026-10-15T06:00:00Z');

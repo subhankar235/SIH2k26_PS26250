@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { getReliefNegotiationContext, optimizeReliefWorld, validateReliefAssignmentSeed, validateReliefPlan } from '../src/relief-planner.js';
-import { createReliefWorld, advanceReliefWorld, RELIEF_PHASES } from '../src/relief-world.js';
+import { getReliefNegotiationContext, optimizeReliefWorld, validateReliefAssignmentSeed, validateReliefPlan } from '../src/planning/planner.js';
+import { createReliefWorld, advanceReliefWorld, RELIEF_PHASES } from '../src/planning/world.js';
 
 const world = () => createReliefWorld({ runId: '00000000-0000-4000-8000-000000000001', now: 0 });
 const assignment = (overrides = {}) => ({ requestId: 'SIM-REQ-MED', aircraftId: 'SIM-A1', crewId: 'SIM-C1', departureSlot: 0, arrivalSlot: 1, ...overrides });

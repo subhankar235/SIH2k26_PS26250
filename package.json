@@ -1,0 +1,22 @@
+{
+  "name": "logistics-decision-support-system",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Root commands for the modular fictional civilian logistics demonstrator",
+  "engines": { "node": ">=24.19.0" },
+  "packageManager": "npm@11.17.0",
+  "scripts": {
+    "setup": "npm --prefix services/ingestion run setup",
+    "credentials": "npm --prefix services/ingestion run credentials",
+    "start": "npm --prefix services/ingestion start",
+    "consumer": "npm --prefix services/ingestion run consumer",
+    "test": "npm --prefix services/ingestion test",
+    "check": "npm --prefix services/ingestion run check",
+    "contracts:check": "npm --prefix services/ingestion run contracts:check",
+    "verify": "npm run check && npm run contracts:check && npm test",
+    "demo:offline": "npm --prefix services/ingestion run system:offline",
+    "demo": "npm --prefix services/ingestion run relief:dynamic --",
+    "test:pipeline": "npm --prefix services/ingestion run relief:test:dynamic --",
+    "test:dashboard": "npm --prefix services/ingestion run relief:test:negotiation-ui --"
+  }
+}

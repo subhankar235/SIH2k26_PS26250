@@ -1,5 +1,5 @@
 import kafkajs from 'kafkajs';
-import { TOPICS } from './contracts.js';
+import { TOPICS } from '../contracts/events.js';
 
 const { Kafka, logLevel } = kafkajs;
 export function createKafkaConsumer(config, groupId) {

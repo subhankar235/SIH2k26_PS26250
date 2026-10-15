@@ -1,6 +1,6 @@
 import { parseArgs } from 'node:util';
 import { writeFileSync } from 'node:fs';
-import { trainDemandModel, forecastDemand } from '../src/relief-models.js';
+import { trainDemandModel, forecastDemand } from '../src/forecasting/demand.js';
 
 try {
   const { values } = parseArgs({ options: { seed: { type: 'string', default: '26250' },

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { ApiError } from './errors.js';
+import { ApiError } from '../platform/errors.js';
 
 export const TOPICS = Object.freeze({
   'aircraft.status': 'logistics.aircraft.v1',

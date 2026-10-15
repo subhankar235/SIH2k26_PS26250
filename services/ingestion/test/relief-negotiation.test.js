@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createReliefWorld, advanceReliefWorld, RELIEF_PHASES } from '../src/relief-world.js';
-import { optimizeReliefWorld, validateReliefPlan, validateReliefAssignmentSeed } from '../src/relief-planner.js';
-import { runReliefNegotiation, finishReliefNegotiation, negotiationSettingsSchema, validateReliefNegotiationReport } from '../src/relief-negotiation.js';
+import { createReliefWorld, advanceReliefWorld, RELIEF_PHASES } from '../src/planning/world.js';
+import { optimizeReliefWorld, validateReliefPlan, validateReliefAssignmentSeed } from '../src/planning/planner.js';
+import { runReliefNegotiation, finishReliefNegotiation, negotiationSettingsSchema, validateReliefNegotiationReport } from '../src/agents/negotiation.js';
 const agents = ['fleet','crew','weather','airport','cargo'];
 function world() { return createReliefWorld({runId:'00000000-0000-4000-8000-000000000001',now:0}); }
 

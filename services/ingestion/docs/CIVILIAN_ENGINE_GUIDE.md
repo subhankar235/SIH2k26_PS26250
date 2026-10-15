@@ -16,17 +16,17 @@ Run commands from `services/ingestion`. The implementation is in the isolated in
 
 | File | Responsibility |
 | --- | --- |
-| `src/contracts.js` | Strict envelopes, source/event identities, ordinary cargo types, timestamp normalization |
-| `src/store.js` | Immutable gateway history, projections, outbox, synchronous transactions/savepoints |
-| `src/publisher.js` | Broker acknowledgment, retry/backoff, per-key ordering |
-| `src/consumer-store.js`, `consumer.js` | Independent durable reader, dedupe, checkpoint, safe quarantine |
-| `src/relief-world.js` | Fixed world, ordered perturbations, validated event mirroring |
-| `src/relief-planner.js` | Five specialist reports, bounded optimizer, independent verifier |
-| `src/relief-models.js` | Synthetic generation, ordinary least squares, held-out evaluation and forecasts |
-| `src/relief-ai.js` | Local-only model configuration, structured ID selection, validation and fallback |
-| `src/relief-service.js` | Command idempotency, revisions, atomic state/events, annotation coalescing |
-| `src/app.js`, `monitoring.js` | Admin commands and authenticated read-only viewer API |
-| `web/relief.js`, `relief.css` | Simulation inspection inside the existing monitor |
+| `src/contracts/events.js` | Strict envelopes, source/event identities, ordinary cargo types, timestamp normalization |
+| `src/ingestion/store.js` | Immutable gateway history, projections, outbox, synchronous transactions/savepoints |
+| `src/transport/publisher.js` | Broker acknowledgment, retry/backoff, per-key ordering |
+| `src/transport/consumer-store.js`, `src/transport/consumer.js` | Independent durable reader, dedupe, checkpoint, safe quarantine |
+| `src/planning/world.js` | Fixed world, ordered perturbations, validated event mirroring |
+| `src/planning/planner.js` | Five specialist reports, bounded optimizer, independent verifier |
+| `src/forecasting/demand.js` | Synthetic generation, ordinary least squares, held-out evaluation and forecasts |
+| `src/agents/annotations.js` | Local-only model configuration, structured ID selection, validation and fallback |
+| `src/planning/service.js` | Command idempotency, revisions, atomic state/events, annotation coalescing |
+| `src/app.js`, `src/dashboard/monitoring.js` | Admin commands and authenticated read-only viewer API |
+| `dashboard/relief.js`, `relief.css` | Simulation inspection inside the existing monitor |
 | `scripts/relief-demo.js` | Authenticated finite end-to-end scenario driver |
 | `scripts/train-relief-models.js` | Reproducible synthetic training artifact |
 | `scripts/relief-model-smoke.js` | Actual two-model validation and digest capture |

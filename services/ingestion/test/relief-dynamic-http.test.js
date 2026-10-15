@@ -3,12 +3,12 @@ import test from 'node:test';
 import { randomUUID } from 'node:crypto';
 import { once } from 'node:events';
 import { createApp } from '../src/app.js';
-import { loadConfig } from '../src/config.js';
-import { EventStore } from '../src/store.js';
-import { ReliefSimulationService } from '../src/relief-service.js';
-import { createReliefWorld } from '../src/relief-world.js';
-import { EVENT_TYPES } from '../src/contracts.js';
-import { createReliefAnnotator, loadReliefAIConfig } from '../src/relief-ai.js';
+import { loadConfig } from '../src/platform/config.js';
+import { EventStore } from '../src/ingestion/store.js';
+import { ReliefSimulationService } from '../src/planning/service.js';
+import { createReliefWorld } from '../src/planning/world.js';
+import { EVENT_TYPES } from '../src/contracts/events.js';
+import { createReliefAnnotator, loadReliefAIConfig } from '../src/agents/annotations.js';
 
 test('configured gateway runs require admin; authenticated source events replan and viewers only inspect', async t => {
  const admin='a'.repeat(48),viewer='v'.repeat(48);

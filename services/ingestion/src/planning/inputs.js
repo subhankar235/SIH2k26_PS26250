@@ -1,6 +1,6 @@
-import { reliefEvents } from './relief-world.js';
-import { validateEvent } from './contracts.js';
-import { ApiError } from './errors.js';
+import { reliefEvents } from './world.js';
+import { validateEvent } from '../contracts/events.js';
+import { ApiError } from '../platform/errors.js';
 
 const collections = {'aircraft.status':'aircraft','crew.availability':'crews','weather.observation':'weather','airport.capacity':'airports','cargo.request':'requests'};
 export function boundEntity(snapshot,event) {

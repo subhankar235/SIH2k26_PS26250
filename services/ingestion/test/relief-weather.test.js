@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createReliefWeatherProvider, weatherCommandSchema } from '../src/relief-weather.js';
-import { validateEvent } from '../src/contracts.js';
+import { createReliefWeatherProvider, weatherCommandSchema } from '../src/integrations/weather.js';
+import { validateEvent } from '../src/contracts/events.js';
 
 const NOW = Date.parse('2026-10-15T12:20:00Z');
 const UUID = 'c3af3cc6-fbee-46da-90d2-95cb9aad6dc9';

@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createReliefWorld, advanceReliefWorld, reliefEvents, RELIEF_PHASES } from '../src/relief-world.js';
-import { EVENT_TYPES } from '../src/contracts.js';
+import { createReliefWorld, advanceReliefWorld, reliefEvents, RELIEF_PHASES } from '../src/planning/world.js';
+import { EVENT_TYPES } from '../src/contracts/events.js';
 const now = Date.parse('2026-10-15T06:00:00Z');
 const sources = EVENT_TYPES.map((type) => ({ sourceId: `relief-${type.split('.')[0]}`, types: [type] }));
 test('fixed civilian world is sealed to finite ordinary cargo and validated gateway fixtures', () => {

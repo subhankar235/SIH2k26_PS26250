@@ -3,9 +3,9 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { ConsumerStore } from '../src/consumer-store.js';
-import { KafkaReadModelWorker } from '../src/consumer.js';
-import { TOPICS } from '../src/contracts.js';
+import { ConsumerStore } from '../src/transport/consumer-store.js';
+import { KafkaReadModelWorker } from '../src/transport/consumer.js';
+import { TOPICS } from '../src/contracts/events.js';
 import { event } from './fixtures.js';
 
 const now = Date.parse('2026-10-15T10:00:00Z');

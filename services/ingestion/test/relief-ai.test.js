@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { loadReliefAIConfig, createReliefAnnotator } from '../src/relief-ai.js';
+import { loadReliefAIConfig, createReliefAnnotator } from '../src/agents/annotations.js';
 
 const agents = ['fleet', 'crew', 'weather', 'airport', 'cargo'];
 function input() {

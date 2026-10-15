@@ -12,7 +12,7 @@ Run from the repository root:
 python services/ingestion/scripts/negotiation-ui-fixture.py
 python services/ingestion/scripts/relief-ui-fixture.py
 python services/ingestion/scripts/dynamic-ui-fixture.py
-node --check services/ingestion/web/relief.js
+node --check services/ingestion/dashboard/relief.js
 ```
 
 Verified in headless Chromium on 2026-10-15:

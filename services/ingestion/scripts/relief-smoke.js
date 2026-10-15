@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { setTimeout as delay } from 'node:timers/promises';
 import { startServer } from '../src/server.js';
-import { runConsumer } from '../src/consumer-cli.js';
+import { runConsumer } from '../src/transport/consumer-cli.js';
 const brokers = process.env.KAFKA_TEST_BROKERS || process.env.KAFKA_BROKERS;
 if (!brokers) throw new Error('Relief pipeline smoke requires a real local test broker.');
 const id = randomUUID(); const env = { ...process.env, HOST: '127.0.0.1', PORT: '31874', KAFKA_BROKERS: brokers, RELIEF_AI_MODE: 'deterministic',
