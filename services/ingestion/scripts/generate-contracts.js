@@ -78,7 +78,7 @@ const reliefSnapshot = { oneOf: [
     plan: { type: 'object', required: ['status', 'assignments', 'unserved', 'agentReports'], properties: { status: { enum: ['optimal', 'feasible_budget'] },
       assignments: { type: 'array', maxItems: 3, items: object }, unserved: { type: 'array', maxItems: 5, items: object }, agentReports: { type: 'array', minItems: 5, maxItems: 5, items: object } } },
     validation: { type: 'object', required: ['valid', 'errors'], properties: { valid: { type: 'boolean' }, errors: { type: 'array', items: { type: 'string' } } } },
-    demand: object, annotations: object, inputs: object, inputFreshness: object, planUsable: { type: 'boolean' }, coordination: object, weatherFeed: object, evidence: { type: 'array', maxItems: 17, items: object }, history: { type: 'array', maxItems: 21, items: object },
+    demand: object, annotations: object, inputs: object, inputFreshness: object, planUsable: { type: 'boolean' }, coordination: object, negotiation: object, weatherFeed: object, evidence: { type: 'array', maxItems: 17, items: object }, history: { type: 'array', maxItems: 21, items: object },
     nextPhase: { type: ['string', 'null'] }, generatedAt: { type: 'string', format: 'date-time' } } },
 ] };
 operation('/v1/simulation', 'get', 'Read the bounded fictional civilian simulation and feed freshness', { success: reliefSnapshot });

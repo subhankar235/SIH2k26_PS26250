@@ -5873,6 +5873,9 @@
                         "coordination": {
                           "type": "object"
                         },
+                        "negotiation": {
+                          "type": "object"
+                        },
                         "weatherFeed": {
                           "type": "object"
                         },
@@ -6664,6 +6667,33 @@
                       "requests"
                     ],
                     "additionalProperties": false
+                  },
+                  "negotiation": {
+                    "type": "object",
+                    "properties": {
+                      "enabled": {
+                        "default": true,
+                        "type": "boolean"
+                      },
+                      "maxRounds": {
+                        "default": 4,
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 8
+                      },
+                      "maxMessages": {
+                        "default": 512,
+                        "type": "integer",
+                        "minimum": 32,
+                        "maximum": 512
+                      }
+                    },
+                    "required": [
+                      "enabled",
+                      "maxRounds",
+                      "maxMessages"
+                    ],
+                    "additionalProperties": false
                   }
                 },
                 "required": [
@@ -6812,6 +6842,9 @@
                           "type": "boolean"
                         },
                         "coordination": {
+                          "type": "object"
+                        },
+                        "negotiation": {
                           "type": "object"
                         },
                         "weatherFeed": {
@@ -6984,6 +7017,9 @@
                           "type": "boolean"
                         },
                         "coordination": {
+                          "type": "object"
+                        },
+                        "negotiation": {
                           "type": "object"
                         },
                         "weatherFeed": {
@@ -7610,6 +7646,9 @@
                           "type": "boolean"
                         },
                         "coordination": {
+                          "type": "object"
+                        },
+                        "negotiation": {
                           "type": "object"
                         },
                         "weatherFeed": {
@@ -8241,6 +8280,9 @@
                         "coordination": {
                           "type": "object"
                         },
+                        "negotiation": {
+                          "type": "object"
+                        },
                         "weatherFeed": {
                           "type": "object"
                         },
@@ -8819,6 +8861,9 @@
                           "type": "boolean"
                         },
                         "coordination": {
+                          "type": "object"
+                        },
+                        "negotiation": {
                           "type": "object"
                         },
                         "weatherFeed": {

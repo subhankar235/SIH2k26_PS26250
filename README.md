@@ -8,6 +8,8 @@ A separate bounded civilian relief engine now demonstrates specialist agents, de
 
 The [dynamic civilian extension guide](services/ingestion/docs/DYNAMIC_CIVILIAN_GUIDE.md) covers configurable fictional runs, source-driven replanning, TTL/maintenance expiry, deterministic coordination and public weather refresh.
 
+[Autonomous civilian negotiation](services/ingestion/docs/AUTONOMOUS_NEGOTIATION_GUIDE.md) adds stateful deterministic peers, proposals/objections/counterbids and checked optimizer warm starts.
+
 The earlier grid platform below is historical scaffolding and is not wired into the standalone ingestion module.
 
 ## Earlier grid scaffolding

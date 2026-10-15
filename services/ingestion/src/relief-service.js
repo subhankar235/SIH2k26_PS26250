@@ -9,8 +9,9 @@ import { trainDemandModel, forecastDemand } from './relief-models.js';
 import { configurationSchema, configuredReliefWorld } from './relief-configuration.js';
 import { buildReliefCoordination } from './relief-coordination.js';
 import { boundEntity, applyBoundObservation, expireBoundObservations, mirroredReliefEvents } from './relief-inputs.js';
+import { negotiationSettingsSchema, runReliefNegotiation, validateReliefNegotiationReport, finishReliefNegotiation } from './relief-negotiation.js';
 import { weatherCommandSchema } from './relief-weather.js';
-export const reliefStartSchema = z.strictObject({ scenario: z.literal('civilian-relief'), commandId: z.uuid(), replaceRunId: z.uuid().optional(), inputMode: z.enum(['scripted','gateway']).optional(), configuration: configurationSchema.optional() }).refine(c => !c.configuration || c.inputMode === 'gateway', 'Configuration requires gateway mode');
+export const reliefStartSchema = z.strictObject({ scenario: z.literal('civilian-relief'), commandId: z.uuid(), replaceRunId: z.uuid().optional(), inputMode: z.enum(['scripted','gateway']).optional(), configuration: configurationSchema.optional(), negotiation: negotiationSettingsSchema.optional() }).refine(c => !c.configuration || c.inputMode === 'gateway', 'Configuration requires gateway mode');
 export const reliefStepSchema = z.strictObject({ commandId: z.uuid(), runId: z.uuid(), expectedRevision: z.number().int().min(0).max(5), phase: z.enum(RELIEF_PHASES) });
 function parse(schema, input) {
   const result = schema.safeParse(input);
@@ -20,8 +21,8 @@ function parse(schema, input) {
 
 /** Bounded civilian fictional scenarios only; all state/event changes are one synchronous DB transaction. */
 export class ReliefSimulationService {
-  constructor({ store, sources, now = Date.now, annotator, weatherProvider, logger = () => {} }) {
-    this.store = store; this.sources = sources; this.now = now; this.annotator = annotator; this.logger = logger; this.weatherProvider = weatherProvider; this.weatherTask = null;
+  constructor({ store, sources, now = Date.now, annotator, weatherProvider, negotiator = runReliefNegotiation, logger = () => {} }) {
+    this.store = store; this.sources = sources; this.now = now; this.annotator = annotator; this.logger = logger; this.weatherProvider = weatherProvider; this.weatherTask = null; this.negotiator = negotiator;
     this.closed = false; this.pending = false; this.task = null;
     this.demandModel = trainDemandModel();
     store.db.exec(`CREATE TABLE IF NOT EXISTS relief_meta(id INTEGER PRIMARY KEY CHECK(id=1),version INTEGER NOT NULL);
@@ -63,7 +64,7 @@ export class ReliefSimulationService {
       const mode=command.inputMode??'scripted';
       const authorities=Object.fromEntries(EVENT_TYPES.map(type=>[type,this.sources.find(s=>s.types.includes(type))?.sourceId]));
       if(Object.values(authorities).some(id=>!id))throw new ApiError(503,'SIMULATION_SOURCES_MISSING','Configure an authorized source for every civilian data type.');
-      return { world, previous: [], history: [], phase: 'initial', inputs:{mode,namespace:`input-${world.runId}-`,authorities,bindings:[]} };
+      return { world, previous: [], history: [], phase: 'initial', negotiationSettings: command.negotiation, inputs:{mode,namespace:`input-${world.runId}-`,authorities,bindings:[]} };
     });
   }
   step(input) {
@@ -72,7 +73,7 @@ export class ReliefSimulationService {
       if (current.inputs?.mode === 'gateway' || current.status !== 'ready' || current.world.runId !== command.runId || current.world.revision !== command.expectedRevision || current.nextPhase !== command.phase) {
         throw new ApiError(409, 'SIMULATION_REVISION_CONFLICT', 'Run, revision or phase does not match the current fictional state.');
       }
-      return { world: advanceReliefWorld(current.world, command.phase), previous: current.plan.assignments, history: current.history, phase: command.phase, inputs: current.inputs };
+      return { world: advanceReliefWorld(current.world, command.phase), previous: current.plan.assignments, history: current.history, phase: command.phase, negotiationSettings: current.negotiation?.settings, inputs: current.inputs };
     });
   }
   execute(kind, command, transition) {
@@ -171,8 +172,18 @@ export class ReliefSimulationService {
   checkCommandCapacity() {
     if(this.store.db.prepare('SELECT COUNT(*) AS n FROM relief_commands').get().n>=1000)throw new ApiError(503,'SIMULATION_COMMAND_CAPACITY','Retained simulation command capacity is full.');
   }
-  persistTransition({world,previous,history,phase,inputs,weatherFeed}) {
-    const plan=optimizeReliefWorld(world,{previousAssignments:previous});
+  persistTransition({world,previous,history,phase,inputs,weatherFeed,negotiationSettings}) {
+    const settings=negotiationSettingsSchema.parse(negotiationSettings ?? {});
+    let negotiation;
+    try {
+      negotiation=this.negotiator(structuredClone(world),{previousAssignments:structuredClone(previous),settings:{...settings}});
+      if(negotiation?.then) { Promise.resolve(negotiation).catch(()=>{}); throw new TypeError('Negotiation must be synchronous.'); }
+      if(!validateReliefNegotiationReport(world,negotiation,{previousAssignments:previous}).valid || JSON.stringify(negotiation.settings)!==JSON.stringify(settings)) throw new Error('Invalid negotiation report.');
+    } catch {
+      this.logger('simulation.negotiation_failed');
+      negotiation={version:1,runId:world.runId,revision:world.revision,mode:'deterministic-autonomous',topology:'fully-connected-peers',settings,previousAssignments:structuredClone(previous),status:'failed',roundsCompleted:0,requests:[],agentStates:[],messages:[],assignments:[],errorCode:'NEGOTIATION_FAILED'};
+    }
+    const plan=optimizeReliefWorld(world,{previousAssignments:previous,initialAssignments:negotiation.assignments});
     const validation=validateReliefPlan(world,plan,{previousAssignments:previous});
     if(!validation.valid)throw new Error('Simulation plan failed independent verification.');
     const events=mirroredReliefEvents(world,this.sources,inputs,this.now());
@@ -181,6 +192,7 @@ export class ReliefSimulationService {
     const forecastDay=120+world.tick;
     const snapshot={status:'ready',world,plan,validation,inputs,
       coordination:buildReliefCoordination(world,plan,validation),
+      negotiation:finishReliefNegotiation(negotiation,world,plan,validation,{previousAssignments:previous}),
       evidence:events.map((event,i)=>({eventId:event.eventId,cursor:receipts[i].cursor,type:event.type,entityId:event.entityId,sourceId:event.sourceId})),
       demand:{modelId:'synthetic-demand-ols',simulation:true,forecastDay,predictedRequests:forecastDemand(this.demandModel,forecastDay),trainingCount:this.demandModel.trainingCount,testCount:this.demandModel.testCount,evaluation:this.demandModel.evaluation},
       annotations:{status:'pending',runId:world.runId,revision:world.revision},
@@ -202,7 +214,7 @@ export class ReliefSimulationService {
       const previous=current.plan.assignments;
       for(const event of applied)applyBoundObservation(current,event,this.now());
       current.world.revision++;
-      this.persistTransition({world:current.world,previous,history:current.history,phase:'gateway-update',inputs:current.inputs,weatherFeed:current.weatherFeed});changed=true;
+      this.persistTransition({world:current.world,previous,history:current.history,phase:'gateway-update',negotiationSettings:current.negotiation?.settings,inputs:current.inputs,weatherFeed:current.weatherFeed});changed=true;
       return result;
     });
     if(changed&&queue)this.queue();return receipts;
@@ -215,7 +227,7 @@ export class ReliefSimulationService {
       if(current.status!=='ready'||current.inputs?.mode!=='gateway'||current.world.revision>=20)return;
       if(!expireBoundObservations(current,this.now()))return;
       current.world.revision++;
-      this.persistTransition({world:current.world,previous:current.plan.assignments,history:current.history,phase:'input-expiry',inputs:current.inputs,weatherFeed:current.weatherFeed});changed=true;
+      this.persistTransition({world:current.world,previous:current.plan.assignments,history:current.history,phase:'input-expiry',negotiationSettings:current.negotiation?.settings,inputs:current.inputs,weatherFeed:current.weatherFeed});changed=true;
     });
     if(changed)this.queue();
   }

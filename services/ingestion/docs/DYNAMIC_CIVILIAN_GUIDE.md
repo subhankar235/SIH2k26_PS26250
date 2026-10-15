@@ -88,7 +88,7 @@ To preserve the existing bounded demonstration and retained history, a run accep
 
 The snapshot contains five deterministic specialist evidence messages to a supervisor and a grounded resolution. Each message includes from/to/kind, entity IDs, current finding IDs and a summary. The supervisor summarizes the independently checked assignment result. The dashboard filters unknown finding IDs defensively and labels historical coordination if expiry is pending.
 
-This is an inspectable evidence exchange, not an autonomous negotiating-agent network. It does not change the objective or hard constraints. Existing optional local Ollama models still select allowlisted finding IDs for annotations; deterministic rules and the optimizer remain authoritative. Forecast evaluation remains synthetic and cannot establish real operational accuracy.
+This coordination summary remains an inspectable evidence exchange. A separate [autonomous deterministic negotiation layer](AUTONOMOUS_NEGOTIATION_GUIDE.md) now executes peer proposals, objections and counterbids before optimization; its accepted seed cannot change the objective or hard constraints. Existing optional local Ollama models still select allowlisted finding IDs for annotations; deterministic rules and the optimizer remain authoritative. Forecast evaluation remains synthetic and cannot establish real operational accuracy.
 
 ## Live public weather
 

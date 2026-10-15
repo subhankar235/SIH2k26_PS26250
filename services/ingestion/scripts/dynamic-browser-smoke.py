@@ -38,6 +38,11 @@ with sync_playwright() as p:
     expect(page.locator('#relief-state')).to_contain_text('Revision 0')
     expect(page.locator('#relief-content')).to_contain_text(state['inputs']['namespace'])
     expect(page.locator('#relief-content')).to_contain_text('Deterministic specialist coordination')
+    expect(page.locator('#relief-negotiation')).to_contain_text('Deterministic autonomous')
+    assert state['negotiation']['outcome']['verified']
+    assert any(m['kind']=='counterproposal' for m in state['negotiation']['messages'])
+    page.locator('details[data-relief-detail="negotiation"] summary').click()
+    expect(page.locator('#relief-table-negotiation-messages')).to_contain_text('Counterproposal')
     from datetime import datetime,timezone,timedelta
     now=datetime.now(timezone.utc)
     event={'schemaVersion':1,'eventId':str(uuid.uuid4()),'sourceId':source['sourceId'],'type':'weather.observation','entityId':state['inputs']['namespace']+'SIM-CLINIC','sequence':1,'observedAt':now.isoformat(),'validUntil':(now+timedelta(seconds=15)).isoformat(),'data':{'temperatureC':24,'windSpeedMps':25,'visibilityM':1500,'condition':'storm'}}

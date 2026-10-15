@@ -12,6 +12,8 @@ After starting the API and signing into the monitor, run `npm run relief:demo` i
 
 The [dynamic extension guide](docs/DYNAMIC_CIVILIAN_GUIDE.md) explains configurable gateway runs, authenticated event-driven replanning, input TTL/maintenance expiry, deterministic specialist messages and explicit Open-Meteo refresh. Run `npm run relief:dynamic` for the new demo, optionally `-- --weather` for public model estimates. [Dynamic validation evidence](docs/validation-dynamic-system.md).
 
+Autonomous deterministic specialists now exchange real proposals, objections, bids and counterproposals before optimization. [Negotiation guide](docs/AUTONOMOUS_NEGOTIATION_GUIDE.md) explains the fully connected in-process protocol, checked incumbents, budgets, failure states and dashboard.
+
 ## Quick start
 
 Requirements: Node **24.19.0 or later**, npm **11.17.0**. Run these commands from this directory:
