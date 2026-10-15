@@ -175,10 +175,51 @@ function better(a, b) {
         (a.objective.totalArrivalSlots === b.objective.totalArrivalSlots && compare(assignmentKey(a.assignments), assignmentKey(b.assignments)) < 0)))));
 }
 
-export function optimizeReliefWorld(world, { previousAssignments = [], nodeLimit = 100000 } = {}) {
+function candidateId(a) {
+  // Validated entity suffixes cannot contain '~', making this tuple encoding
+  // collision-free even when entity IDs contain underscores or hyphens.
+  return `SIM-CAND-${a.requestId.slice(4)}~${a.aircraftId.slice(4)}~${a.crewId.slice(4)}~${a.departureSlot}~${a.arrivalSlot}`;
+}
+
+export function getReliefNegotiationContext(world) {
+  assertWorld(world);
+  const candidates = sorted(world.requests).flatMap(r => sorted(world.aircraft).flatMap(a => sorted(world.crews).flatMap(c =>
+    world.policy.slots.map(departureSlot => {
+      const assignment = { requestId: r.id, aircraftId: a.id, crewId: c.id, departureSlot, arrivalSlot: departureSlot + 1 };
+      return { id: candidateId(assignment), assignment };
+    }))));
+  return {
+    agentReports: buildReports(world), candidates,
+    feasibleCandidateIds: sorted(world.requests).flatMap(r => candidatesFor(r, world).candidates.map(candidateId)),
+  };
+}
+
+export function validateReliefAssignmentSeed(world, assignments, { previousAssignments = [] } = {}) {
+  try { assertWorld(world); assertPrevious(previousAssignments); }
+  catch (error) { return { valid: false, errors: [error.message] }; }
+  if (!Array.isArray(assignments) || assignments.length > 5 || assignments.some(a => !assignmentShape(a))) {
+    return { valid: false, errors: ['Invalid assignment seed shape or slots'] };
+  }
+  // Derive only the metadata required by the authoritative plan checker. This
+  // private envelope is never a returned plan or a claim that search ran.
+  const options = sorted(world.requests).map(r => ({ requestId: r.id, ...candidatesFor(r, world) }));
+  const served = new Set(assignments.map(a => a.requestId));
+  return validateReliefPlan(world, {
+    status: 'optimal', assignments,
+    unserved: options.filter(o => !served.has(o.requestId)).map(o => ({ requestId: o.requestId,
+      reasonCodes: o.candidates.length ? ['RESOURCE_CONTENTION_OR_PRIORITY'] : o.reasonCodes })),
+    objective: objectiveFor(world, assignments, previousAssignments), agentReports: buildReports(world),
+    diagnostics: { method: 'bounded-exact-one-wave', nodesExplored: 1, nodeLimit: 1, budgetExhausted: false,
+      candidateCount: options.reduce((n, o) => n + o.candidates.length, 0) },
+  }, { previousAssignments });
+}
+
+export function optimizeReliefWorld(world, { previousAssignments = [], initialAssignments = [], nodeLimit = 100000 } = {}) {
   assertWorld(world);
   assertPrevious(previousAssignments);
   if (!integer(nodeLimit, 1, 100000)) throw new RangeError('nodeLimit must be an integer from 1 to 100000');
+  const seedValidation = validateReliefAssignmentSeed(world, initialAssignments, { previousAssignments });
+  if (!seedValidation.valid) throw new TypeError(`Invalid initialAssignments: ${seedValidation.errors.join('; ')}`);
   const requests = sorted(world.requests);
   const agentReports = buildReports(world);
   const eligibility = Object.fromEntries(agentReports.map(report => [report.agentId, new Set(report.eligibleIds)]));
@@ -190,7 +231,7 @@ export function optimizeReliefWorld(world, { previousAssignments = [], nodeLimit
       eligibility.fleet.has(a.aircraftId) && eligibility.crew.has(a.crewId) && eligibility.cargo.has(r.id) &&
       [r.originId, r.destinationId].every(id => eligibility.weather.has(id) && eligibility.airport.has(id))) };
   });
-  let best = { assignments: [], objective: objectiveFor(world, [], previousAssignments) };
+  let best = { assignments: initialAssignments.map(a => ({ ...a })), objective: objectiveFor(world, initialAssignments, previousAssignments) };
   let nodesExplored = 0, budgetExhausted = false;
   const usedAircraft = new Set(), usedCrews = new Set(), departures = new Map(), arrivals = new Map();
   const chosen = [];
