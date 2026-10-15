@@ -72,6 +72,84 @@ function coordination(snapshot) {
   details.append(node('summary', `Inspect coordination messages · ${rows.length}`), table('relief-table-coordination', 'Deterministic coordination messages', ['Message ID', 'From → To', 'Kind', 'Entity IDs', 'Grounded finding IDs', 'Evidence summary'], rows, 'No coordination messages reported.'));
   result.append(details); return result;
 }
+const negotiationKinds = { cfp: 'Call for proposals', proposal: 'Proposal', accept: 'Acceptance', reject: 'Objection', bid: 'Bid', counterproposal: 'Counterproposal', commit: 'Commit', defer: 'Deferred request', resolution: 'Resolution' };
+const negotiationStatuses = { agreed: 'Agreed', partial: 'Partial', no_agreement: 'No agreement', budget_exhausted: 'Budget exhausted', failed: 'Failed', disabled: 'Disabled', blocked: 'Blocked', deferred: 'Deferred' };
+function negotiationReferences(snapshot) {
+  const world = snapshot.world;
+  const entities = new Set(['aircraft', 'crews', 'airports', 'requests'].flatMap((key) => list(world[key]).map((item) => item.id)));
+  const requests = new Set(list(world.requests).map((item) => item.id));
+  const aircraft = new Set(list(world.aircraft).map((item) => item.id)), crews = new Set(list(world.crews).map((item) => item.id));
+  const knownFindings = new Set(list(snapshot.plan.agentReports).flatMap((report) => list(report.findings).map((finding) => finding.id)));
+  const candidates = new Set();
+  for (const request of list(world.requests)) for (const plane of aircraft) for (const crew of crews) for (const slot of list(world.policy?.slots)) {
+    candidates.add(`SIM-CAND-${request.id.slice(4)}~${plane.slice(4)}~${crew.slice(4)}~${slot}~${slot + 1}`);
+  }
+  const candidateId = (assignment) => `SIM-CAND-${assignment.requestId.slice(4)}~${assignment.aircraftId.slice(4)}~${assignment.crewId.slice(4)}~${assignment.departureSlot}~${assignment.arrivalSlot}`;
+  const assignmentKnown = (assignment) => assignment && Number.isInteger(assignment.departureSlot) && Number.isInteger(assignment.arrivalSlot) && requests.has(assignment.requestId) && aircraft.has(assignment.aircraftId) && crews.has(assignment.crewId) && candidates.has(candidateId(assignment));
+  return { entities, requests, knownFindings, candidates, candidateId, assignmentKnown };
+}
+function negotiation(snapshot) {
+  const historical = snapshot.planUsable === false || snapshot.inputFreshness?.replanPending === true;
+  const result = section('Autonomous civilian negotiation', 'Deterministic policies make negotiation decisions through bounded contract-net proposals, objections and counterbids. No LLM makes these decisions. The independent checker remains authoritative; nothing is dispatched.');
+  result.id = 'relief-negotiation';
+  const report = snapshot.negotiation;
+  if (report.runId !== snapshot.world.runId || report.revision !== snapshot.world.revision) {
+    result.append(node('p', 'No negotiation report for this run and revision.', 'relief-empty')); return result;
+  }
+  if (report.version !== 1 || report.mode !== 'deterministic-autonomous' || report.topology !== 'fully-connected-peers') {
+    result.append(node('p', 'Negotiation format not supported by this viewer.', 'relief-empty')); return result;
+  }
+  if (historical) result.append(node('p', 'Historical negotiation only. Retained activity, commitments and outcomes describe the prior input state; a verified replan is required.', 'relief-warning relief-label'));
+  const refs = negotiationReferences(snapshot);
+  let omitted = false;
+  const grounded = (ids, known) => {
+    const kept = list(ids).filter((id) => known.has(id));
+    if (kept.length !== list(ids).length) omitted = true;
+    return kept;
+  };
+  const actors = { ...labels, supervisor: 'Supervisor' };
+  const messages = list(report.messages).filter((message) => {
+    const valid = message && Object.hasOwn(actors, message.from) && Object.hasOwn(actors, message.to) && Object.hasOwn(negotiationKinds, message.kind) &&
+      (!message.requestId || refs.requests.has(message.requestId)) && (!message.assignment || refs.assignmentKnown(message.assignment) && (!message.requestId || message.assignment.requestId === message.requestId)) &&
+      (!message.candidateId || refs.candidates.has(message.candidateId)) && list(message.candidateIds).every((id) => refs.candidates.has(id)) &&
+      (!message.assignment || !message.candidateId || refs.candidateId(message.assignment) === message.candidateId);
+    if (!valid) omitted = true;
+    return valid;
+  });
+  const proposals = new Set(messages.filter((message) => message.kind === 'proposal' && refs.requests.has(message.requestId) && message.candidateId && Number.isInteger(message.round) && message.round >= 1 && message.round <= 8 &&
+    message.proposalId === `SIM-PROP-${report.runId}-${report.revision}-${message.requestId.slice(4)}-${message.round}`).map((message) => message.proposalId));
+  const assignmentRows = (assignments) => list(assignments).filter((assignment) => {
+    if (refs.assignmentKnown(assignment)) return true;
+    omitted = true; return false;
+  }).map((assignment) => [assignment.requestId, assignment.aircraftId, assignment.crewId, assignment.departureSlot, assignment.arrivalSlot]);
+  result.append(definition([['Policy mode', 'Deterministic autonomous'], ['Topology', 'Fully connected peers and supervisor'], ['Negotiation status', negotiationStatuses[report.status] || 'Not reported'], ['Enabled', report.settings?.enabled === true ? 'Yes' : report.settings?.enabled === false ? 'No' : 'Not reported'], ['Rounds completed', report.roundsCompleted], ['Maximum rounds per request', report.settings?.maxRounds], ['Messages used / budget', `${list(report.messages).length} / ${value(report.settings?.maxMessages)}`]]));
+  const outcome = report.outcome;
+  const outcomeLabels = { 'seed-retained': 'Negotiated seed retained', 'solver-refined': 'Optimizer refined negotiated seed', 'deterministic-fallback': 'Deterministic optimizer fallback', disabled: 'Negotiation disabled' };
+  if (outcome) {
+    result.append(node('p', `${historical ? 'Historical outcome: ' : 'Outcome: '}${outcomeLabels[outcome.status] || 'Not reported'}`, 'relief-label'));
+    result.append(definition([['Negotiated seed served priority', outcome.seedServedPriority], ['Optimizer final served priority', outcome.finalServedPriority], ['Outcome independently verified', outcome.verified === true ? 'Yes' : outcome.verified === false ? 'No' : 'Not reported']]));
+  } else result.append(node('p', 'Negotiation outcome not reported.', 'relief-empty'));
+  result.append(node('p', historical ? 'Historical negotiated seed' : 'Negotiated seed assignments', 'small relief-label'), table('relief-table-negotiation-seed', historical ? 'Historical negotiated seed' : 'Negotiated seed assignments', ['Request', 'Aircraft', 'Crew', 'Departure slot', 'Arrival slot'], assignmentRows(report.assignments), 'No negotiated assignments retained. Inspect request statuses and optimizer outcome.'));
+  const requestRows = list(report.requests).filter((request) => {
+    const valid = refs.requests.has(request?.requestId) && (!request.assignment || refs.assignmentKnown(request.assignment) && request.assignment.requestId === request.requestId);
+    if (!valid) omitted = true;
+    return valid;
+  }).map((request) => [request.requestId, negotiationStatuses[request.status] || 'Not reported', request.rounds]);
+  result.append(table('relief-table-negotiation-requests', 'Negotiation request results', ['Request', 'Status', 'Rounds'], requestRows, 'No request negotiation results reported.'));
+  const agentRows = list(report.agentStates).filter((agent) => {
+    if (agent && Object.hasOwn(labels, agent.agentId)) return true;
+    omitted = true; return false;
+  }).map((agent) => [labels[agent.agentId], joined(grounded(agent.acceptedProposalIds, proposals)), joined(grounded(agent.rejectedProposalIds, proposals)), agent.bidsSent]);
+  result.append(table('relief-table-negotiation-agents', 'Negotiating agent activity', ['Policy actor', 'Accepted proposal IDs', 'Rejected proposal IDs', 'Bids sent'], agentRows, 'No agent activity reported.'));
+  const messageRows = messages.filter((message) => {
+    if (!message.proposalId || proposals.has(message.proposalId)) return true;
+    omitted = true; return false;
+  }).map((message) => [message.id, message.round, `${actors[message.from]} → ${actors[message.to]}`, negotiationKinds[message.kind], message.requestId || 'None', message.proposalId || 'None', joined(grounded(message.entityIds, refs.entities)), joined(grounded(message.findingIds, refs.knownFindings)), joined(message.ruleCodes), message.candidateId || joined(message.candidateIds), message.assignment ? `${message.assignment.aircraftId} / ${message.assignment.crewId} / ${message.assignment.departureSlot} → ${message.assignment.arrivalSlot}` : 'None', message.summary]);
+  if (omitted) result.append(node('p', 'Unsupported or ungrounded references were omitted from this negotiation view.', 'small relief-warning'));
+  const details = node('details', undefined, 'relief-report relief-coordination relief-negotiation-ledger'); details.dataset.reliefDetail = 'negotiation';
+  details.append(node('summary', `Inspect ${historical ? 'historical ' : ''}peer negotiation messages · ${messageRows.length}`), table('relief-table-negotiation-messages', historical ? 'Historical peer negotiation messages' : 'Peer negotiation messages', ['Message ID', 'Round', 'From → To', 'Kind', 'Request', 'Proposal ID', 'Grounded entity IDs', 'Grounded finding IDs', 'Assignment rule codes', 'Candidate IDs', 'Candidate assignment', 'Policy summary'], messageRows, 'No supported negotiation messages reported.'));
+  result.append(details); return result;
+}
 function weatherFeed(snapshot) {
   const result = section('Weather feed', 'Shows the most recent administrator-requested provider refresh. Monitor polling reads this status; it does not request live weather.');
   const feed = snapshot.weatherFeed;
@@ -198,6 +276,7 @@ export function reliefRender(snapshot) {
   if (snapshot.inputs) inputSections.push(inputDetails(snapshot.inputs));
   if (snapshot.weatherFeed) inputSections.push(weatherFeed(snapshot));
   if (snapshot.coordination) inputSections.push(coordination(snapshot));
+  if (snapshot.negotiation) inputSections.push(negotiation(snapshot));
   content.replaceChildren(overview, ...inputSections, proposal, unmet, requests, worldDetails(world), annotations(snapshot), reports(snapshot), history);
   get('relief-state').textContent = `Revision ${value(world.revision)} · Logical tick ${value(world.tick)} · Fictional scenario`;
   for (const details of content.querySelectorAll('[data-relief-detail]')) {
