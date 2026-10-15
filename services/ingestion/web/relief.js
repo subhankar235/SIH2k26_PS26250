@@ -80,9 +80,9 @@ function negotiationReferences(snapshot) {
   const requests = new Set(list(world.requests).map((item) => item.id));
   const aircraft = new Set(list(world.aircraft).map((item) => item.id)), crews = new Set(list(world.crews).map((item) => item.id));
   const knownFindings = new Set(list(snapshot.plan.agentReports).flatMap((report) => list(report.findings).map((finding) => finding.id)));
-  const candidates = new Set();
+  const candidates = new Map();
   for (const request of list(world.requests)) for (const plane of aircraft) for (const crew of crews) for (const slot of list(world.policy?.slots)) {
-    candidates.add(`SIM-CAND-${request.id.slice(4)}~${plane.slice(4)}~${crew.slice(4)}~${slot}~${slot + 1}`);
+    candidates.set(`SIM-CAND-${request.id.slice(4)}~${plane.slice(4)}~${crew.slice(4)}~${slot}~${slot + 1}`, request.id);
   }
   const candidateId = (assignment) => `SIM-CAND-${assignment.requestId.slice(4)}~${assignment.aircraftId.slice(4)}~${assignment.crewId.slice(4)}~${assignment.departureSlot}~${assignment.arrivalSlot}`;
   const assignmentKnown = (assignment) => assignment && Number.isInteger(assignment.departureSlot) && Number.isInteger(assignment.arrivalSlot) && requests.has(assignment.requestId) && aircraft.has(assignment.aircraftId) && crews.has(assignment.crewId) && candidates.has(candidateId(assignment));
@@ -111,13 +111,20 @@ function negotiation(snapshot) {
   const messages = list(report.messages).filter((message) => {
     const valid = message && Object.hasOwn(actors, message.from) && Object.hasOwn(actors, message.to) && Object.hasOwn(negotiationKinds, message.kind) &&
       (!message.requestId || refs.requests.has(message.requestId)) && (!message.assignment || refs.assignmentKnown(message.assignment) && (!message.requestId || message.assignment.requestId === message.requestId)) &&
-      (!message.candidateId || refs.candidates.has(message.candidateId)) && list(message.candidateIds).every((id) => refs.candidates.has(id)) &&
+      (!message.candidateId || refs.candidates.has(message.candidateId) && refs.candidates.get(message.candidateId) === message.requestId) && list(message.candidateIds).every((id) => refs.candidates.has(id) && refs.candidates.get(id) === message.requestId) &&
       (!message.assignment || !message.candidateId || refs.candidateId(message.assignment) === message.candidateId);
     if (!valid) omitted = true;
     return valid;
   });
-  const proposals = new Set(messages.filter((message) => message.kind === 'proposal' && refs.requests.has(message.requestId) && message.candidateId && Number.isInteger(message.round) && message.round >= 1 && message.round <= 8 &&
-    message.proposalId === `SIM-PROP-${report.runId}-${report.revision}-${message.requestId.slice(4)}-${message.round}`).map((message) => message.proposalId));
+  const proposals = new Map(), conflictingProposals = new Set();
+  for (const message of messages) {
+    if (message.kind !== 'proposal' || !refs.requests.has(message.requestId) || !message.candidateId || !Number.isInteger(message.round) || message.round < 1 || message.round > 8 ||
+      message.proposalId !== `SIM-PROP-${report.runId}-${report.revision}-${message.requestId.slice(4)}-${message.round}`) continue;
+    const previous = proposals.get(message.proposalId);
+    if (previous && (previous.requestId !== message.requestId || previous.round !== message.round || previous.candidateId !== message.candidateId)) conflictingProposals.add(message.proposalId);
+    proposals.set(message.proposalId, { requestId: message.requestId, round: message.round, candidateId: message.candidateId });
+  }
+  for (const id of conflictingProposals) proposals.delete(id);
   const assignmentRows = (assignments) => list(assignments).filter((assignment) => {
     if (refs.assignmentKnown(assignment)) return true;
     omitted = true; return false;
@@ -142,8 +149,12 @@ function negotiation(snapshot) {
   }).map((agent) => [labels[agent.agentId], joined(grounded(agent.acceptedProposalIds, proposals)), joined(grounded(agent.rejectedProposalIds, proposals)), agent.bidsSent]);
   result.append(table('relief-table-negotiation-agents', 'Negotiating agent activity', ['Policy actor', 'Accepted proposal IDs', 'Rejected proposal IDs', 'Bids sent'], agentRows, 'No agent activity reported.'));
   const messageRows = messages.filter((message) => {
-    if (!message.proposalId || proposals.has(message.proposalId)) return true;
-    omitted = true; return false;
+    const proposal = proposals.get(message.proposalId);
+    const requiresProposal = ['proposal', 'accept', 'reject', 'bid', 'counterproposal', 'commit'].includes(message.kind);
+    const votesOnCandidate = ['proposal', 'accept', 'reject', 'commit'].includes(message.kind);
+    const valid = !message.proposalId && !requiresProposal || proposal && proposal.requestId === message.requestId && proposal.round === message.round && (!votesOnCandidate || proposal.candidateId === message.candidateId);
+    if (!valid) omitted = true;
+    return valid;
   }).map((message) => [message.id, message.round, `${actors[message.from]} → ${actors[message.to]}`, negotiationKinds[message.kind], message.requestId || 'None', message.proposalId || 'None', joined(grounded(message.entityIds, refs.entities)), joined(grounded(message.findingIds, refs.knownFindings)), joined(message.ruleCodes), message.candidateId || joined(message.candidateIds), message.assignment ? `${message.assignment.aircraftId} / ${message.assignment.crewId} / ${message.assignment.departureSlot} → ${message.assignment.arrivalSlot}` : 'None', message.summary]);
   if (omitted) result.append(node('p', 'Unsupported or ungrounded references were omitted from this negotiation view.', 'small relief-warning'));
   const details = node('details', undefined, 'relief-report relief-coordination relief-negotiation-ledger'); details.dataset.reliefDetail = 'negotiation';

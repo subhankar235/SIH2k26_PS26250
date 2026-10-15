@@ -91,6 +91,34 @@ try:
                 page.evaluate('document.querySelector("#refresh").dispatchEvent(new Event("click"))')
             expect(page.locator('#refresh')).to_be_enabled()
 
+        # Existing IDs can still contradict their referenced proposal tuple.
+        other_assignment = dict(ASSIGNMENT, requestId='SIM-R2')
+        other_candidate = 'SIM-CAND-R2~A~C~0~1'
+        alternate_assignment = dict(ASSIGNMENT, departureSlot=1, arrivalSlot=2)
+        alternate_candidate = 'SIM-CAND-R~A~C~1~2'
+        state['sim']['world']['requests'].append(dict(state['sim']['world']['requests'][0], id='SIM-R2'))
+        state['sim']['negotiation']['messages'].extend([
+            dict(messages[2], id='cross-request', requestId='SIM-R2', candidateId=other_candidate, candidateIds=[other_candidate], assignment=other_assignment, summary='BAD-CROSS-REQUEST'),
+            dict(messages[2], id='cross-candidate', candidateId=alternate_candidate, candidateIds=[alternate_candidate], assignment=alternate_assignment, summary='BAD-VOTE-CANDIDATE'),
+            dict(messages[3], id='cross-rejection', candidateId=alternate_candidate, candidateIds=[alternate_candidate], assignment=alternate_assignment, summary='BAD-REJECTION-CANDIDATE'),
+            dict(messages[2], id='cross-round', kind='commit', round=2, summary='BAD-COMMIT-ROUND'),
+            dict(messages[4], id='cross-bid', candidateIds=[other_candidate], summary='BAD-BID-REQUEST'),
+            dict(messages[5], id='cross-counter', requestId='SIM-R2', candidateId=other_candidate, candidateIds=[other_candidate], assignment=other_assignment, summary='BAD-COUNTER-REQUEST'),
+            dict(messages[5], id='valid-counter', candidateId=alternate_candidate, candidateIds=[alternate_candidate], assignment=alternate_assignment, summary='VALID-ALTERNATE-COUNTER'),
+        ])
+        refresh()
+        for forbidden in ['BAD-CROSS-REQUEST', 'BAD-VOTE-CANDIDATE', 'BAD-REJECTION-CANDIDATE', 'BAD-COMMIT-ROUND', 'BAD-BID-REQUEST', 'BAD-COUNTER-REQUEST']:
+            expect(panel).not_to_contain_text(forbidden)
+        expect(panel).to_contain_text('VALID-ALTERNATE-COUNTER')
+        expect(panel.locator('#relief-table-negotiation-messages tbody tr')).to_have_count(41)
+        # Reusing the same canonical proposal ID for a different tuple is ambiguous.
+        state['sim']['negotiation']['messages'].append(dict(messages[1], id='conflicting-proposal', candidateId=alternate_candidate, candidateIds=[alternate_candidate], assignment=alternate_assignment, summary='BAD-CONFLICTING-PROPOSAL'))
+        refresh()
+        expect(panel).not_to_contain_text('SIM-PROP-fixture-run-3-R-1')
+        expect(panel).not_to_contain_text('BAD-CONFLICTING-PROPOSAL')
+        state['sim'] = copy.deepcopy(READY)
+        refresh()
+
         ledger = panel.locator('[data-relief-detail="negotiation"]')
         summary = ledger.locator('summary')
         summary.focus(); page.keyboard.press('Enter')
@@ -167,4 +195,4 @@ try:
         browser.close()
 finally:
     server.shutdown(); server.server_close()
-print('Negotiation UI fixtures passed: typed transcript, grounded references, agent activity, budgets/outcomes, history/staleness, safe DOM, keyboard/scroll/timer preservation, four viewports, legacy/empty states, auth clearing and no writes.')
+print('Negotiation UI fixtures passed: typed transcript, grounded references and proposal tuple correlation, agent activity, budgets/outcomes, history/staleness, safe DOM, keyboard/scroll/timer preservation, four viewports, legacy/empty states, auth clearing and no writes.')
