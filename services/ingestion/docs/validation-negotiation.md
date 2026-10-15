@@ -1,4 +1,4 @@
-﻿# Autonomous negotiation validation
+# Autonomous negotiation validation
 
 Validated2026-10-15 in feature/logistics-ingestion isolated worktree, baseline ae5dbb2.
 
@@ -13,4 +13,6 @@ Validated2026-10-15 in feature/logistics-ingestion isolated worktree, baseline a
 
 Local evidence remains ignored: var/negotiation-smoke.log, var/negotiation-unit-tests.log, var/dynamic-browser-live.png and .superpowers/sdd/civilian-negotiation*/ screenshots/review reports. No new distributed actor transport, LLM-led negotiation, military optimization or production-scale claim. Latest report persists in relief_state; command receipts retain saved reports, older source-triggered full conversations are not a permanent archive.
 
-Broad final review and deployed local API checks will be appended after completion.
+Final independent broad review approved with no required findings. Reviewer reran20focused tests, swept320randomized bounded world/budget/prior cases with valid audit/seed/canonical optima and detected an in-memory payload-check mutation. Optional failed-prior/context-default notes were also regression-tested and fixed.
+
+The live public-weather path also passed negotiation checks:6revisions/101events, exact replay, service/reader restart and verified result. Native API3100 was restarted with reviewed code and initialized a fresh gateway scenario:HTTP201, fully-connected-peers,5request-round attempts,271directed message deliveries, two counterproposal senders (ten directed counterproposal deliveries), independently verified seed-retained outcome. Partial status reflects unserved requests under the fixture's available resources, not failed consensus for committed assignments.

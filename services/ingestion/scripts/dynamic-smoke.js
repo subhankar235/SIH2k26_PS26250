@@ -49,7 +49,7 @@ try {
  assert.equal(runtime.store.metrics().events,84);
  if(options.has('--live-weather')){
   const command={commandId:randomUUID(),runId,expectedRevision:4,airportId:'SIM-HUB',location:'delhi'};
-  const live=await request('/v1/simulation/weather',command);assert.equal(live.weatherFeed.status,'ready');assert.equal(live.world.revision,5);assert.equal(live.validation.valid,true);
+  const live=await request('/v1/simulation/weather',command);assert.equal(live.weatherFeed.status,'ready');assert.equal(live.world.revision,5);assert.equal(live.validation.valid,true);checkNegotiation(live);
   const replay=await request('/v1/simulation/weather',command);assert.equal(replay.command.replayed,true);
   console.log(JSON.stringify({publicWeather:live.weatherFeed.provenance,revision:live.world.revision,verified:live.validation.valid}));
  }
