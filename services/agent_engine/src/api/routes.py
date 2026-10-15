@@ -20,9 +20,11 @@ def get_engine() -> EquilibriumEngine:
     return _engine_instance
 
 
+@router.get("/health")
 @router.get("/health/live")
+@router.get("/api/v1/health")
 async def health_live():
-    return {"status": "ok"}
+    return {"status": "ok", "service": "agent_engine"}
 
 
 @router.get("/health/ready")
