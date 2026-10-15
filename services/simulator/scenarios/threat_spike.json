@@ -1,0 +1,20 @@
+{
+  "scenario": "threat_spike",
+  "description": "Hostile surface-to-air missile radar deployment detected along primary Corridor Alpha",
+  "events": [
+    {
+      "schemaVersion": 1,
+      "sourceId": "demo-weather",
+      "entityId": "Corr-North-Direct",
+      "type": "weather.observation",
+      "sequence": 10,
+      "data": {
+        "temperatureC": 22,
+        "windSpeedMps": 12,
+        "visibilityM": 9000,
+        "condition": "fog"
+      }
+    }
+  ]
+}
+

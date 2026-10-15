@@ -1,0 +1,19 @@
+{
+  "scenario": "mechanical_fault",
+  "description": "Hydraulic failure and engine alert on primary transport airframe C130-Alpha",
+  "events": [
+    {
+      "schemaVersion": 1,
+      "sourceId": "demo-aircraft",
+      "entityId": "C130-Alpha",
+      "type": "aircraft.status",
+      "sequence": 20,
+      "data": {
+        "status": "maintenance",
+        "airportId": "airport-main",
+        "capacityKg": 20000
+      }
+    }
+  ]
+}
+

@@ -1,0 +1,32 @@
+{
+  "scenario": "storm_front",
+  "description": "Convective thunderstorm front closing runway and primary air corridor",
+  "events": [
+    {
+      "schemaVersion": 1,
+      "sourceId": "demo-weather",
+      "entityId": "airport-north",
+      "type": "weather.observation",
+      "sequence": 15,
+      "data": {
+        "temperatureC": 18,
+        "windSpeedMps": 32,
+        "visibilityM": 400,
+        "condition": "storm"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "sourceId": "demo-airport",
+      "entityId": "airport-north",
+      "type": "airport.capacity",
+      "sequence": 16,
+      "data": {
+        "status": "closed",
+        "arrivalsPerHour": 0,
+        "departuresPerHour": 0
+      }
+    }
+  ]
+}
+

@@ -78,3 +78,4 @@ This plan implements the complete end-to-end multi-service architecture for SIH 
 | **Kafka / Solver Event Thrashing** | High | Implement a 1-second sliding debounce window to batch telemetry events before declaring an equilibrium break. |
 | **Agent Deadlock / Non-convergence** | Medium | Bounded negotiation rounds (default 4 rounds) with Coordinator fallback to CP-SAT global relaxation. |
 | **Local SLM Latency / Unavailability** | Low | Decision logic is 100% deterministic; SLM is strictly used for text reasoning traces with instant template fallback. |
+
