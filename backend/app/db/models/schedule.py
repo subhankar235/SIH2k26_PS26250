@@ -9,12 +9,12 @@ from sqlalchemy import JSON, ForeignKey, String, Uuid
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
-from backend.app.db.base import Base, UUIDPk, Versioned
+from backend.app.db.base import Base, CreatedAt, UUIDPk, Versioned
 
 JSON_VALUE = JSON().with_variant(JSONB(), "postgresql")
 
 
-class Schedule(Base, UUIDPk, Versioned):
+class Schedule(Base, UUIDPk, Versioned, CreatedAt):
     """Persist a versioned schedule and its objective and solver metadata."""
 
     __tablename__ = "schedule"

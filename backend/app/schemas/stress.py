@@ -14,7 +14,7 @@ class StressRunIn(APIModel):
     """Start a seeded synthetic scenario with a severity level."""
 
     scenario: str = Field(min_length=1)
-    seed: int
+    seed: int = Field(ge=0, le=2_147_483_647)
     severity: float = Field(ge=0, le=1)
 
 

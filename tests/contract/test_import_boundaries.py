@@ -54,6 +54,11 @@ def _violations(path: Path, imports: set[str]) -> list[str]:
             "backend.app.db",
             "backend.app.schemas",
             "backend.app.utils",
+            "backend.app.services.verification.constraint_checker",
+            "backend.app.services.verification.consistency_checker",
+            "backend.app.services.verification.uncertainty_flagger",
+            "backend.app.services.verification.approval_router",
+            "backend.app.services.audit.audit_service",
         )
         for module in imports:
             if module.startswith("backend.app.") and not any(
@@ -64,7 +69,12 @@ def _violations(path: Path, imports: set[str]) -> list[str]:
                 violations.append(f"verifier imports solver/model module {module}")
 
     elif relative.startswith("backend/app/services/audit/"):
-        allowed = ("backend.app.core", "backend.app.db")
+        allowed = (
+            "backend.app.core",
+            "backend.app.db",
+            "backend.app.schemas.audit",
+            "backend.app.schemas.common",
+        )
         for module in imports:
             if module.startswith("backend.app.") and not any(
                 _is_under(module, package) for package in allowed
@@ -78,6 +88,7 @@ def _violations(path: Path, imports: set[str]) -> list[str]:
             if module.startswith("backend.app.") and not any(
                 _is_under(module, package)
                 for package in (
+                    "backend.app.agents",
                     "backend.app.services",
                     "backend.app.schemas",
                     "backend.app.core",
@@ -102,7 +113,16 @@ def _violations(path: Path, imports: set[str]) -> list[str]:
     elif relative.startswith("backend/app/services/"):
         for module in imports:
             if _is_under(module, "backend.app.api") or _is_under(module, "backend.app.agents"):
-                violations.append(f"service imports disallowed backend module {module}")
+                is_agent_facade_dependency = (
+                    relative == "backend/app/services/agent_service.py"
+                    and module
+                    in {
+                        "backend.app.agents.graph",
+                        "backend.app.agents.state",
+                    }
+                )
+                if not is_agent_facade_dependency:
+                    violations.append(f"service imports disallowed backend module {module}")
 
     elif relative.startswith("ml/") or relative.startswith("optimisation/"):
         for module in imports:

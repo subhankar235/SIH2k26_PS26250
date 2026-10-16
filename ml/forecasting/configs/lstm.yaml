@@ -1,0 +1,10 @@
+seed: 42
+data_path: data/processed/sih_product/splits/forecast_train.csv
+epochs: 60
+lr: 0.01
+batch_size: 64
+output_dir: ml/artifacts/lstm
+model: autoregressive_lstm
+hidden_size: 16
+window: 12
+interval_level: 0.95

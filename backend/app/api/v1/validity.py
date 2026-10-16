@@ -94,5 +94,4 @@ def reverify(
         "reverify",
         db,
         request.change_events,
-        actor=actor.id,
     )

@@ -39,6 +39,17 @@ class ClaimBelief(BaseModel):
     probability: float = Field(ge=0, le=1)
 
 
+def _hdi(samples: np.ndarray, mass: float = 0.9) -> tuple[float, float]:
+    """Compute the shortest sampled interval containing the requested mass."""
+    ordered = np.sort(samples)
+    interval_size = max(1, int(mass * len(ordered)))
+    if interval_size >= len(ordered):
+        return float(ordered[0]), float(ordered[-1])
+    widths = ordered[interval_size:] - ordered[:-interval_size]
+    start = int(np.argmin(widths))
+    return float(ordered[start]), float(ordered[start + interval_size])
+
+
 def _agreement_counts(db: Session) -> tuple[dict[UUID, int], dict[UUID, int]]:
     """Count per-source agreements and disagreements on comparable claims."""
     rows = db.execute(
@@ -80,6 +91,9 @@ def source_reliability(db: Session, seed: int) -> dict[UUID, ReliabilityEstimate
 
     Returns:
         Reliability estimates keyed by source UUID.
+
+    Raises:
+        SQLAlchemyError: If source or claim observations cannot be queried.
     """
     successes, failures = _agreement_counts(db)
     rng = np.random.default_rng(seed)
@@ -112,7 +126,7 @@ def source_reliability(db: Session, seed: int) -> dict[UUID, ReliabilityEstimate
             draws = draws.reshape((-1, len(source_ids)))
             for index, source_id in enumerate(source_ids):
                 source_draws = draws[:, index]
-                low, high = np.quantile(source_draws, [0.05, 0.95]).tolist()
+                low, high = _hdi(source_draws)
                 estimates[source_id] = ReliabilityEstimate(
                     mean=float(np.mean(source_draws)),
                     hdi_low=float(low),
@@ -128,7 +142,7 @@ def source_reliability(db: Session, seed: int) -> dict[UUID, ReliabilityEstimate
         alpha = max(0.1, 4.0 * prior) + successes.get(source.id, 0)
         beta = max(0.1, 4.0 * (1.0 - prior)) + failures.get(source.id, 0)
         draws = rng.beta(alpha, beta, size=4096)
-        low, high = np.quantile(draws, [0.05, 0.95]).tolist()
+        low, high = _hdi(draws)
         estimates[source.id] = ReliabilityEstimate(
             mean=alpha / (alpha + beta),
             hdi_low=float(low),
@@ -149,6 +163,9 @@ def claim_belief(
 
     Returns:
         Claim beliefs sorted by claim UUID.
+
+    Raises:
+        None.
     """
     claim_details = issue.details.get("claims", [])
     beliefs: list[ClaimBelief] = []

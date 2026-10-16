@@ -86,7 +86,7 @@ def test_staleness_detection_uses_source_threshold_and_deduplicates_issues() -> 
     assert is_stale(record, now, {SourceType.RESOURCE: 3600})
     assert not is_stale(record, now, {SourceType.RESOURCE: 24 * 3600})
     first = find_stale(db, now)
-    second = find_stale(db, now)
+    second = find_stale(db, now + timedelta(minutes=5))
 
     assert len(first) == len(second) == 1
     assert first[0].id == second[0].id
@@ -114,11 +114,15 @@ def test_conflicts_duplicates_and_missing_fields() -> None:
     missing_record = Record(
         entity_id="resource:missing",
         source_type=SourceType.RESOURCE.value,
-        normalised_payload={"entity_id": "resource:missing"},
         source_id=source_c.id,
         raw_event_id=record_c.raw_event_id,
         event_time=now,
         ingest_time=now,
+        flags=["invalid"],
+        normalised_payload={
+            "entity_id": "resource:missing",
+            "validation_errors": ["capacity_mw: Input should be a valid number"],
+        },
     )
     db.add(missing_record)
     db.commit()
@@ -132,6 +136,9 @@ def test_conflicts_duplicates_and_missing_fields() -> None:
     assert len(duplicates) == 1
     assert duplicates[0].issue_class == IssueClass.DUPLICATE.value
     assert any(issue.details["record_id"] == str(missing_record.id) for issue in missing)
+    assert any(
+        "capacity_mw" in error for issue in missing for error in issue.details["missing_fields"]
+    )
     db.close()
     engine.dispose()
 

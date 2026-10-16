@@ -1,0 +1,20 @@
+{
+  "base": "distilbert-base-uncased",
+  "class_order": [
+    "match",
+    "no_match"
+  ],
+  "seed": 42,
+  "test_examples": 147,
+  "test_metrics": {
+    "f1": 0.22891566265060243,
+    "precision": 0.1292517006802721,
+    "recall": 1.0
+  },
+  "training_examples": 192,
+  "training_label_counts": {
+    "match": 64,
+    "no_match": 128
+  },
+  "validation_examples": 140
+}

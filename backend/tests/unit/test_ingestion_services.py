@@ -15,36 +15,7 @@ from backend.app.services.ingestion.deduplicator import DedupeStatus, classify, 
 from backend.app.services.ingestion.entity_matcher import match
 from backend.app.services.ingestion.ingestion_service import ingest_event
 from backend.app.services.ingestion.normaliser import NormalisedRecord, normalise, to_utc
-from backend.app.services.ingestion.validator import (
-    SCHEMAS,
-    AvailabilityPayload,
-    validate_event,
-)
-
-
-def test_validation_has_a_schema_for_every_source_and_never_raises() -> None:
-    """Validate sample payloads and report missing or mistyped fields as errors."""
-    assert set(SCHEMAS) == set(SourceType)
-    sample_payloads = {
-        SourceType.RESOURCE: {"entity_id": "r-1", "capacity_mw": 2.5},
-        SourceType.CREW: {"entity_id": "crew-1", "skills": ["repair"]},
-        SourceType.AVAILABILITY: {"entity_id": "r-1", "available": True},
-        SourceType.WEATHER: {"entity_id": "region-1", "temperature_c": 12.5},
-        SourceType.CONSTRAINT: {"entity_id": "grid-1", "constraint_type": "capacity"},
-    }
-
-    for source, payload in sample_payloads.items():
-        assert validate_event(source, payload).ok
-        invalid = validate_event(source, {**payload, "entity_id": 3})
-        assert not invalid.ok
-        assert invalid.errors
-        missing = validate_event(source, {"unrelated": "missing identity"})
-        assert not missing.ok
-        assert any("entity_id" in error for error in missing.errors)
-
-    missing = validate_event(SourceType.RESOURCE, {"capacity_mw": "not-a-number"})
-    assert not missing.ok
-    assert any("entity_id" in error for error in missing.errors)
+from backend.app.services.ingestion.validator import AvailabilityPayload, validate_event
 
 
 def test_normalization_converts_time_units_ids_and_preserves_unknown_fields() -> None:

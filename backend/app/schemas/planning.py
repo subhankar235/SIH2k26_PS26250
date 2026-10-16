@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any, Literal
 from uuid import UUID
 
-from pydantic import Field, model_validator
+from pydantic import AwareDatetime, Field, model_validator
 
 from backend.app.core.enums import ScheduleStatus
 from backend.app.schemas.common import APIModel
@@ -20,6 +20,7 @@ class ProblemIn(APIModel):
     precedence: list[dict[str, Any]] = Field(default_factory=list)
     policies: list[dict[str, Any]] = Field(default_factory=list)
     objectives: dict[str, float]
+    forecast_id: UUID | None = None
 
 
 class Assignment(APIModel):
@@ -44,7 +45,7 @@ class SolveIn(APIModel):
     problem: ProblemIn
     use_alns: bool = False
     time_limit_s: int = Field(default=30, gt=0)
-    seed: int
+    seed: int = Field(ge=0, le=2_147_483_647)
 
 
 class ScheduleOut(APIModel):
@@ -58,6 +59,7 @@ class ScheduleOut(APIModel):
     solver_meta: dict[str, Any]
     status: ScheduleStatus
     problem_hash: str
+    created_at: AwareDatetime
 
 
 class Alternative(APIModel):

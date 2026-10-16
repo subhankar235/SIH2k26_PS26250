@@ -56,6 +56,9 @@ def dedupe_key(rec: NormalisedRecord) -> str:
 
     Returns:
         SHA-256 key based on canonical source, identity, content, and event time.
+
+    Raises:
+        None.
     """
     return _fingerprint(
         rec.source.value,
@@ -74,6 +77,9 @@ def find_duplicate(db: Session, rec: NormalisedRecord) -> Record | None:
 
     Returns:
         The persisted exact duplicate, or None when no exact match exists.
+
+    Raises:
+        SQLAlchemyError: If the database query fails.
     """
     candidates = db.scalars(
         select(Record).where(
@@ -103,6 +109,9 @@ def classify(db: Session, rec: NormalisedRecord) -> DedupeDecision:
 
     Returns:
         A classification and the relevant candidate record, when available.
+
+    Raises:
+        SQLAlchemyError: If a database query fails.
     """
     duplicate = find_duplicate(db, rec)
     if duplicate is not None:

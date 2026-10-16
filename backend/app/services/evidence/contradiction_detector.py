@@ -45,6 +45,9 @@ def find_conflicts(
 
     Returns:
         Open conflict issues for matching entity attributes.
+
+    Raises:
+        SQLAlchemyError: If claims or issues cannot be queried or persisted.
     """
     statement = (
         select(Claim, Record)
@@ -107,6 +110,9 @@ def find_duplicates(db: Session) -> list[Issue]:
 
     Returns:
         Open duplicate issues for claims repeated across source records.
+
+    Raises:
+        SQLAlchemyError: If claims or issues cannot be queried or persisted.
     """
     statement = (
         select(Claim, Record)
@@ -160,6 +166,10 @@ def find_missing(db: Session, required: dict[SourceType, list[str]]) -> list[Iss
 
     Returns:
         Open missing-information issues for records with absent values.
+
+    Raises:
+        ValueError: If a persisted record has an unsupported source type.
+        SQLAlchemyError: If records or issues cannot be queried or persisted.
     """
     records = db.scalars(select(Record).where(Record.superseded_by.is_(None))).all()
     now = datetime.now(UTC)
@@ -169,8 +179,13 @@ def find_missing(db: Session, required: dict[SourceType, list[str]]) -> list[Iss
         missing = [
             field
             for field in required.get(source, [])
-            if field not in record.normalised_payload or record.normalised_payload[field] is None
+            if field not in record.normalised_payload
+            or record.normalised_payload[field] is None
+            or record.normalised_payload[field] == ""
         ]
+        validation_errors = record.normalised_payload.get("validation_errors", [])
+        if "invalid" in record.flags and validation_errors:
+            missing.extend(str(error) for error in validation_errors)
         if not missing:
             continue
         claim_ids = db.scalars(select(Claim.id).where(Claim.record_id == record.id)).all()
@@ -200,6 +215,9 @@ def detect_all(db: Session, now: datetime) -> list[Issue]:
 
     Returns:
         Deduplicated open staleness, conflict, duplicate, and missing issues.
+
+    Raises:
+        SQLAlchemyError: If a detector's database operations fail.
     """
     issues = find_stale(db, now)
     entity_ids = db.scalars(

@@ -57,7 +57,7 @@ def _rule_probability(a: NormalisedRecord, b: Record) -> float:
 
 def _ditto_probability(a: NormalisedRecord, b: Record) -> float | None:
     """Call an installed Ditto inference module when model configuration exists."""
-    model_path = Path(os.getenv("DITTO_MODEL_PATH", "ml/artifacts/ditto/model"))
+    model_path = Path(os.getenv("DITTO_MODEL_PATH", "ml/artifacts/ditto"))
     try:
         inference = importlib.import_module("ml.entity_matching.infer")
         model = inference.load(model_path)

@@ -29,8 +29,8 @@ class ForecastPoint(APIModel):
     @model_validator(mode="after")
     def validate_interval(self) -> ForecastPoint:
         """Ensure the lower bound does not exceed the upper bound."""
-        if self.lower > self.upper:
-            raise ValueError("lower must not exceed upper")
+        if self.lower > self.mean or self.mean > self.upper:
+            raise ValueError("forecast interval must satisfy lower <= mean <= upper")
         return self
 
 
@@ -45,3 +45,4 @@ class ForecastOut(APIModel):
     input_versions: dict[str, Any]
     version: int = Field(ge=1)
     high_uncertainty: bool
+    created_at: AwareDatetime
