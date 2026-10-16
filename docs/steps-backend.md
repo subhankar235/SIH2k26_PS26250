@@ -113,11 +113,11 @@ Create/solve endpoints accept header `Idempotency-Key`. Same key + same body →
 
 | Package | May import | Must NOT import |
 |---|---|---|
-| `app/services/verification/*` | `app.core`, `app.db`, `app.schemas`, `app.utils` | `optimisation`, `app.agents`, `ml`, `app.services.planning` |
-| `app/services/audit/*` | `app.core`, `app.db` | everything else |
-| `app/agents/*` | `app.services.*`, `app.schemas`, `app.core` | direct DB writes to verification/audit tables (go through services) |
+| `app/services/verification/*` | `app.core`, `app.db`, `app.schemas`, `app.utils`, intra-verifier checkers/router, `app.services.audit.audit_service` | `optimisation`, `app.agents`, `ml`, `app.services.planning` |
+| `app/services/audit/*` | `app.core`, `app.db`, `app.schemas.audit`, `app.schemas.common` | everything else |
+| `app/agents/*` | intra-agent modules, `app.services.*`, `app.schemas`, `app.core` | direct DB model access/writes (use services) |
 | `app/api/v1/*` | `app.services.*`, `app.schemas`, `app.core.deps` | `app.db.models` directly (use services) |
-| `app/services/*` | `app.db`, `app.core`, `app.schemas`, `app.utils`, `optimisation`, `ml` (inference only) | `app.api`, `app.agents` |
+| `app/services/*` | `app.db`, `app.core`, `app.schemas`, `app.utils`, `optimisation`, `ml` (inference only); F8 service facade may call `app.agents.graph`/`state` | `app.api`, other `app.agents` modules |
 | `ml/*`, `optimisation/*`, `simulation/*`, `evaluation/*` | stdlib + own libs; may call `app.services` only in `evaluation/` and `simulation/runner/` | `app.api` |
 
 Reason: the verifier must stay independent so that a bug in the solver or an agent cannot also break the check.
@@ -543,11 +543,12 @@ def impacted_assignments(schedule: Schedule, changes: list[ChangeEvent], g: nx.D
 def replan(db: Session, schedule_id: UUID, changes: list[ChangeEvent], actor: str) -> ReplanOut: ...
 ```
 - **Flow:** impact → try warm-start partial re-solve → verify → if infeasible/invalid, full re-solve → diff → persist new version (`parent_schedule_id`) → mark old `superseded` only after new is verified → audit.
+- **Input removals:** versioned inputs are retired with a newer tombstone version; a physically removed ref cannot be represented by `ChangeEvent`.
 
 #### `schedule_diff.py`
 ```python
 def diff(old: Schedule, new: Schedule) -> ScheduleDiff: ...   # added, removed, moved(before/after), unchanged count
-def stability(d: ScheduleDiff) -> float: ...                    # fraction unchanged
+def stability(d: ScheduleDiff) -> float: ...                    # unchanged / prior assignments; additions excluded
 ```
 
 ---
@@ -558,6 +559,7 @@ def start_run(db: Session, req: StressRunIn, actor: str) -> ExperimentRun: ...  
 def get_run(db: Session, run_id: UUID) -> ExperimentRun: ...
 def execute_run(run_id: UUID) -> None: ...                                         # background task, calls simulation.runner
 ```
+- **Lifecycle:** persist `queued` and audit before enqueue; worker transitions `running` → `completed`/`failed`, persists metrics and optional MLflow run id. Scenario execution uses a local seeded RNG; MLflow is optional for offline runs.
 
 ---
 
@@ -567,6 +569,7 @@ def build_explanation(db: Session, run: AgentRun) -> ExplanationOut: ...
 def validate_citations(db: Session, text: str, refs: list[EvidenceRef]) -> list[str]: ...  # returns unresolved refs
 ```
 - **Rules:** every claim sentence must map to ≥1 `EvidenceRef(kind, id, version)` that resolves in DB; unresolved → raise `VerificationFailed`.
+- **Citation resolution:** versioned record/forecast/schedule/decision refs must match their stored version; immutable evidence rows resolve at version 1. If inline `[kind:uuid:vN]` citations are used, every sentence needs a listed reference and all listed refs must resolve.
 
 ---
 
@@ -617,7 +620,7 @@ def decide(db: Session, approval_id: UUID, decision: ApprovalDecision,
 ```python
 def record(db: Session, entity_type: str, entity_id: UUID, action: str,
            before: dict | None, after: dict | None, actor: str) -> AuditEntry: ...
-def query(db: Session, filters: AuditQuery, limit: int, offset: int) -> Page[AuditEntry]: ...
+def query(db: Session, filters: AuditQuery, limit: int, offset: int) -> Page[AuditEntryOut]: ...
 def history(db: Session, entity_type: str, entity_id: UUID) -> list[AuditEntry]: ...
 ```
 - **Rules:** no update/delete functions exist. `before/after` are references or small diffs, not full payloads.
@@ -691,6 +694,7 @@ def approval_interrupt(state: AgentState) -> AgentState: ...   # sets status AWA
 - Plain-text prompt templates. Must instruct: cite evidence ids, never invent ids, output JSON matching schema.
 
 **Rules:** all LLM output parsed through Pydantic; parse failure = one retry; verification node never takes LLM output as input.
+- **Execution:** API start persists `PENDING` and enqueues work; graph execution checkpoints to PostgreSQL (`MemorySaver` is used for SQLite/tests), then pauses at the approval interrupt. Identical invalid/uncertain retries escalate instead of repeating.
 
 ---
 
@@ -706,6 +710,7 @@ def stable_hash(obj: Any) -> str: ...        # sha256 of canonical JSON
 def to_node_link(g: nx.Graph) -> dict: ...   # for API/UI
 def subgraph_by_depth(g: nx.Graph, root: str, depth: int) -> nx.Graph: ...
 ```
+- `parse_iso` interprets naive timestamps as UTC and converts offsets to UTC; graph node-link output uses a stable `edges` key and JSON-safe attributes.
 
 ---
 
@@ -713,7 +718,7 @@ def subgraph_by_depth(g: nx.Graph, root: str, depth: int) -> nx.Graph: ...
 
 | File | Purpose |
 |---|---|
-| `conftest.py` | Postgres test container/DB, session fixture with rollback, factories for source/record/claim/schedule, `client` fixture with API key headers |
+| `conftest.py` | `TEST_DATABASE_URL` Postgres DB (SQLite in-memory fallback), rollback session, source/record/claim/schedule factories, `client` fixture with API key headers |
 | `unit/test_validator.py` | each source: valid, missing field, wrong type |
 | `unit/test_deduplicator.py` | exact dup, near dup, new |
 | `unit/test_contradiction_detector.py` | conflict/missing/duplicate/stale on labelled fixtures |
@@ -807,6 +812,7 @@ def start_run(experiment: str, params: dict, tags: dict | None = None) -> Contex
 def log_metrics(metrics: dict[str, float], step: int | None = None) -> None: ...
 def log_artifact_path(path: Path) -> None: ...
 ```
+- ML-specific runtime dependencies are installed from `ml/requirements.txt`; imports in shared MLflow helpers stay lazy so CPU-only/offline consumers do not need a tracking server.
 
 ### `ml/entity_matching/ditto_model.py`
 ```python
@@ -815,9 +821,10 @@ class DittoMatcher(nn.Module):
     def forward(self, input_ids, attention_mask) -> Tensor: ...    # logits [match, no_match]
 def serialize_pair(a: dict, b: dict) -> str: ...                    # "[COL] k [VAL] v ... [SEP] ..."
 ```
+- Class index 0 is `match`, class index 1 is `no_match`; inference returns the class-0 probability expected by the ingestion matcher.
 
 ### `ml/entity_matching/train.py`
-- CLI: `--config --seed`. Loads pairs CSV, trains, logs P/R/F1 to MLflow, saves to `ml/artifacts/ditto/`.
+- CLI: `--config --seed`. Loads JSON-record pair CSV, trains, logs precision/recall/F1 to MLflow, saves a local encoder/tokenizer/classifier artifact under `ml/artifacts/ditto/` by default.
 ```python
 def train(cfg: DittoConfig, seed: int) -> Path: ...
 ```

@@ -1,0 +1,9 @@
+seed: 42
+data_path: data/processed/sih_product/splits
+output_dir: ml/artifacts/tgn
+epochs: 1
+lr: 0.001
+hidden_dim: 32
+batch_size: 128
+max_train_events: null
+experiment: temporal-graph-tgn

@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, BackgroundTasks, Depends, status
 from sqlalchemy.orm import Session
 
 from backend.app.core.deps import Actor, get_db, get_idempotency_key, require_role
@@ -20,6 +20,7 @@ VIEWER = require_role("viewer", "analyst", "approver", "admin")
 @router.post("/runs", response_model=StressRunOut, status_code=status.HTTP_202_ACCEPTED)
 def start_run(
     request: StressRunIn,
+    background_tasks: BackgroundTasks,
     db: Annotated[Session, Depends(get_db)],
     actor: Annotated[Actor, Depends(require_role("analyst", "admin"))],
     idempotency_key: Annotated[str | None, Depends(get_idempotency_key)],
@@ -48,6 +49,7 @@ def start_run(
             db,
             request,
             actor=actor.id,
+            background_tasks=background_tasks,
         ),
         result_model=StressRunOut,
     )

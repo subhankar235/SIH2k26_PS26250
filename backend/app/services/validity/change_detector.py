@@ -55,11 +55,12 @@ def detect_changes(
             raise ValueError(f"series {key!r} must contain only finite observations")
         posterior = bocpd(observations, hazard_function)
         for index in change_points(posterior, threshold=0.5):
+            previous_mode = int(np.argmax(posterior[index, : index + 1]))
             found.append(
                 ChangePoint(
                     series=key,
                     index=index,
-                    probability=float(posterior[index + 1, : index + 1].sum()),
+                    probability=float(posterior[index + 1, :previous_mode].sum()),
                 )
             )
     return found

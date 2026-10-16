@@ -2,20 +2,12 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from statistics import NormalDist
 
 import numpy as np
 import pandas as pd  # type: ignore[import-untyped]
 
-
-@dataclass(frozen=True)
-class ForecastResult:
-    """Forecast means and lower/upper prediction bounds."""
-
-    mean: np.ndarray
-    lower: np.ndarray
-    upper: np.ndarray
+from ml.forecasting.baselines._common import ForecastResult, target_values
 
 
 def fit_predict(
@@ -36,12 +28,9 @@ def fit_predict(
     Raises:
         ValueError: If input data are empty, malformed, or non-finite.
     """
-    del seed
-    if "target" not in train or train.empty or test.empty:
-        raise ValueError("ARIMA requires non-empty train target and test feature rows")
-    values = pd.to_numeric(train["target"], errors="coerce").to_numpy(dtype=float)
-    if not np.isfinite(values).all():
-        raise ValueError("ARIMA training observations must be finite")
+    if not isinstance(seed, int) or isinstance(seed, bool) or seed < 0:
+        raise ValueError("seed must be a non-negative integer")
+    values, _horizon = target_values(train, test)
     differences = np.diff(values)
     intercept = 0.0
     autoregressive = 0.0
@@ -60,17 +49,23 @@ def fit_predict(
     if lag_one is None:
         raise ValueError("ARIMA test features must include a lag-1 column")
     lag_two = next((name for name in test.columns if name.endswith("_lag_2")), None)
-    latest = test[lag_one].to_numpy(dtype=float)
-    previous = test[lag_two].to_numpy(dtype=float) if lag_two is not None else latest
+    latest = pd.to_numeric(test[lag_one], errors="coerce").to_numpy(dtype=float)
+    previous = (
+        pd.to_numeric(test[lag_two], errors="coerce").to_numpy(dtype=float)
+        if lag_two is not None
+        else latest
+    )
     if not np.isfinite(latest).all() or not np.isfinite(previous).all():
         raise ValueError("ARIMA lag inputs must be finite")
     predicted_difference = intercept + autoregressive * (latest - previous)
     mean = latest + predicted_difference
     horizon_steps = (
-        test["forecast_horizon_step"].to_numpy(dtype=float)
+        pd.to_numeric(test["forecast_horizon_step"], errors="coerce").to_numpy(dtype=float)
         if "forecast_horizon_step" in test
         else np.ones(len(test), dtype=float)
     )
+    if not np.isfinite(horizon_steps).all() or np.any(horizon_steps < 1):
+        raise ValueError("forecast_horizon_step must contain finite positive values")
     scale = innovation_scale * np.sqrt(np.maximum(horizon_steps, 1.0))
     quantile = NormalDist().inv_cdf(0.975)
     return ForecastResult(

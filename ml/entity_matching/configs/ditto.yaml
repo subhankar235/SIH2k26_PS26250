@@ -1,0 +1,12 @@
+seed: 42
+data_path: data/processed/sih_product/splits/pairs_train.csv
+validation_path: data/processed/sih_product/splits/pairs_val.csv
+test_path: data/processed/sih_product/splits/pairs_test.csv
+output_dir: ml/artifacts/ditto
+base: distilbert-base-uncased
+epochs: 3
+lr: 0.00002
+batch_size: 32
+max_length: 128
+validation_fraction: 0.2
+experiment: entity-matching-ditto

@@ -20,6 +20,9 @@ class ExperimentRun(Base, UUIDPk, CreatedAt):
 
     scenario: Mapped[str] = mapped_column(String(255), nullable=False)
     seed: Mapped[int] = mapped_column(Integer, nullable=False)
+    status: Mapped[str] = mapped_column(
+        String(32), default="queued", server_default="queued", nullable=False
+    )
     config: Mapped[dict[str, Any]] = mapped_column(JSON_VALUE, default=dict, nullable=False)
     metrics: Mapped[dict[str, Any]] = mapped_column(JSON_VALUE, default=dict, nullable=False)
     mlflow_run_id: Mapped[str | None] = mapped_column(String(255), nullable=True)

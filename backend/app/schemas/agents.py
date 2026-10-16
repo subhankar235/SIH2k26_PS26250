@@ -15,7 +15,7 @@ class AgentRequestIn(APIModel):
     """Request an agent workflow using a structured task payload."""
 
     request: dict[str, Any]
-    seed: int = 0
+    seed: int = Field(default=0, ge=0, le=2_147_483_647)
 
 
 class AgentStep(APIModel):

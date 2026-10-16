@@ -1,0 +1,11 @@
+seed: 42
+data_path: data/processed/sih_product/splits/forecast_train.csv
+target: capacity_mw
+output_dir: ml/artifacts/ds_dgp
+epochs: 50
+batch_size: 64
+lr: 0.01
+hidden_dims: [16, 16]
+num_inducing: 64
+num_likelihood_samples: 8
+experiment: forecasting-ds-dgp

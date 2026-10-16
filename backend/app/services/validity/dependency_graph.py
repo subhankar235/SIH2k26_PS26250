@@ -75,6 +75,8 @@ def build(db: Session, input_filter: list[InputRef] | None = None) -> nx.DiGraph
             decision_node,
             kind="decision",
             decision_id=decision.id,
+            decision_type=decision.decision_type,
+            ref_id=decision.ref_id,
             version=decision.version,
             status=decision.status,
         )
