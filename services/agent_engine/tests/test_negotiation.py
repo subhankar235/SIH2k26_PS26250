@@ -45,7 +45,7 @@ def test_magi_negotiation_threat_objection_and_counterbid(air_ops_env):
     # ThreatAgent should object to Corr-Alpha-HighThreat
     threat_objections = [
         t for t in transcripts
-        if t.agent_name == "MAGI-Threat" and t.message_type == "OBJECTION"
+        if t.agent_name in ("THREAT-INTEL-05", "MAGI-Threat") and t.message_type == "OBJECTION"
     ]
     assert len(threat_objections) >= 1
     assert "exceeds mission tolerance" in threat_objections[0].content
@@ -53,7 +53,7 @@ def test_magi_negotiation_threat_objection_and_counterbid(air_ops_env):
     # ThreatAgent should propose counter-bid
     counter_bids = [
         t for t in transcripts
-        if t.agent_name == "MAGI-Threat" and t.message_type == "COUNTER_BID"
+        if t.agent_name in ("THREAT-INTEL-05", "MAGI-Threat") and t.message_type == "COUNTER_BID"
     ]
     assert len(counter_bids) >= 1
 
@@ -93,11 +93,11 @@ def test_magi_crew_qualification_objection(air_ops_env):
     transcripts = outcome["transcripts"]
     crew_accepts = [
         t for t in transcripts
-        if t.agent_name == "Balthasar-Crew" and t.message_type == "ACCEPT"
+        if t.agent_name in ("CREW-LOGISTICS-02", "Balthasar-Crew") and t.message_type == "ACCEPT"
     ]
     crew_rejects = [
         t for t in transcripts
-        if t.agent_name == "Balthasar-Crew" and t.message_type == "OBJECTION"
+        if t.agent_name in ("CREW-LOGISTICS-02", "Balthasar-Crew") and t.message_type == "OBJECTION"
     ]
     assert len(crew_accepts) >= 1
     assert any("certified" in t.content for t in crew_accepts)

@@ -1,0 +1,65 @@
+[
+  {
+    "name": "ingestion",
+    "command": [
+      "npm.cmd",
+      "test"
+    ],
+    "exit_code": 0,
+    "summary": "redecessor blocks later work in the same Kafka stream (7.0487ms)\n\u00e2\u0153\u201d retention preserves latest state and queued/dead work while purging old settled history (9.2653ms)\n\u00e2\u0153\u201d history and queued delivery survive a database close and restart (84.3765ms)\n\u00e2\u0153\u201d retention bounds examined records and advances beyond protected prefixes (5.0946ms)\n{\"systemJourney\":\"passed\",\"scores\":[9,7,6,0,9],\"revisions\":5,\"sourceReplay\":true,\"expiry\":\"injected-clock\",\"dashboard\":true,\"restart\":true,\"kafka\":\"disabled-events-remain-queued\"}\n\u00e2\u0153\u201d isolated system journey: HTTP input, negotiation, dashboard, expiry and persisted recovery (1375.7333ms)\n\u00e2\u0153\u201d fictional sample generators satisfy all runtime contracts (70.6493ms)\n\u00e2\u0153\u201d credential generator creates separate secrets without printing them and refuses overwrite (1162.9251ms)\n\u00e2\u0153\u201d committed generated contract files match their generator (600.228ms)\n\u00e2\u201e\u00b9 tests 201\n\u00e2\u201e\u00b9 suites 0\n\u00e2\u201e\u00b9 pass 201\n\u00e2\u201e\u00b9 fail 0\n\u00e2\u201e\u00b9 cancelled 0\n\u00e2\u201e\u00b9 skipped 0\n\u00e2\u201e\u00b9 todo 0\n\u00e2\u201e\u00b9 duration_ms 13233.9903\n",
+    "stderr": ""
+  },
+  {
+    "name": "frontend-unit",
+    "command": [
+      "npm.cmd",
+      "--prefix",
+      "frontend",
+      "test"
+    ],
+    "exit_code": 0,
+    "summary": "city is reported honestly (0.4577ms)\n\u00e2\u0153\u201d changed capacity invalidates prior result (0.4186ms)\n\u00e2\u0153\u201d seeded fault detection is reproducible (0.5879ms)\n(node:22820) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///E:/Projects/SIH2k26_PS26250_ingestion/frontend/src/lib/request-failure.test.ts is not specified and it doesn't parse as CommonJS.\nReparsing as ES module because module syntax was detected. This incurs a performance overhead.\nTo eliminate this warning, add \"type\": \"module\" to \\\\?\\E:\\Projects\\SIH2k26_PS26250_ingestion\\frontend\\package.json.\n(Use `node --trace-warnings ...` to show where the warning was created)\n\u00e2\u0153\u201d browser connection failures have a useful recovery message (2.2286ms)\n\u00e2\u0153\u201d HTTP failures retain their status and distinguish recovery paths (0.5983ms)\n\u00e2\u0153\u201d validation messages remain available and unclassified failures get safe guidance (0.4604ms)\n\u00e2\u201e\u00b9 tests 7\n\u00e2\u201e\u00b9 suites 0\n\u00e2\u201e\u00b9 pass 7\n\u00e2\u201e\u00b9 fail 0\n\u00e2\u201e\u00b9 cancelled 0\n\u00e2\u201e\u00b9 skipped 0\n\u00e2\u201e\u00b9 todo 0\n\u00e2\u201e\u00b9 duration_ms 237.7948\n",
+    "stderr": ""
+  },
+  {
+    "name": "ui-smoke",
+    "command": [
+      "C:\\Users\\Satyam\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+      "frontend/tests/ui_smoke.py"
+    ],
+    "exit_code": 0,
+    "summary": "PASS: demo/live toggle; time window; search; settings; 14 routes; evidence filters; reverify; solve; compare; polling; approval gates, rationale and failures; audit filter; API retry; mobile navigation.\n",
+    "stderr": ""
+  },
+  {
+    "name": "demo-workflows",
+    "command": [
+      "C:\\Users\\Satyam\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+      "frontend/tests/demo_workflows.py"
+    ],
+    "exit_code": 0,
+    "summary": "PASS: 15 demo routes; forecast warning; persistent reverify; solve; preloaded diff; stress/agent polling; approval gate and audit; reset; mobile; no backend requests or browser errors.\n",
+    "stderr": ""
+  },
+  {
+    "name": "failure-states",
+    "command": [
+      "C:\\Users\\Satyam\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+      "frontend/tests/failure_states.py"
+    ],
+    "exit_code": 0,
+    "summary": "PASS: network errors across 13 routes; retry; technical details; HTTP 404/403/429/503; mobile layout; live dashboard recovery to demo.\n",
+    "stderr": ""
+  },
+  {
+    "name": "simulator",
+    "command": [
+      "C:\\Users\\Satyam\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+      "-c",
+      "import sys,pytest;sys.path.insert(0,'services');raise SystemExit(pytest.main(['services/simulator/tests','-q']))"
+    ],
+    "exit_code": 0,
+    "summary": ".                                                                        [100%]\n1 passed in 0.38s\n",
+    "stderr": ""
+  }
+]

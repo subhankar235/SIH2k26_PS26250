@@ -10,3 +10,6 @@ __pycache__/
 .pytest_cache/
 .venv/
 .DS_Store
+.next/
+*.tsbuildinfo
+test-results/

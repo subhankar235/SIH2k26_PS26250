@@ -1,0 +1,173 @@
+[
+  {
+    "id": "PROBE-01",
+    "name": "restore unknown registry references",
+    "expected": "quarantine unknown resources; never invent operational capability",
+    "status": "FAIL",
+    "actual": {
+      "is_equilibrium": true,
+      "invented_registry_entries": {
+        "UNKNOWN-MISSION": true,
+        "UNKNOWN-AIRCRAFT": true,
+        "UNKNOWN-CREW": true,
+        "UNKNOWN-CORRIDOR": true
+      },
+      "aircraft": {
+        "id": "UNKNOWN-AIRCRAFT",
+        "capacity_kg": 2000,
+        "max_range_km": 2000,
+        "turnaround_mins": 45,
+        "status": "available"
+      }
+    }
+  },
+  {
+    "id": "PROBE-02",
+    "name": "restore assignment timing and risk",
+    "expected": "persisted arrival slot=5 and risk=0.6 survive restoration",
+    "status": "FAIL",
+    "actual": {
+      "mission_id": "M0",
+      "airframe_id": "A0",
+      "crew_id": "C0",
+      "corridor_id": "R0",
+      "slot": 2,
+      "estimated_arrival_slot": 3,
+      "threat_risk": 0.0
+    }
+  },
+  {
+    "id": "PROBE-03",
+    "name": "clear weather while airport remains closed",
+    "expected": "closed airport remains unavailable after weather clearance",
+    "status": "FAIL",
+    "actual": {
+      "after_close": 0,
+      "after_followup": 1,
+      "closed_airports": [
+        "HUB"
+      ],
+      "corridor_weather": "clear",
+      "followup_scheduled_replan": true
+    }
+  },
+  {
+    "id": "PROBE-04",
+    "name": "airport reopening restores feasible route",
+    "expected": "sole mission becomes serviceable after explicit airport reopening",
+    "status": "FAIL",
+    "actual": {
+      "after_close": 0,
+      "after_followup": 0,
+      "closed_airports": [],
+      "corridor_weather": "storm",
+      "followup_scheduled_replan": false
+    }
+  },
+  {
+    "id": "PROBE-05",
+    "name": "cargo mass update preserves hazardous flag",
+    "expected": "hazardous=True survives unrelated mass change",
+    "status": "FAIL",
+    "actual": {
+      "id": "M0",
+      "origin_base": "HUB",
+      "dest_base": "CLINIC",
+      "payload_kg": 900.0,
+      "priority": 5,
+      "deadline_slot": 4,
+      "required_qualification": "transport",
+      "temperature_controlled": false,
+      "hazardous": false,
+      "max_threat_tolerance": 0.7
+    }
+  },
+  {
+    "id": "PROBE-06",
+    "name": "partial crew update preserves remaining duty",
+    "expected": "omitted duty retains 1.25h instead of resetting to 12h",
+    "status": "FAIL",
+    "actual": {
+      "id": "C0",
+      "qualifications": [
+        "transport"
+      ],
+      "duty_hours_left": 12.0,
+      "status": "available"
+    }
+  },
+  {
+    "id": "PROBE-07",
+    "name": "reject non-finite capacityKg",
+    "expected": "reject non-finite input without mutating valid state",
+    "status": "FAIL",
+    "actual": {
+      "field": "capacityKg",
+      "supplied": "nan",
+      "before": 1000,
+      "after": "nan",
+      "returned": false
+    }
+  },
+  {
+    "id": "PROBE-08",
+    "name": "reject non-finite maxRangeKm",
+    "expected": "reject non-finite input without mutating valid state",
+    "status": "FAIL",
+    "actual": {
+      "field": "maxRangeKm",
+      "supplied": "inf",
+      "before": 2000,
+      "after": "inf",
+      "returned": false
+    }
+  },
+  {
+    "id": "PROBE-09",
+    "name": "reject non-finite dutyHoursLeft",
+    "expected": "reject non-finite input without mutating valid state",
+    "status": "FAIL",
+    "actual": {
+      "field": "dutyHoursLeft",
+      "supplied": "inf",
+      "before": 12,
+      "after": "inf",
+      "returned": false
+    }
+  },
+  {
+    "id": "PROBE-10",
+    "name": "malformed threat risk is rejected safely",
+    "expected": "no exception or state corruption from malformed risk",
+    "status": "FAIL",
+    "actual": {
+      "exception": "ValueError",
+      "message": "could not convert string to float: 'not-a-number'",
+      "traceback": "Traceback (most recent call last):\n  File \"E:\\Projects\\SIH2k26_PS26250_ingestion\\docs\\testing\\2026-10-16-rerun\\independent_probes.py\", line 24, in record\n    passed, actual = await fn()\n                     ^^^^^^^^^^\n  File \"E:\\Projects\\SIH2k26_PS26250_ingestion\\docs\\testing\\2026-10-16-rerun\\independent_probes.py\", line 115, in bad_risk\n    returned = await e.ingest_event(dict(type='threat.update', entityId='R0', data={'riskScore':'not-a-number'}))\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"E:\\Projects\\SIH2k26_PS26250_ingestion\\services\\agent_engine\\src\\transport\\equilibrium.py\", line 214, in ingest_event\n    broken = self._check_equilibrium_break(event)\nValueError: could not convert string to float: 'not-a-number'\n"
+    }
+  },
+  {
+    "id": "PROBE-11",
+    "name": "malformed event expiration is rejected",
+    "expected": "invalid validity metadata cannot alter operational state",
+    "status": "FAIL",
+    "actual": {
+      "returned": true,
+      "capacity": 500.0
+    }
+  },
+  {
+    "id": "PROBE-12",
+    "name": "consumer survives semantic poison record",
+    "expected": "invalid risk must not prevent following valid event from being applied",
+    "status": "FAIL",
+    "actual": {
+      "exception": {
+        "type": "ValueError",
+        "message": "could not convert string to float: 'not-a-number'"
+      },
+      "capacity_after_second_event": 1000,
+      "consumer_stopped": true
+    }
+  }
+]

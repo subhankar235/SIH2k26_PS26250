@@ -36,6 +36,15 @@ class IngestionEventConsumer:
         self.consumer: Optional[AIOKafkaConsumer] = None
         self._running = False
 
+    def _safe_deserialize(self, v: bytes) -> Optional[dict]:
+        if not v:
+            return None
+        try:
+            return json.loads(v.decode("utf-8"))
+        except Exception as e:
+            logger.warning(f"Poison Kafka record discarded: {e}")
+            return None
+
     async def start(self) -> None:
         """Start Kafka consumer loop."""
         self.consumer = AIOKafkaConsumer(
@@ -44,7 +53,7 @@ class IngestionEventConsumer:
             group_id=self.group_id,
             auto_offset_reset="latest",
             enable_auto_commit=True,
-            value_deserializer=lambda v: json.loads(v.decode("utf-8")),
+            value_deserializer=self._safe_deserialize,
         )
         await self.consumer.start()
         self._running = True
@@ -60,6 +69,8 @@ class IngestionEventConsumer:
                 if not self._running:
                     break
                 event = msg.value
+                if not event or not isinstance(event, dict):
+                    continue
                 logger.info(f"Received event: {event.get('type')} for {event.get('entityId')}")
                 # Feed into equilibrium engine
                 await self.engine.ingest_event(event)

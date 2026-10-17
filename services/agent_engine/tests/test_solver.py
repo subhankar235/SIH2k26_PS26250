@@ -23,9 +23,9 @@ def baseline_scenario():
         Corridor(id="Corr-East", from_base="Base-A", to_base="Base-C", distance_km=600, flight_time_mins=70, threat_risk=0.05),
     ]
     missions = [
-        Mission(id="M-Ammo-01", origin_base="Base-A", dest_base="Base-B", payload_kg=15000, priority=9, deadline_slot=2),
-        Mission(id="M-Medical-02", origin_base="Base-A", dest_base="Base-B", payload_kg=4000, priority=7, deadline_slot=2),
-        Mission(id="M-Rations-03", origin_base="Base-A", dest_base="Base-C", payload_kg=5000, priority=4, deadline_slot=3),
+        Mission(id="M-Ammo-01", origin_base="Base-A", dest_base="Base-B", payload_kg=15000, priority=9, deadline_slot=4),
+        Mission(id="M-Medical-02", origin_base="Base-A", dest_base="Base-B", payload_kg=4000, priority=7, deadline_slot=4),
+        Mission(id="M-Rations-03", origin_base="Base-A", dest_base="Base-C", payload_kg=5000, priority=4, deadline_slot=4),
     ]
     return airframes, crews, corridors, missions
 

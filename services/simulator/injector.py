@@ -28,20 +28,31 @@ def load_env_credentials(env_path: Path) -> dict:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Operational Disruption Scenario Injector")
+    parser = argparse.ArgumentParser(description="Operational Disruption Simulator - Scenario Injector CLI")
     parser.add_argument(
         "--scenario",
         type=str,
-        default="threat_spike",
-        help="Scenario name (threat_spike, storm_front, mechanical_fault)"
+        default=None,
+        help="Scenario name (threat_spike, storm_front, mechanical_fault, crew_fatigue)"
+    )
+    parser.add_argument(
+        "--interactive",
+        action="store_true",
+        help="Launch full interactive real-time telemetry HUD with keyboard hotkeys"
     )
     parser.add_argument(
         "--api-url",
         type=str,
-        default=os.getenv("INGESTION_API_URL", "http://127.0.0.1:3100"),
-        help="Ingestion service base URL"
+        default=os.getenv("INGESTION_API_URL", "http://127.0.0.1:8000"),
+        help="Agent engine API base URL"
     )
     args = parser.parse_args()
+
+    # Default to interactive simulator if no specific scenario passed or --interactive
+    if args.interactive or not args.scenario:
+        from .interactive_simulator import main as sim_main
+        sim_main()
+        return
 
     root_dir = Path(__file__).resolve().parent.parent.parent
     env_path = root_dir / "services" / "ingestion" / ".env"

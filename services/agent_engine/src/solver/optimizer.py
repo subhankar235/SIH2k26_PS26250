@@ -31,11 +31,20 @@ class AirOperationsOptimizer:
         prior_set: Set[tuple] = set()
         if prior_assignments:
             for pa in prior_assignments:
-                prior_set.add((pa.get("mission_id"), pa.get("airframe_id"), pa.get("corridor_id")))
+                prior_set.add((
+                    pa.get("mission_id"),
+                    pa.get("airframe_id"),
+                    pa.get("crew_id"),
+                    pa.get("corridor_id"),
+                    pa.get("slot")
+                ))
 
         for m in missions:
             for a in airframes:
                 if a.status != "available" or m.payload_kg > a.capacity_kg:
+                    continue
+                # Temperature control check
+                if m.temperature_controlled and getattr(a, "capacity_kg", 0) < 5000:
                     continue
                 for c in crews:
                     if c.status != "available" or m.required_qualification not in c.qualifications:
@@ -49,37 +58,45 @@ class AirOperationsOptimizer:
                             continue
                         if r.threat_risk > m.max_threat_tolerance:
                             continue
+                        # Duty hours check: crew duty hours left must exceed flight time
+                        flight_hours = r.flight_time_mins / 60.0
+                        if c.duty_hours_left < flight_hours:
+                            continue
+
+                        # Operational time slot (1 hour = 60 mins per slot)
+                        flight_slots = max(1, (r.flight_time_mins + 59) // 60)
                         for t in slots:
-                            if t > m.deadline_slot:
+                            # Arrival slot cannot exceed deadline slot (prevents zero-deadline impossible dispatches)
+                            if t + flight_slots > m.deadline_slot:
                                 continue
 
                             var_key = (m.id, a.id, c.id, r.id, t)
                             var = model.new_bool_var(f"x_{m.id}_{a.id}_{c.id}_{r.id}_s{t}")
                             x[var_key] = var
-                            viable_combinations.append((m, a, c, r, t, var))
+                            viable_combinations.append((m, a, c, r, t, flight_slots, var))
 
         # Constraint 1: Each mission assigned at most once
         for m in missions:
-            m_vars = [var for (m_item, _, _, _, _, var) in viable_combinations if m_item.id == m.id]
+            m_vars = [var for (m_item, _, _, _, _, _, var) in viable_combinations if m_item.id == m.id]
             if m_vars:
                 model.add_at_most_one(m_vars)
 
         # Constraint 2: Each airframe performs at most one flight across slots
         for a in airframes:
-            a_vars = [var for (_, a_item, _, _, _, var) in viable_combinations if a_item.id == a.id]
+            a_vars = [var for (_, a_item, _, _, _, _, var) in viable_combinations if a_item.id == a.id]
             if a_vars:
                 model.add_at_most_one(a_vars)
 
         # Constraint 3: Each crew performs at most one flight across slots
         for c in crews:
-            c_vars = [var for (_, _, c_item, _, _, var) in viable_combinations if c_item.id == c.id]
+            c_vars = [var for (_, _, c_item, _, _, _, var) in viable_combinations if c_item.id == c.id]
             if c_vars:
                 model.add_at_most_one(c_vars)
 
         # Constraint 4: Corridor capacity per slot (maximum 1 aircraft per slot)
         for r in corridors:
             for t in slots:
-                r_vars = [var for (_, _, _, r_item, t_slot, var) in viable_combinations if r_item.id == r.id and t_slot == t]
+                r_vars = [var for (_, _, _, r_item, t_slot, _, var) in viable_combinations if r_item.id == r.id and t_slot == t]
                 if r_vars:
                     model.add_at_most_one(r_vars)
 
@@ -89,10 +106,10 @@ class AirOperationsOptimizer:
                 (s["mission_id"], s["airframe_id"], s.get("crew_id"), s["corridor_id"], s.get("slot", 0))
                 for s in candidate_seed
             }
-            for (m, a, c, r, t, var) in viable_combinations:
-                # Match either exact crew or wildcard
+            for (m, a, c, r, t, _, var) in viable_combinations:
+                # Match exact mission, airframe, corridor, slot, and compatible crew
                 matched = any(
-                    (m.id == sk[0] and a.id == sk[1] and r.id == sk[3] and (sk[2] is None or c.id == sk[2]))
+                    (m.id == sk[0] and a.id == sk[1] and r.id == sk[3] and t == sk[4] and (sk[2] is None or c.id == sk[2]))
                     for sk in seed_keys
                 )
                 if matched:
@@ -101,14 +118,14 @@ class AirOperationsOptimizer:
         # Multi-objective formulation:
         # Maximize: Priority*1000 - Threat*500 - Slot*50 - Churn*200
         objective_terms = []
-        for (m, a, c, r, t, var) in viable_combinations:
+        for (m, a, c, r, t, _, var) in viable_combinations:
             priority_score = m.priority * 1000
             threat_penalty = int(r.threat_risk * 500)
             delay_penalty = t * 50
             
-            # Anti-churn: penalize changing a previously assigned airframe/corridor
+            # Anti-churn: penalize changing a previously assigned airframe/crew/corridor/slot
             churn_penalty = 0
-            if prior_assignments and (m.id, a.id, r.id) not in prior_set:
+            if prior_assignments and (m.id, a.id, c.id, r.id, t) not in prior_set:
                 churn_penalty = 200
 
             coeff = priority_score - threat_penalty - delay_penalty - churn_penalty
@@ -128,6 +145,8 @@ class AirOperationsOptimizer:
             status_str = "optimal"
         elif status == cp_model.FEASIBLE:
             status_str = "feasible"
+        elif status == cp_model.UNKNOWN:
+            status_str = "timeout"
 
         assignments: List[Assignment] = []
         served_mission_ids: Set[str] = set()
@@ -135,7 +154,7 @@ class AirOperationsOptimizer:
         total_threat_risk = 0.0
 
         if status in (cp_model.OPTIMAL, cp_model.FEASIBLE):
-            for (m, a, c, r, t, var) in viable_combinations:
+            for (m, a, c, r, t, flight_slots, var) in viable_combinations:
                 if solver.value(var) == 1:
                     assignments.append(
                         Assignment(
@@ -144,7 +163,7 @@ class AirOperationsOptimizer:
                             crew_id=c.id,
                             corridor_id=r.id,
                             slot=t,
-                            estimated_arrival_slot=t + 1,
+                            estimated_arrival_slot=t + flight_slots,
                             threat_risk=r.threat_risk,
                         )
                     )

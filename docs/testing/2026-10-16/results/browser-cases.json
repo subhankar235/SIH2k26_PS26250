@@ -1,0 +1,1362 @@
+[
+  {
+    "id": "BROWSER-001",
+    "category": "browser-routes",
+    "name": "route renders with bounded layout",
+    "layer": "real-browser+intercepted-api",
+    "inputs": {
+      "path": "/",
+      "width": 1440
+    },
+    "expected": "HTTP 200, visible heading, no page exception or horizontal overflow",
+    "actual": {
+      "http": 200,
+      "heading": true,
+      "overflow": false,
+      "pageerrors": []
+    },
+    "status": "PASS",
+    "issue": "",
+    "duration_ms": 1622.555
+  },
+  {
+    "id": "BROWSER-002",
+    "category": "browser-routes",
+    "name": "route renders with bounded layout",
+    "layer": "real-browser+intercepted-api",
+    "inputs": {
+      "path": "/ingestion",
+      "width": 1440
+    },
+    "expected": "HTTP 200, visible heading, no page exception or horizontal overflow",
+    "actual": {
+      "http": 200,
+      "heading": true,
+      "overflow": false,
+      "pageerrors": []
+    },
+    "status": "PASS",
+    "issue": "",
+    "duration_ms": 1126.867
+  },
+  {
+    "id": "BROWSER-003",
+    "category": "browser-routes",
+    "name": "route renders with bounded layout",
+    "layer": "real-browser+intercepted-api",
+    "inputs": {
+      "path": "/evidence",
+      "width": 1440
+    },
+    "expected": "HTTP 200, visible heading, no page exception or horizontal overflow",
+    "actual": {
+      "http": 200,
+      "heading": true,
+      "overflow": false,
+      "pageerrors": []
+    },
+    "status": "PASS",
+    "issue": "",
+    "duration_ms": 883.75
+  },
+  {
+    "id": "BROWSER-004",
+    "category": "browser-routes",
+    "name": "route renders with bounded layout",
+    "layer": "real-browser+intercepted-api",
+    "inputs": {
+      "path": "/evidence/REC-1",
+      "width": 1440
+    },
+    "expected": "HTTP 200, visible heading, no page exception or horizontal overflow",
+    "actual": {
+      "http": 200,
+      "heading": true,
+      "overflow": false,
+      "pageerrors": []
+    },
+    "status": "PASS",
+    "issue": "",
+    "duration_ms": 961.569
+  },
+  {
+    "id": "BROWSER-005",
+    "category": "browser-routes",
+    "name": "route renders with bounded layout",
+    "layer": "real-browser+intercepted-api",
+    "inputs": {
+      "path": "/validity",
+      "width": 1440
+    },
+    "expected": "HTTP 200, visible heading, no page exception or horizontal overflow",
+    "actual": {
+      "http": 200,
+      "heading": true,
+      "overflow": false,
+      "pageerrors": []
+    },
+    "status": "PASS",
+    "issue": "",
+    "duration_ms": 891.782
+  },
+  {
+    "id": "BROWSER-006",
+    "category": "browser-routes",
+    "name": "route renders with bounded layout",
+    "layer": "real-browser+intercepted-api",
+    "inputs": {
+      "path": "/validity/DEC-1",
+      "width": 1440
+    },
+    "expected": "HTTP 200, visible heading, no page exception or horizontal overflow",
+    "actual": {
+      "http": 200,
+      "heading": true,
+      "overflow": false,
+      "pageerrors": []
+    },
+    "status": "PASS",
+    "issue": "",
+    "duration_ms": 1022.247
+  },
+  {
+    "id": "BROWSER-007",
+    "category": "browser-routes",
+    "name": "route renders with bounded layout",
+    "layer": "real-browser+intercepted-api",
+    "inputs": {
+      "path": "/forecasts",
+      "width": 1440
+    },
+    "expected": "HTTP 200, visible heading, no page exception or horizontal overflow",
+    "actual": {
+      "http": 200,
+      "heading": true,
+      "overflow": false,
+      "pageerrors": []
+    },
+    "status": "PASS",
+    "issue": "",
+    "duration_ms": 963.606
+  },
+  {
+    "id": "BROWSER-008",
+    "category": "browser-routes",
+    "name": "route renders with bounded layout",
+    "layer": "real-browser+intercepted-api",
+    "inputs": {
+      "path": "/planning",
+      "width": 1440
+    },
+    "expected": "HTTP 200, visible heading, no page exception or horizontal overflow",
+    "actual": {
+      "http": 200,
+      "heading": true,
+      "overflow": false,
+      "pageerrors": []
+    },
+    "status": "PASS",
+    "issue": "",
+    "duration_ms": 967.673
+  },
+  {
+    "id": "BROWSER-009",
+    "category": "browser-routes",
+    "name": "route renders with bounded layout",
+    "layer": "real-browser+intercepted-api",
+    "inputs": {
+      "path": "/planning/compare",
+      "width": 1440
+    },
+    "expected": "HTTP 200, visible heading, no page exception or horizontal overflow",
+    "actual": {
+      "http": 200,
+      "heading": true,
+      "overflow": false,
+      "pageerrors": []
+    },
+    "status": "PASS",
+    "issue": "",
+    "duration_ms": 922.139
+  },
+  {
+    "id": "BROWSER-010",
+    "category": "browser-routes",
+    "name": "route renders with bounded layout",
+    "layer": "real-browser+intercepted-api",
+    "inputs": {
+      "path": "/stress-lab",
+      "width": 1440
+    },
+    "expected": "HTTP 200, visible heading, no page exception or horizontal overflow",
+    "actual": {
+      "http": 200,
+      "heading": true,
+      "overflow": false,
+      "pageerrors": []
+    },
+    "status": "PASS",
+    "issue": "",
+    "duration_ms": 862.087
+  },
+  {
+    "id": "BROWSER-011",
+    "category": "browser-routes",
+    "name": "route renders with bounded layout",
+    "layer": "real-browser+intercepted-api",
+    "inputs": {
+      "path": "/explanations",
+      "width": 1440
+    },
+    "expected": "HTTP 200, visible heading, no page exception or horizontal overflow",
+    "actual": {
+      "http": 200,
+      "heading": true,
+      "overflow": false,
+      "pageerrors": []
+    },
+    "status": "PASS",
+    "issue": "",
+    "duration_ms": 899.279
+  },
+  {
+    "id": "BROWSER-012",
+    "category": "browser-routes",
+    "name": "route renders with bounded layout",
+    "layer": "real-browser+intercepted-api",
+    "inputs": {
+      "path": "/approvals",
+      "width": 1440
+    },
+    "expected": "HTTP 200, visible heading, no page exception or horizontal overflow",
+    "actual": {
+      "http": 200,
+      "heading": true,
+      "overflow": false,
+      "pageerrors": []
+    },
+    "status": "PASS",
+    "issue": "",
+    "duration_ms": 915.399
+  },
+  {
+    "id": "BROWSER-013",
+    "category": "browser-routes",
+    "name": "route renders with bounded layout",
+    "layer": "real-browser+intercepted-api",
+    "inputs": {
+      "path": "/audit",
+      "width": 1440
+    },
+    "expected": "HTTP 200, visible heading, no page exception or horizontal overflow",
+    "actual": {
+      "http": 200,
+      "heading": true,
+      "overflow": false,
+      "pageerrors": []
+    },
+    "status": "PASS",
+    "issue": "",
+    "duration_ms": 928.36
+  },
+  {
+    "id": "BROWSER-014",
+    "category": "browser-routes",
+    "name": "route renders with bounded layout",
+    "layer": "real-browser+intercepted-api",
+    "inputs": {
+      "path": "/benchmarks",
+      "width": 1440
+    },
+    "expected": "HTTP 200, visible heading, no page exception or horizontal overflow",
+    "actual": {
+      "http": 200,
+      "heading": true,
+      "overflow": false,
+      "pageerrors": []
+    },
+    "status": "PASS",
+    "issue": "",
+    "duration_ms": 984.225
+  },
+  {
+    "id": "BROWSER-015",
+    "category": "browser-routes",
+    "name": "route renders with bounded layout",
+    "layer": "real-browser+intercepted-api",
+    "inputs": {
+      "path": "/",
+      "width": 390
+    },
+    "expected": "HTTP 200, visible heading, no page exception or horizontal overflow",
+    "actual": {
+      "http": 200,
+      "heading": true,
+      "overflow": false,
+      "pageerrors": []
+    },
+    "status": "PASS",
+    "issue": "",
+    "duration_ms": 1378.428
+  },
+  {
+    "id": "BROWSER-016",
+    "category": "browser-routes",
+    "name": "route renders with bounded layout",
+    "layer": "real-browser+intercepted-api",
+    "inputs": {
+      "path": "/ingestion",
+      "width": 390
+    },
+    "expected": "HTTP 200, visible heading, no page exception or horizontal overflow",
+    "actual": {
+      "http": 200,
+      "heading": true,
+      "overflow": false,
+      "pageerrors": []
+    },
+    "status": "PASS",
+    "issue": "",
+    "duration_ms": 868.208
+  },
+  {
+    "id": "BROWSER-017",
+    "category": "browser-routes",
+    "name": "route renders with bounded layout",
+    "layer": "real-browser+intercepted-api",
+    "inputs": {
+      "path": "/evidence",
+      "width": 390
+    },
+    "expected": "HTTP 200, visible heading, no page exception or horizontal overflow",
+    "actual": {
+      "http": 200,
+      "heading": true,
+      "overflow": false,
+      "pageerrors": []
+    },
+    "status": "PASS",
+    "issue": "",
+    "duration_ms": 854.644
+  },
+  {
+    "id": "BROWSER-018",
+    "category": "browser-routes",
+    "name": "route renders with bounded layout",
+    "layer": "real-browser+intercepted-api",
+    "inputs": {
+      "path": "/evidence/REC-1",
+      "width": 390
+    },
+    "expected": "HTTP 200, visible heading, no page exception or horizontal overflow",
+    "actual": {
+      "http": 200,
+      "heading": true,
+      "overflow": false,
+      "pageerrors": []
+    },
+    "status": "PASS",
+    "issue": "",
+    "duration_ms": 876.053
+  },
+  {
+    "id": "BROWSER-019",
+    "category": "browser-routes",
+    "name": "route renders with bounded layout",
+    "layer": "real-browser+intercepted-api",
+    "inputs": {
+      "path": "/validity",
+      "width": 390
+    },
+    "expected": "HTTP 200, visible heading, no page exception or horizontal overflow",
+    "actual": {
+      "http": 200,
+      "heading": true,
+      "overflow": false,
+      "pageerrors": []
+    },
+    "status": "PASS",
+    "issue": "",
+    "duration_ms": 857.899
+  },
+  {
+    "id": "BROWSER-020",
+    "category": "browser-routes",
+    "name": "route renders with bounded layout",
+    "layer": "real-browser+intercepted-api",
+    "inputs": {
+      "path": "/validity/DEC-1",
+      "width": 390
+    },
+    "expected": "HTTP 200, visible heading, no page exception or horizontal overflow",
+    "actual": {
+      "http": 200,
+      "heading": true,
+      "overflow": false,
+      "pageerrors": []
+    },
+    "status": "PASS",
+    "issue": "",
+    "duration_ms": 916.146
+  },
+  {
+    "id": "BROWSER-021",
+    "category": "browser-routes",
+    "name": "route renders with bounded layout",
+    "layer": "real-browser+intercepted-api",
+    "inputs": {
+      "path": "/forecasts",
+      "width": 390
+    },
+    "expected": "HTTP 200, visible heading, no page exception or horizontal overflow",
+    "actual": {
+      "http": 200,
+      "heading": true,
+      "overflow": false,
+      "pageerrors": []
+    },
+    "status": "PASS",
+    "issue": "",
+    "duration_ms": 874.649
+  },
+  {
+    "id": "BROWSER-022",
+    "category": "browser-routes",
+    "name": "route renders with bounded layout",
+    "layer": "real-browser+intercepted-api",
+    "inputs": {
+      "path": "/planning",
+      "width": 390
+    },
+    "expected": "HTTP 200, visible heading, no page exception or horizontal overflow",
+    "actual": {
+      "http": 200,
+      "heading": true,
+      "overflow": false,
+      "pageerrors": []
+    },
+    "status": "PASS",
+    "issue": "",
+    "duration_ms": 1018.107
+  },
+  {
+    "id": "BROWSER-023",
+    "category": "browser-routes",
+    "name": "route renders with bounded layout",
+    "layer": "real-browser+intercepted-api",
+    "inputs": {
+      "path": "/planning/compare",
+      "width": 390
+    },
+    "expected": "HTTP 200, visible heading, no page exception or horizontal overflow",
+    "actual": {
+      "http": 200,
+      "heading": true,
+      "overflow": false,
+      "pageerrors": []
+    },
+    "status": "PASS",
+    "issue": "",
+    "duration_ms": 868.097
+  },
+  {
+    "id": "BROWSER-024",
+    "category": "browser-routes",
+    "name": "route renders with bounded layout",
+    "layer": "real-browser+intercepted-api",
+    "inputs": {
+      "path": "/stress-lab",
+      "width": 390
+    },
+    "expected": "HTTP 200, visible heading, no page exception or horizontal overflow",
+    "actual": {
+      "http": 200,
+      "heading": true,
+      "overflow": false,
+      "pageerrors": []
+    },
+    "status": "PASS",
+    "issue": "",
+    "duration_ms": 864.537
+  },
+  {
+    "id": "BROWSER-025",
+    "category": "browser-routes",
+    "name": "route renders with bounded layout",
+    "layer": "real-browser+intercepted-api",
+    "inputs": {
+      "path": "/explanations",
+      "width": 390
+    },
+    "expected": "HTTP 200, visible heading, no page exception or horizontal overflow",
+    "actual": {
+      "http": 200,
+      "heading": true,
+      "overflow": false,
+      "pageerrors": []
+    },
+    "status": "PASS",
+    "issue": "",
+    "duration_ms": 882.835
+  },
+  {
+    "id": "BROWSER-026",
+    "category": "browser-routes",
+    "name": "route renders with bounded layout",
+    "layer": "real-browser+intercepted-api",
+    "inputs": {
+      "path": "/approvals",
+      "width": 390
+    },
+    "expected": "HTTP 200, visible heading, no page exception or horizontal overflow",
+    "actual": {
+      "http": 200,
+      "heading": true,
+      "overflow": false,
+      "pageerrors": []
+    },
+    "status": "PASS",
+    "issue": "",
+    "duration_ms": 880.0
+  },
+  {
+    "id": "BROWSER-027",
+    "category": "browser-routes",
+    "name": "route renders with bounded layout",
+    "layer": "real-browser+intercepted-api",
+    "inputs": {
+      "path": "/audit",
+      "width": 390
+    },
+    "expected": "HTTP 200, visible heading, no page exception or horizontal overflow",
+    "actual": {
+      "http": 200,
+      "heading": true,
+      "overflow": false,
+      "pageerrors": []
+    },
+    "status": "PASS",
+    "issue": "",
+    "duration_ms": 884.879
+  },
+  {
+    "id": "BROWSER-028",
+    "category": "browser-routes",
+    "name": "route renders with bounded layout",
+    "layer": "real-browser+intercepted-api",
+    "inputs": {
+      "path": "/benchmarks",
+      "width": 390
+    },
+    "expected": "HTTP 200, visible heading, no page exception or horizontal overflow",
+    "actual": {
+      "http": 200,
+      "heading": true,
+      "overflow": false,
+      "pageerrors": []
+    },
+    "status": "PASS",
+    "issue": "",
+    "duration_ms": 920.563
+  },
+  {
+    "id": "BROWSER-029",
+    "category": "browser-failure-states",
+    "name": "API failure is visible",
+    "layer": "real-browser+intercepted-api",
+    "inputs": {
+      "path": "/ingestion",
+      "status": "network"
+    },
+    "expected": "explicit request failure rather than fabricated successful data",
+    "actual": {
+      "failure_text": "STREAM STATUS\nStream status could not be loaded\n\nWe could not reach the data service. Check your connection and make sure the service is running, then try again.\n\nConnection unavailable\nTry again\nBack to dashboard\nConnection details"
+    },
+    "status": "PASS",
+    "issue": "",
+    "duration_ms": 904.781
+  },
+  {
+    "id": "BROWSER-030",
+    "category": "browser-failure-states",
+    "name": "API failure is visible",
+    "layer": "real-browser+intercepted-api",
+    "inputs": {
+      "path": "/evidence",
+      "status": "network"
+    },
+    "expected": "explicit request failure rather than fabricated successful data",
+    "actual": {
+      "failure_text": "EVIDENCE RECORDS\nEvidence records could not be loaded\n\nWe could not reach the data service. Check your connection and make sure the service is running, then try again.\n\nConnection unavailable\nTry again\nBack to dashboard\nConnection details"
+    },
+    "status": "PASS",
+    "issue": "",
+    "duration_ms": 847.181
+  },
+  {
+    "id": "BROWSER-031",
+    "category": "browser-failure-states",
+    "name": "API failure is visible",
+    "layer": "real-browser+intercepted-api",
+    "inputs": {
+      "path": "/validity",
+      "status": "network"
+    },
+    "expected": "explicit request failure rather than fabricated successful data",
+    "actual": {
+      "failure_text": "DECISION VALIDITY\nDecision validity could not be loaded\n\nWe could not reach the data service. Check your connection and make sure the service is running, then try again.\n\nConnection unavailable\nTry again\nBack to dashboard\nConnection details"
+    },
+    "status": "PASS",
+    "issue": "",
+    "duration_ms": 889.379
+  },
+  {
+    "id": "BROWSER-032",
+    "category": "browser-failure-states",
+    "name": "API failure is visible",
+    "layer": "real-browser+intercepted-api",
+    "inputs": {
+      "path": "/forecasts",
+      "status": "network"
+    },
+    "expected": "explicit request failure rather than fabricated successful data",
+    "actual": {
+      "failure_text": "FORECASTS\nForecasts could not be loaded\n\nWe could not reach the data service. Check your connection and make sure the service is running, then try again.\n\nConnection unavailable\nTry again\nBack to dashboard\nConnection details"
+    },
+    "status": "PASS",
+    "issue": "",
+    "duration_ms": 909.364
+  },
+  {
+    "id": "BROWSER-033",
+    "category": "browser-failure-states",
+    "name": "API failure is visible",
+    "layer": "real-browser+intercepted-api",
+    "inputs": {
+      "path": "/planning",
+      "status": "network"
+    },
+    "expected": "explicit request failure rather than fabricated successful data",
+    "actual": {
+      "failure_text": "SCHEDULE ALTERNATIVES\nSchedule alternatives could not be loaded\n\nWe could not reach the data service. Check your connection and make sure the service is running, then try again.\n\nConnection unavailable\nTry again\nBack to dashboard\nConnection details"
+    },
+    "status": "PASS",
+    "issue": "",
+    "duration_ms": 919.554
+  },
+  {
+    "id": "BROWSER-034",
+    "category": "browser-failure-states",
+    "name": "API failure is visible",
+    "layer": "real-browser+intercepted-api",
+    "inputs": {
+      "path": "/approvals",
+      "status": "network"
+    },
+    "expected": "explicit request failure rather than fabricated successful data",
+    "actual": {
+      "failure_text": "APPROVAL QUEUE\nApproval queue could not be loaded\n\nWe could not reach the data service. Check your connection and make sure the service is running, then try again.\n\nConnection unavailable\nTry again\nBack to dashboard\nConnection details"
+    },
+    "status": "PASS",
+    "issue": "",
+    "duration_ms": 885.001
+  },
+  {
+    "id": "BROWSER-035",
+    "category": "browser-failure-states",
+    "name": "API failure is visible",
+    "layer": "real-browser+intercepted-api",
+    "inputs": {
+      "path": "/ingestion",
+      "status": 403
+    },
+    "expected": "explicit request failure rather than fabricated successful data",
+    "actual": {
+      "failure_text": "STREAM STATUS\nStream status could not be loaded\n\nYour current session does not have access to this data. Sign in with an authorized account or contact your workspace administrator.\n\nAccess required\nTry again\nBack to dashboard\nConnection details"
+    },
+    "status": "PASS",
+    "issue": "",
+    "duration_ms": 884.142
+  },
+  {
+    "id": "BROWSER-036",
+    "category": "browser-failure-states",
+    "name": "API failure is visible",
+    "layer": "real-browser+intercepted-api",
+    "inputs": {
+      "path": "/evidence",
+      "status": 403
+    },
+    "expected": "explicit request failure rather than fabricated successful data",
+    "actual": {
+      "failure_text": "EVIDENCE RECORDS\nEvidence records could not be loaded\n\nYour current session does not have access to this data. Sign in with an authorized account or contact your workspace administrator.\n\nAccess required\nTry again\nBack to dashboard\nConnection details"
+    },
+    "status": "PASS",
+    "issue": "",
+    "duration_ms": 877.476
+  },
+  {
+    "id": "BROWSER-037",
+    "category": "browser-failure-states",
+    "name": "API failure is visible",
+    "layer": "real-browser+intercepted-api",
+    "inputs": {
+      "path": "/validity",
+      "status": 403
+    },
+    "expected": "explicit request failure rather than fabricated successful data",
+    "actual": {
+      "failure_text": "DECISION VALIDITY\nDecision validity could not be loaded\n\nYour current session does not have access to this data. Sign in with an authorized account or contact your workspace administrator.\n\nAccess required\nTry again\nBack to dashboard\nConnection details"
+    },
+    "status": "PASS",
+    "issue": "",
+    "duration_ms": 851.153
+  },
+  {
+    "id": "BROWSER-038",
+    "category": "browser-failure-states",
+    "name": "API failure is visible",
+    "layer": "real-browser+intercepted-api",
+    "inputs": {
+      "path": "/forecasts",
+      "status": 403
+    },
+    "expected": "explicit request failure rather than fabricated successful data",
+    "actual": {
+      "failure_text": "FORECASTS\nForecasts could not be loaded\n\nYour current session does not have access to this data. Sign in with an authorized account or contact your workspace administrator.\n\nAccess required\nTry again\nBack to dashboard\nConnection details"
+    },
+    "status": "PASS",
+    "issue": "",
+    "duration_ms": 880.235
+  },
+  {
+    "id": "BROWSER-039",
+    "category": "browser-failure-states",
+    "name": "API failure is visible",
+    "layer": "real-browser+intercepted-api",
+    "inputs": {
+      "path": "/planning",
+      "status": 403
+    },
+    "expected": "explicit request failure rather than fabricated successful data",
+    "actual": {
+      "failure_text": "SCHEDULE ALTERNATIVES\nSchedule alternatives could not be loaded\n\nYour current session does not have access to this data. Sign in with an authorized account or contact your workspace administrator.\n\nAccess required\nTry again\nBack to dashboard\nConnection details"
+    },
+    "status": "PASS",
+    "issue": "",
+    "duration_ms": 944.815
+  },
+  {
+    "id": "BROWSER-040",
+    "category": "browser-failure-states",
+    "name": "API failure is visible",
+    "layer": "real-browser+intercepted-api",
+    "inputs": {
+      "path": "/approvals",
+      "status": 403
+    },
+    "expected": "explicit request failure rather than fabricated successful data",
+    "actual": {
+      "failure_text": "APPROVAL QUEUE\nApproval queue could not be loaded\n\nYour current session does not have access to this data. Sign in with an authorized account or contact your workspace administrator.\n\nAccess required\nTry again\nBack to dashboard\nConnection details"
+    },
+    "status": "PASS",
+    "issue": "",
+    "duration_ms": 949.154
+  },
+  {
+    "id": "BROWSER-041",
+    "category": "browser-failure-states",
+    "name": "API failure is visible",
+    "layer": "real-browser+intercepted-api",
+    "inputs": {
+      "path": "/ingestion",
+      "status": 404
+    },
+    "expected": "explicit request failure rather than fabricated successful data",
+    "actual": {
+      "failure_text": "STREAM STATUS\nStream status could not be loaded\n\nThe requested record or service endpoint could not be found. Check the record link, or try again once this service is available.\n\nData not available\nTry again\nBack to dashboard\nConnection details"
+    },
+    "status": "PASS",
+    "issue": "",
+    "duration_ms": 883.991
+  },
+  {
+    "id": "BROWSER-042",
+    "category": "browser-failure-states",
+    "name": "API failure is visible",
+    "layer": "real-browser+intercepted-api",
+    "inputs": {
+      "path": "/evidence",
+      "status": 404
+    },
+    "expected": "explicit request failure rather than fabricated successful data",
+    "actual": {
+      "failure_text": "EVIDENCE RECORDS\nEvidence records could not be loaded\n\nThe requested record or service endpoint could not be found. Check the record link, or try again once this service is available.\n\nData not available\nTry again\nBack to dashboard\nConnection details"
+    },
+    "status": "PASS",
+    "issue": "",
+    "duration_ms": 858.789
+  },
+  {
+    "id": "BROWSER-043",
+    "category": "browser-failure-states",
+    "name": "API failure is visible",
+    "layer": "real-browser+intercepted-api",
+    "inputs": {
+      "path": "/validity",
+      "status": 404
+    },
+    "expected": "explicit request failure rather than fabricated successful data",
+    "actual": {
+      "failure_text": "DECISION VALIDITY\nDecision validity could not be loaded\n\nThe requested record or service endpoint could not be found. Check the record link, or try again once this service is available.\n\nData not available\nTry again\nBack to dashboard\nConnection details"
+    },
+    "status": "PASS",
+    "issue": "",
+    "duration_ms": 877.088
+  },
+  {
+    "id": "BROWSER-044",
+    "category": "browser-failure-states",
+    "name": "API failure is visible",
+    "layer": "real-browser+intercepted-api",
+    "inputs": {
+      "path": "/forecasts",
+      "status": 404
+    },
+    "expected": "explicit request failure rather than fabricated successful data",
+    "actual": {
+      "failure_text": "FORECASTS\nForecasts could not be loaded\n\nThe requested record or service endpoint could not be found. Check the record link, or try again once this service is available.\n\nData not available\nTry again\nBack to dashboard\nConnection details"
+    },
+    "status": "PASS",
+    "issue": "",
+    "duration_ms": 897.012
+  },
+  {
+    "id": "BROWSER-045",
+    "category": "browser-failure-states",
+    "name": "API failure is visible",
+    "layer": "real-browser+intercepted-api",
+    "inputs": {
+      "path": "/planning",
+      "status": 404
+    },
+    "expected": "explicit request failure rather than fabricated successful data",
+    "actual": {
+      "failure_text": "SCHEDULE ALTERNATIVES\nSchedule alternatives could not be loaded\n\nThe requested record or service endpoint could not be found. Check the record link, or try again once this service is available.\n\nData not available\nTry again\nBack to dashboard\nConnection details"
+    },
+    "status": "PASS",
+    "issue": "",
+    "duration_ms": 919.243
+  },
+  {
+    "id": "BROWSER-046",
+    "category": "browser-failure-states",
+    "name": "API failure is visible",
+    "layer": "real-browser+intercepted-api",
+    "inputs": {
+      "path": "/approvals",
+      "status": 404
+    },
+    "expected": "explicit request failure rather than fabricated successful data",
+    "actual": {
+      "failure_text": "APPROVAL QUEUE\nApproval queue could not be loaded\n\nThe requested record or service endpoint could not be found. Check the record link, or try again once this service is available.\n\nData not available\nTry again\nBack to dashboard\nConnection details"
+    },
+    "status": "PASS",
+    "issue": "",
+    "duration_ms": 941.701
+  },
+  {
+    "id": "BROWSER-047",
+    "category": "browser-failure-states",
+    "name": "API failure is visible",
+    "layer": "real-browser+intercepted-api",
+    "inputs": {
+      "path": "/ingestion",
+      "status": 429
+    },
+    "expected": "explicit request failure rather than fabricated successful data",
+    "actual": {
+      "failure_text": "STREAM STATUS\nStream status could not be loaded\n\nThe service is receiving too many requests. Wait a moment before trying again.\n\nToo many requests\nTry again\nBack to dashboard\nConnection details"
+    },
+    "status": "PASS",
+    "issue": "",
+    "duration_ms": 915.362
+  },
+  {
+    "id": "BROWSER-048",
+    "category": "browser-failure-states",
+    "name": "API failure is visible",
+    "layer": "real-browser+intercepted-api",
+    "inputs": {
+      "path": "/evidence",
+      "status": 429
+    },
+    "expected": "explicit request failure rather than fabricated successful data",
+    "actual": {
+      "failure_text": "EVIDENCE RECORDS\nEvidence records could not be loaded\n\nThe service is receiving too many requests. Wait a moment before trying again.\n\nToo many requests\nTry again\nBack to dashboard\nConnection details"
+    },
+    "status": "PASS",
+    "issue": "",
+    "duration_ms": 925.367
+  },
+  {
+    "id": "BROWSER-049",
+    "category": "browser-failure-states",
+    "name": "API failure is visible",
+    "layer": "real-browser+intercepted-api",
+    "inputs": {
+      "path": "/validity",
+      "status": 429
+    },
+    "expected": "explicit request failure rather than fabricated successful data",
+    "actual": {
+      "failure_text": "DECISION VALIDITY\nDecision validity could not be loaded\n\nThe service is receiving too many requests. Wait a moment before trying again.\n\nToo many requests\nTry again\nBack to dashboard\nConnection details"
+    },
+    "status": "PASS",
+    "issue": "",
+    "duration_ms": 906.942
+  },
+  {
+    "id": "BROWSER-050",
+    "category": "browser-failure-states",
+    "name": "API failure is visible",
+    "layer": "real-browser+intercepted-api",
+    "inputs": {
+      "path": "/forecasts",
+      "status": 429
+    },
+    "expected": "explicit request failure rather than fabricated successful data",
+    "actual": {
+      "failure_text": "FORECASTS\nForecasts could not be loaded\n\nThe service is receiving too many requests. Wait a moment before trying again.\n\nToo many requests\nTry again\nBack to dashboard\nConnection details"
+    },
+    "status": "PASS",
+    "issue": "",
+    "duration_ms": 876.2
+  },
+  {
+    "id": "BROWSER-051",
+    "category": "browser-failure-states",
+    "name": "API failure is visible",
+    "layer": "real-browser+intercepted-api",
+    "inputs": {
+      "path": "/planning",
+      "status": 429
+    },
+    "expected": "explicit request failure rather than fabricated successful data",
+    "actual": {
+      "failure_text": "SCHEDULE ALTERNATIVES\nSchedule alternatives could not be loaded\n\nThe service is receiving too many requests. Wait a moment before trying again.\n\nToo many requests\nTry again\nBack to dashboard\nConnection details"
+    },
+    "status": "PASS",
+    "issue": "",
+    "duration_ms": 895.238
+  },
+  {
+    "id": "BROWSER-052",
+    "category": "browser-failure-states",
+    "name": "API failure is visible",
+    "layer": "real-browser+intercepted-api",
+    "inputs": {
+      "path": "/approvals",
+      "status": 429
+    },
+    "expected": "explicit request failure rather than fabricated successful data",
+    "actual": {
+      "failure_text": "APPROVAL QUEUE\nApproval queue could not be loaded\n\nThe service is receiving too many requests. Wait a moment before trying again.\n\nToo many requests\nTry again\nBack to dashboard\nConnection details"
+    },
+    "status": "PASS",
+    "issue": "",
+    "duration_ms": 910.063
+  },
+  {
+    "id": "BROWSER-053",
+    "category": "browser-failure-states",
+    "name": "API failure is visible",
+    "layer": "real-browser+intercepted-api",
+    "inputs": {
+      "path": "/ingestion",
+      "status": 503
+    },
+    "expected": "explicit request failure rather than fabricated successful data",
+    "actual": {
+      "failure_text": "STREAM STATUS\nStream status could not be loaded\n\nThe data service could not complete this request. Try again in a moment. If the problem continues, contact your workspace administrator.\n\nService temporarily unavailable\nTry again\nBack to dashboard\nConnection details"
+    },
+    "status": "PASS",
+    "issue": "",
+    "duration_ms": 848.139
+  },
+  {
+    "id": "BROWSER-054",
+    "category": "browser-failure-states",
+    "name": "API failure is visible",
+    "layer": "real-browser+intercepted-api",
+    "inputs": {
+      "path": "/evidence",
+      "status": 503
+    },
+    "expected": "explicit request failure rather than fabricated successful data",
+    "actual": {
+      "failure_text": "EVIDENCE RECORDS\nEvidence records could not be loaded\n\nThe data service could not complete this request. Try again in a moment. If the problem continues, contact your workspace administrator.\n\nService temporarily unavailable\nTry again\nBack to dashboard\nConnection details"
+    },
+    "status": "PASS",
+    "issue": "",
+    "duration_ms": 843.554
+  },
+  {
+    "id": "BROWSER-055",
+    "category": "browser-failure-states",
+    "name": "API failure is visible",
+    "layer": "real-browser+intercepted-api",
+    "inputs": {
+      "path": "/validity",
+      "status": 503
+    },
+    "expected": "explicit request failure rather than fabricated successful data",
+    "actual": {
+      "failure_text": "DECISION VALIDITY\nDecision validity could not be loaded\n\nThe data service could not complete this request. Try again in a moment. If the problem continues, contact your workspace administrator.\n\nService temporarily unavailable\nTry again\nBack to dashboard\nConnection details"
+    },
+    "status": "PASS",
+    "issue": "",
+    "duration_ms": 853.217
+  },
+  {
+    "id": "BROWSER-056",
+    "category": "browser-failure-states",
+    "name": "API failure is visible",
+    "layer": "real-browser+intercepted-api",
+    "inputs": {
+      "path": "/forecasts",
+      "status": 503
+    },
+    "expected": "explicit request failure rather than fabricated successful data",
+    "actual": {
+      "failure_text": "FORECASTS\nForecasts could not be loaded\n\nThe data service could not complete this request. Try again in a moment. If the problem continues, contact your workspace administrator.\n\nService temporarily unavailable\nTry again\nBack to dashboard\nConnection details"
+    },
+    "status": "PASS",
+    "issue": "",
+    "duration_ms": 914.79
+  },
+  {
+    "id": "BROWSER-057",
+    "category": "browser-failure-states",
+    "name": "API failure is visible",
+    "layer": "real-browser+intercepted-api",
+    "inputs": {
+      "path": "/planning",
+      "status": 503
+    },
+    "expected": "explicit request failure rather than fabricated successful data",
+    "actual": {
+      "failure_text": "SCHEDULE ALTERNATIVES\nSchedule alternatives could not be loaded\n\nThe data service could not complete this request. Try again in a moment. If the problem continues, contact your workspace administrator.\n\nService temporarily unavailable\nTry again\nBack to dashboard\nConnection details"
+    },
+    "status": "PASS",
+    "issue": "",
+    "duration_ms": 927.286
+  },
+  {
+    "id": "BROWSER-058",
+    "category": "browser-failure-states",
+    "name": "API failure is visible",
+    "layer": "real-browser+intercepted-api",
+    "inputs": {
+      "path": "/approvals",
+      "status": 503
+    },
+    "expected": "explicit request failure rather than fabricated successful data",
+    "actual": {
+      "failure_text": "APPROVAL QUEUE\nApproval queue could not be loaded\n\nThe data service could not complete this request. Try again in a moment. If the problem continues, contact your workspace administrator.\n\nService temporarily unavailable\nTry again\nBack to dashboard\nConnection details"
+    },
+    "status": "PASS",
+    "issue": "",
+    "duration_ms": 872.158
+  },
+  {
+    "id": "BROWSER-059",
+    "category": "browser-evidence-integrity",
+    "name": "planning respects returned IDs and times",
+    "layer": "real-browser+intercepted-api",
+    "inputs": {
+      "id": "AUDIT-SCHEDULE",
+      "version": 1,
+      "assignments": [
+        {
+          "taskId": "TSK-101",
+          "resourceId": "AUDIT-AIRCRAFT",
+          "crewId": "AUDIT-CREW",
+          "corridorId": "AUDIT-CORRIDOR",
+          "start": 3,
+          "end": 5
+        }
+      ],
+      "objectives": {
+        "utilization": 75,
+        "cost": 200,
+        "balance": 80
+      },
+      "verification": "verified"
+    },
+    "expected": "display exact returned aircraft, crew, corridor and interval",
+    "actual": {
+      "manifest": "Sortie / Task\tAircraft & Base\tPilot & Crew (Duty)\tPayload / Ordnance\tRoute & Corridor\tTime Window\tVerification\nSortieTSK-101\tAUDIT-AIRCRAFT\nTail: SB042 \u2022 Bareilly AFS\n\tAUDIT-CREW\n6.8h / 8.0h (1.2h remaining)\n\t2x BrahMos-A + 4x Astra Mk-1 (9,400 kg)\tBareilly AFS \u2192 Leh Forward AFS\nAUDIT-CORRIDOR\n\t3:00\u20135:00 UTC (T+3h \u2192 T+5h, Slots 3\u20135)\t\nCP-SAT Verified"
+    },
+    "status": "PASS",
+    "issue": "",
+    "duration_ms": 1113.598
+  },
+  {
+    "id": "BROWSER-060",
+    "category": "browser-evidence-integrity",
+    "name": "empty/failed disruption cannot certify fixture sorties",
+    "layer": "real-browser+intercepted-api",
+    "inputs": {
+      "scenario": "storm_front",
+      "status": 200,
+      "assignments": []
+    },
+    "expected": "request reaches API; no successful/optimal claim when response fails or contains no assignments",
+    "actual": {
+      "disruption_requests": [
+        {
+          "method": "POST",
+          "path": "/disruption"
+        }
+      ],
+      "shows_verified_optimal": false,
+      "response_status": 200,
+      "manifest_excerpt": "Flight Dispatch Manifest (6)\nFleet Airframes (8)\nAircrew & Pilots (6)\nMunitions & Priority (6)\nCorridors & Weather (4)\nThreat Radar (3)\nData Feeds Health\nActive Sortie Dispatch & Mission Allocation Board\n\nTransparent air operations manifest: exact aircraft, pilot crew & duty limits, munitions/cargo loadout, origin-corridor-destination routing, and live delay & reroute tracking.\n\nAll Sorties (6)\nOn Schedule (1)\nIn-Flight (3)\nRerouted / Alert (1)\nOPERATIONAL DISRUPTION LOGGED \u2014 REPLANNING PENDING / UNVERIFIED:\n\nDisruption event received. Solver returned empty plan or replan request failed. Manual commander inspection required.\n\nMSN-OP-901\nGARUDA-01\n\u2022 Deep Strike Alpha (Forward Deterrence)\nP-1 Urgent Strike\nON SCHEDULE\nASSIGNED AIRCRAFT\n\nSukhoi Su-30MKI Flanker-H\n\nTail: SB042\nBase: Bareilly AFS (Base-A)\nASSIGNED CREW\n\nWg Cdr Vikram Joshi [PIC]\n\nSqn Ldr Dev Nair (WSO)\n\nDuty Margin:\n1.2h left / 8h max\nPAYLOAD / MUNITIONS\n\n2x BrahMos-A Supersonic Cruise + 4x Astra Mk-1 BVR + 2x R-73\n\nWeight:\n9,400 kg\nFLIGHT ROUTE & TIMINGS\nBareilly AFS\nLeh Forward AFS (Base-B)\n\nVia: Corridor Alpha-1 (Direct FL320, 850 km)\n\nDEPARTURE:\n10:00 UTC (T+00:00)\nEST. ARRIVAL:\n11:15 UTC (T+01:15)\nDeadline: 12:00 UTC\nSafety Margin: +45 min\nINSPECTION REQUIRED\nMSN-OP-902\nTIGER-SWEEP-2\n\u2022 Air Superiority BVR Combat Patrol\nP-2 Air Superiority\nIN-FLIGHT\nASSIGNED AIRCRAFT\n\nDassault Rafale EH\n\nTail: RB011\nBase: Ambala AFS\nASSIGNED CREW\n\nWg Cdr Arjun Rathore [PIC]\n\nSingle Seat (Integrated SPECTRA EW)\n\nDuty Margin:\n3."
+    },
+    "status": "PASS",
+    "issue": "",
+    "duration_ms": 4095.327
+  },
+  {
+    "id": "BROWSER-061",
+    "category": "browser-evidence-integrity",
+    "name": "empty/failed disruption cannot certify fixture sorties",
+    "layer": "real-browser+intercepted-api",
+    "inputs": {
+      "scenario": "storm_front",
+      "status": 403,
+      "assignments": []
+    },
+    "expected": "request reaches API; no successful/optimal claim when response fails or contains no assignments",
+    "actual": {
+      "disruption_requests": [
+        {
+          "method": "POST",
+          "path": "/disruption"
+        }
+      ],
+      "shows_verified_optimal": false,
+      "response_status": 403,
+      "manifest_excerpt": "Flight Dispatch Manifest (6)\nFleet Airframes (8)\nAircrew & Pilots (6)\nMunitions & Priority (6)\nCorridors & Weather (4)\nThreat Radar (3)\nData Feeds Health\nActive Sortie Dispatch & Mission Allocation Board\n\nTransparent air operations manifest: exact aircraft, pilot crew & duty limits, munitions/cargo loadout, origin-corridor-destination routing, and live delay & reroute tracking.\n\nAll Sorties (6)\nOn Schedule (1)\nIn-Flight (3)\nRerouted / Alert (1)\nOPERATIONAL DISRUPTION LOGGED \u2014 REPLANNING PENDING / UNVERIFIED:\n\nDisruption event received. Solver returned empty plan or replan request failed. Manual commander inspection required.\n\nMSN-OP-901\nGARUDA-01\n\u2022 Deep Strike Alpha (Forward Deterrence)\nP-1 Urgent Strike\nON SCHEDULE\nASSIGNED AIRCRAFT\n\nSukhoi Su-30MKI Flanker-H\n\nTail: SB042\nBase: Bareilly AFS (Base-A)\nASSIGNED CREW\n\nWg Cdr Vikram Joshi [PIC]\n\nSqn Ldr Dev Nair (WSO)\n\nDuty Margin:\n1.2h left / 8h max\nPAYLOAD / MUNITIONS\n\n2x BrahMos-A Supersonic Cruise + 4x Astra Mk-1 BVR + 2x R-73\n\nWeight:\n9,400 kg\nFLIGHT ROUTE & TIMINGS\nBareilly AFS\nLeh Forward AFS (Base-B)\n\nVia: Corridor Alpha-1 (Direct FL320, 850 km)\n\nDEPARTURE:\n10:00 UTC (T+00:00)\nEST. ARRIVAL:\n11:15 UTC (T+01:15)\nDeadline: 12:00 UTC\nSafety Margin: +45 min\nINSPECTION REQUIRED\nMSN-OP-902\nTIGER-SWEEP-2\n\u2022 Air Superiority BVR Combat Patrol\nP-2 Air Superiority\nIN-FLIGHT\nASSIGNED AIRCRAFT\n\nDassault Rafale EH\n\nTail: RB011\nBase: Ambala AFS\nASSIGNED CREW\n\nWg Cdr Arjun Rathore [PIC]\n\nSingle Seat (Integrated SPECTRA EW)\n\nDuty Margin:\n3."
+    },
+    "status": "PASS",
+    "issue": "",
+    "duration_ms": 4324.447
+  },
+  {
+    "id": "BROWSER-062",
+    "category": "browser-evidence-integrity",
+    "name": "empty/failed disruption cannot certify fixture sorties",
+    "layer": "real-browser+intercepted-api",
+    "inputs": {
+      "scenario": "storm_front",
+      "status": 503,
+      "assignments": []
+    },
+    "expected": "request reaches API; no successful/optimal claim when response fails or contains no assignments",
+    "actual": {
+      "disruption_requests": [
+        {
+          "method": "POST",
+          "path": "/disruption"
+        }
+      ],
+      "shows_verified_optimal": false,
+      "response_status": 503,
+      "manifest_excerpt": "Flight Dispatch Manifest (6)\nFleet Airframes (8)\nAircrew & Pilots (6)\nMunitions & Priority (6)\nCorridors & Weather (4)\nThreat Radar (3)\nData Feeds Health\nActive Sortie Dispatch & Mission Allocation Board\n\nTransparent air operations manifest: exact aircraft, pilot crew & duty limits, munitions/cargo loadout, origin-corridor-destination routing, and live delay & reroute tracking.\n\nAll Sorties (6)\nOn Schedule (1)\nIn-Flight (3)\nRerouted / Alert (1)\nOPERATIONAL DISRUPTION LOGGED \u2014 REPLANNING PENDING / UNVERIFIED:\n\nDisruption event received. Solver returned empty plan or replan request failed. Manual commander inspection required.\n\nMSN-OP-901\nGARUDA-01\n\u2022 Deep Strike Alpha (Forward Deterrence)\nP-1 Urgent Strike\nON SCHEDULE\nASSIGNED AIRCRAFT\n\nSukhoi Su-30MKI Flanker-H\n\nTail: SB042\nBase: Bareilly AFS (Base-A)\nASSIGNED CREW\n\nWg Cdr Vikram Joshi [PIC]\n\nSqn Ldr Dev Nair (WSO)\n\nDuty Margin:\n1.2h left / 8h max\nPAYLOAD / MUNITIONS\n\n2x BrahMos-A Supersonic Cruise + 4x Astra Mk-1 BVR + 2x R-73\n\nWeight:\n9,400 kg\nFLIGHT ROUTE & TIMINGS\nBareilly AFS\nLeh Forward AFS (Base-B)\n\nVia: Corridor Alpha-1 (Direct FL320, 850 km)\n\nDEPARTURE:\n10:00 UTC (T+00:00)\nEST. ARRIVAL:\n11:15 UTC (T+01:15)\nDeadline: 12:00 UTC\nSafety Margin: +45 min\nINSPECTION REQUIRED\nMSN-OP-902\nTIGER-SWEEP-2\n\u2022 Air Superiority BVR Combat Patrol\nP-2 Air Superiority\nIN-FLIGHT\nASSIGNED AIRCRAFT\n\nDassault Rafale EH\n\nTail: RB011\nBase: Ambala AFS\nASSIGNED CREW\n\nWg Cdr Arjun Rathore [PIC]\n\nSingle Seat (Integrated SPECTRA EW)\n\nDuty Margin:\n3."
+    },
+    "status": "PASS",
+    "issue": "",
+    "duration_ms": 4751.11
+  },
+  {
+    "id": "BROWSER-063",
+    "category": "browser-evidence-integrity",
+    "name": "empty/failed disruption cannot certify fixture sorties",
+    "layer": "real-browser+intercepted-api",
+    "inputs": {
+      "scenario": "mechanical_fault",
+      "status": 200,
+      "assignments": []
+    },
+    "expected": "request reaches API; no successful/optimal claim when response fails or contains no assignments",
+    "actual": {
+      "disruption_requests": [
+        {
+          "method": "POST",
+          "path": "/disruption"
+        }
+      ],
+      "shows_verified_optimal": false,
+      "response_status": 200,
+      "manifest_excerpt": "Flight Dispatch Manifest (6)\nFleet Airframes (8)\nAircrew & Pilots (6)\nMunitions & Priority (6)\nCorridors & Weather (4)\nThreat Radar (3)\nData Feeds Health\nActive Sortie Dispatch & Mission Allocation Board\n\nTransparent air operations manifest: exact aircraft, pilot crew & duty limits, munitions/cargo loadout, origin-corridor-destination routing, and live delay & reroute tracking.\n\nAll Sorties (6)\nOn Schedule (2)\nIn-Flight (3)\nRerouted / Alert (0)\nOPERATIONAL DISRUPTION LOGGED \u2014 REPLANNING PENDING / UNVERIFIED:\n\nDisruption event received. Solver returned empty plan or replan request failed. Manual commander inspection required.\n\nMSN-OP-901\nGARUDA-01\n\u2022 Deep Strike Alpha (Forward Deterrence)\nP-1 Urgent Strike\nON SCHEDULE\nASSIGNED AIRCRAFT\n\nDassault Rafale EH (Standby Swap)\n\nTail: RB011\nBase: Ambala AFS (Fast Staged)\nASSIGNED CREW\n\nWg Cdr Vikram Joshi [PIC]\n\nSqn Ldr Dev Nair (WSO)\n\nDuty Margin:\n1.2h left / 8h max\nPAYLOAD / MUNITIONS\n\n2x BrahMos-A Supersonic Cruise + 4x Astra Mk-1 BVR + 2x R-73\n\nWeight:\n9,400 kg\nFLIGHT ROUTE & TIMINGS\nBareilly AFS\nLeh Forward AFS (Base-B)\n\nVia: Corridor Alpha-1 (Direct FL320, 850 km)\n\nDEPARTURE:\n10:00 UTC (T+00:00)\nEST. ARRIVAL:\n11:15 UTC (T+01:15)\nDynamic Replan Rationale: Lead airframe SU30-SB042 grounded for hydraulic check -> CP-SAT auto-substituted standby RAF-RB011. Crew & BrahMos load transferred with 0 launch delay.\nDeadline: 12:00 UTC\nSafety Margin: +45 min\nINSPECTION REQUIRED\nMSN-OP-902\nTIGER-SWEEP-2\n\u2022 Air Superiority BVR Combat Patrol\nP-2"
+    },
+    "status": "PASS",
+    "issue": "",
+    "duration_ms": 4120.358
+  },
+  {
+    "id": "BROWSER-064",
+    "category": "browser-evidence-integrity",
+    "name": "empty/failed disruption cannot certify fixture sorties",
+    "layer": "real-browser+intercepted-api",
+    "inputs": {
+      "scenario": "mechanical_fault",
+      "status": 403,
+      "assignments": []
+    },
+    "expected": "request reaches API; no successful/optimal claim when response fails or contains no assignments",
+    "actual": {
+      "disruption_requests": [
+        {
+          "method": "POST",
+          "path": "/disruption"
+        }
+      ],
+      "shows_verified_optimal": false,
+      "response_status": 403,
+      "manifest_excerpt": "Flight Dispatch Manifest (6)\nFleet Airframes (8)\nAircrew & Pilots (6)\nMunitions & Priority (6)\nCorridors & Weather (4)\nThreat Radar (3)\nData Feeds Health\nActive Sortie Dispatch & Mission Allocation Board\n\nTransparent air operations manifest: exact aircraft, pilot crew & duty limits, munitions/cargo loadout, origin-corridor-destination routing, and live delay & reroute tracking.\n\nAll Sorties (6)\nOn Schedule (2)\nIn-Flight (3)\nRerouted / Alert (0)\nOPERATIONAL DISRUPTION LOGGED \u2014 REPLANNING PENDING / UNVERIFIED:\n\nDisruption event received. Solver returned empty plan or replan request failed. Manual commander inspection required.\n\nMSN-OP-901\nGARUDA-01\n\u2022 Deep Strike Alpha (Forward Deterrence)\nP-1 Urgent Strike\nON SCHEDULE\nASSIGNED AIRCRAFT\n\nDassault Rafale EH (Standby Swap)\n\nTail: RB011\nBase: Ambala AFS (Fast Staged)\nASSIGNED CREW\n\nWg Cdr Vikram Joshi [PIC]\n\nSqn Ldr Dev Nair (WSO)\n\nDuty Margin:\n1.2h left / 8h max\nPAYLOAD / MUNITIONS\n\n2x BrahMos-A Supersonic Cruise + 4x Astra Mk-1 BVR + 2x R-73\n\nWeight:\n9,400 kg\nFLIGHT ROUTE & TIMINGS\nBareilly AFS\nLeh Forward AFS (Base-B)\n\nVia: Corridor Alpha-1 (Direct FL320, 850 km)\n\nDEPARTURE:\n10:00 UTC (T+00:00)\nEST. ARRIVAL:\n11:15 UTC (T+01:15)\nDynamic Replan Rationale: Lead airframe SU30-SB042 grounded for hydraulic check -> CP-SAT auto-substituted standby RAF-RB011. Crew & BrahMos load transferred with 0 launch delay.\nDeadline: 12:00 UTC\nSafety Margin: +45 min\nINSPECTION REQUIRED\nMSN-OP-902\nTIGER-SWEEP-2\n\u2022 Air Superiority BVR Combat Patrol\nP-2"
+    },
+    "status": "PASS",
+    "issue": "",
+    "duration_ms": 4186.578
+  },
+  {
+    "id": "BROWSER-065",
+    "category": "browser-evidence-integrity",
+    "name": "empty/failed disruption cannot certify fixture sorties",
+    "layer": "real-browser+intercepted-api",
+    "inputs": {
+      "scenario": "mechanical_fault",
+      "status": 503,
+      "assignments": []
+    },
+    "expected": "request reaches API; no successful/optimal claim when response fails or contains no assignments",
+    "actual": {
+      "disruption_requests": [
+        {
+          "method": "POST",
+          "path": "/disruption"
+        }
+      ],
+      "shows_verified_optimal": false,
+      "response_status": 503,
+      "manifest_excerpt": "Flight Dispatch Manifest (6)\nFleet Airframes (8)\nAircrew & Pilots (6)\nMunitions & Priority (6)\nCorridors & Weather (4)\nThreat Radar (3)\nData Feeds Health\nActive Sortie Dispatch & Mission Allocation Board\n\nTransparent air operations manifest: exact aircraft, pilot crew & duty limits, munitions/cargo loadout, origin-corridor-destination routing, and live delay & reroute tracking.\n\nAll Sorties (6)\nOn Schedule (2)\nIn-Flight (3)\nRerouted / Alert (0)\nOPERATIONAL DISRUPTION LOGGED \u2014 REPLANNING PENDING / UNVERIFIED:\n\nDisruption event received. Solver returned empty plan or replan request failed. Manual commander inspection required.\n\nMSN-OP-901\nGARUDA-01\n\u2022 Deep Strike Alpha (Forward Deterrence)\nP-1 Urgent Strike\nON SCHEDULE\nASSIGNED AIRCRAFT\n\nDassault Rafale EH (Standby Swap)\n\nTail: RB011\nBase: Ambala AFS (Fast Staged)\nASSIGNED CREW\n\nWg Cdr Vikram Joshi [PIC]\n\nSqn Ldr Dev Nair (WSO)\n\nDuty Margin:\n1.2h left / 8h max\nPAYLOAD / MUNITIONS\n\n2x BrahMos-A Supersonic Cruise + 4x Astra Mk-1 BVR + 2x R-73\n\nWeight:\n9,400 kg\nFLIGHT ROUTE & TIMINGS\nBareilly AFS\nLeh Forward AFS (Base-B)\n\nVia: Corridor Alpha-1 (Direct FL320, 850 km)\n\nDEPARTURE:\n10:00 UTC (T+00:00)\nEST. ARRIVAL:\n11:15 UTC (T+01:15)\nDynamic Replan Rationale: Lead airframe SU30-SB042 grounded for hydraulic check -> CP-SAT auto-substituted standby RAF-RB011. Crew & BrahMos load transferred with 0 launch delay.\nDeadline: 12:00 UTC\nSafety Margin: +45 min\nINSPECTION REQUIRED\nMSN-OP-902\nTIGER-SWEEP-2\n\u2022 Air Superiority BVR Combat Patrol\nP-2"
+    },
+    "status": "PASS",
+    "issue": "",
+    "duration_ms": 4088.793
+  },
+  {
+    "id": "BROWSER-066",
+    "category": "browser-evidence-integrity",
+    "name": "empty/failed disruption cannot certify fixture sorties",
+    "layer": "real-browser+intercepted-api",
+    "inputs": {
+      "scenario": "threat_spike",
+      "status": 200,
+      "assignments": []
+    },
+    "expected": "request reaches API; no successful/optimal claim when response fails or contains no assignments",
+    "actual": {
+      "disruption_requests": [
+        {
+          "method": "POST",
+          "path": "/disruption"
+        }
+      ],
+      "shows_verified_optimal": false,
+      "response_status": 200,
+      "manifest_excerpt": "Flight Dispatch Manifest (6)\nFleet Airframes (8)\nAircrew & Pilots (6)\nMunitions & Priority (6)\nCorridors & Weather (4)\nThreat Radar (3)\nData Feeds Health\nActive Sortie Dispatch & Mission Allocation Board\n\nTransparent air operations manifest: exact aircraft, pilot crew & duty limits, munitions/cargo loadout, origin-corridor-destination routing, and live delay & reroute tracking.\n\nAll Sorties (6)\nOn Schedule (2)\nIn-Flight (3)\nRerouted / Alert (0)\nOPERATIONAL DISRUPTION LOGGED \u2014 REPLANNING PENDING / UNVERIFIED:\n\nDisruption event received. Solver returned empty plan or replan request failed. Manual commander inspection required.\n\nMSN-OP-901\nGARUDA-01\n\u2022 Deep Strike Alpha (Forward Deterrence)\nP-1 Urgent Strike\nON SCHEDULE\nASSIGNED AIRCRAFT\n\nSukhoi Su-30MKI Flanker-H\n\nTail: SB042\nBase: Bareilly AFS (Base-A)\nASSIGNED CREW\n\nWg Cdr Vikram Joshi [PIC]\n\nSqn Ldr Dev Nair (WSO)\n\nDuty Margin:\n1.2h left / 8h max\nPAYLOAD / MUNITIONS\n\n2x BrahMos-A Supersonic Cruise + 4x Astra Mk-1 BVR + 2x R-73\n\nWeight:\n9,400 kg\nFLIGHT ROUTE & TIMINGS\nBareilly AFS\nLeh Forward AFS (Base-B)\n\nVia: Corridor Alpha-1 (Low-Altitude Terrain Masked FL140, 850 km)\n\nDEPARTURE:\n10:00 UTC (T+00:00)\nEST. ARRIVAL:\n11:15 UTC (T+01:15)\nDynamic Replan Rationale: Hostile S-400 radar active in Sector Bravo -> CP-SAT lowered flight level to FL140 terrain-masked vector. Stand-off BrahMos launch point secured with 0 schedule delay.\nDeadline: 12:00 UTC\nSafety Margin: +45 min\nINSPECTION REQUIRED\nMSN-OP-902\nTIGER-SWEEP-2\n\u2022 Air Superior"
+    },
+    "status": "PASS",
+    "issue": "",
+    "duration_ms": 4152.355
+  },
+  {
+    "id": "BROWSER-067",
+    "category": "browser-evidence-integrity",
+    "name": "empty/failed disruption cannot certify fixture sorties",
+    "layer": "real-browser+intercepted-api",
+    "inputs": {
+      "scenario": "threat_spike",
+      "status": 403,
+      "assignments": []
+    },
+    "expected": "request reaches API; no successful/optimal claim when response fails or contains no assignments",
+    "actual": {
+      "disruption_requests": [
+        {
+          "method": "POST",
+          "path": "/disruption"
+        }
+      ],
+      "shows_verified_optimal": false,
+      "response_status": 403,
+      "manifest_excerpt": "Flight Dispatch Manifest (6)\nFleet Airframes (8)\nAircrew & Pilots (6)\nMunitions & Priority (6)\nCorridors & Weather (4)\nThreat Radar (3)\nData Feeds Health\nActive Sortie Dispatch & Mission Allocation Board\n\nTransparent air operations manifest: exact aircraft, pilot crew & duty limits, munitions/cargo loadout, origin-corridor-destination routing, and live delay & reroute tracking.\n\nAll Sorties (6)\nOn Schedule (2)\nIn-Flight (3)\nRerouted / Alert (0)\nOPERATIONAL DISRUPTION LOGGED \u2014 REPLANNING PENDING / UNVERIFIED:\n\nDisruption event received. Solver returned empty plan or replan request failed. Manual commander inspection required.\n\nMSN-OP-901\nGARUDA-01\n\u2022 Deep Strike Alpha (Forward Deterrence)\nP-1 Urgent Strike\nON SCHEDULE\nASSIGNED AIRCRAFT\n\nSukhoi Su-30MKI Flanker-H\n\nTail: SB042\nBase: Bareilly AFS (Base-A)\nASSIGNED CREW\n\nWg Cdr Vikram Joshi [PIC]\n\nSqn Ldr Dev Nair (WSO)\n\nDuty Margin:\n1.2h left / 8h max\nPAYLOAD / MUNITIONS\n\n2x BrahMos-A Supersonic Cruise + 4x Astra Mk-1 BVR + 2x R-73\n\nWeight:\n9,400 kg\nFLIGHT ROUTE & TIMINGS\nBareilly AFS\nLeh Forward AFS (Base-B)\n\nVia: Corridor Alpha-1 (Low-Altitude Terrain Masked FL140, 850 km)\n\nDEPARTURE:\n10:00 UTC (T+00:00)\nEST. ARRIVAL:\n11:15 UTC (T+01:15)\nDynamic Replan Rationale: Hostile S-400 radar active in Sector Bravo -> CP-SAT lowered flight level to FL140 terrain-masked vector. Stand-off BrahMos launch point secured with 0 schedule delay.\nDeadline: 12:00 UTC\nSafety Margin: +45 min\nINSPECTION REQUIRED\nMSN-OP-902\nTIGER-SWEEP-2\n\u2022 Air Superior"
+    },
+    "status": "PASS",
+    "issue": "",
+    "duration_ms": 4153.565
+  },
+  {
+    "id": "BROWSER-068",
+    "category": "browser-evidence-integrity",
+    "name": "empty/failed disruption cannot certify fixture sorties",
+    "layer": "real-browser+intercepted-api",
+    "inputs": {
+      "scenario": "threat_spike",
+      "status": 503,
+      "assignments": []
+    },
+    "expected": "request reaches API; no successful/optimal claim when response fails or contains no assignments",
+    "actual": {
+      "disruption_requests": [
+        {
+          "method": "POST",
+          "path": "/disruption"
+        }
+      ],
+      "shows_verified_optimal": false,
+      "response_status": 503,
+      "manifest_excerpt": "Flight Dispatch Manifest (6)\nFleet Airframes (8)\nAircrew & Pilots (6)\nMunitions & Priority (6)\nCorridors & Weather (4)\nThreat Radar (3)\nData Feeds Health\nActive Sortie Dispatch & Mission Allocation Board\n\nTransparent air operations manifest: exact aircraft, pilot crew & duty limits, munitions/cargo loadout, origin-corridor-destination routing, and live delay & reroute tracking.\n\nAll Sorties (6)\nOn Schedule (2)\nIn-Flight (3)\nRerouted / Alert (0)\nOPERATIONAL DISRUPTION LOGGED \u2014 REPLANNING PENDING / UNVERIFIED:\n\nDisruption event received. Solver returned empty plan or replan request failed. Manual commander inspection required.\n\nMSN-OP-901\nGARUDA-01\n\u2022 Deep Strike Alpha (Forward Deterrence)\nP-1 Urgent Strike\nON SCHEDULE\nASSIGNED AIRCRAFT\n\nSukhoi Su-30MKI Flanker-H\n\nTail: SB042\nBase: Bareilly AFS (Base-A)\nASSIGNED CREW\n\nWg Cdr Vikram Joshi [PIC]\n\nSqn Ldr Dev Nair (WSO)\n\nDuty Margin:\n1.2h left / 8h max\nPAYLOAD / MUNITIONS\n\n2x BrahMos-A Supersonic Cruise + 4x Astra Mk-1 BVR + 2x R-73\n\nWeight:\n9,400 kg\nFLIGHT ROUTE & TIMINGS\nBareilly AFS\nLeh Forward AFS (Base-B)\n\nVia: Corridor Alpha-1 (Low-Altitude Terrain Masked FL140, 850 km)\n\nDEPARTURE:\n10:00 UTC (T+00:00)\nEST. ARRIVAL:\n11:15 UTC (T+01:15)\nDynamic Replan Rationale: Hostile S-400 radar active in Sector Bravo -> CP-SAT lowered flight level to FL140 terrain-masked vector. Stand-off BrahMos launch point secured with 0 schedule delay.\nDeadline: 12:00 UTC\nSafety Margin: +45 min\nINSPECTION REQUIRED\nMSN-OP-902\nTIGER-SWEEP-2\n\u2022 Air Superior"
+    },
+    "status": "PASS",
+    "issue": "",
+    "duration_ms": 4320.139
+  },
+  {
+    "id": "BROWSER-069",
+    "category": "browser-evidence-integrity",
+    "name": "initial live manifest renders new backend mission",
+    "layer": "real-browser+intercepted-api",
+    "inputs": {},
+    "expected": "new backend mission visible without requiring fixture ID match or scenario click",
+    "actual": {
+      "returned": [
+        {
+          "mission_id": "AUDIT-NEW-MISSION",
+          "airframe_id": "AUDIT-NEW-AIRCRAFT",
+          "crew_id": "AUDIT-NEW-CREW",
+          "corridor_id": "AUDIT-ROUTE",
+          "slot": 1
+        }
+      ],
+      "manifest_excerpt": "Flight Dispatch Manifest (7)\nFleet Airframes (8)\nAircrew & Pilots (6)\nMunitions & Priority (6)\nCorridors & Weather (4)\nThreat Radar (3)\nData Feeds Health\nActive Sortie Dispatch & Mission Allocation Board\n\nTransparent air operations manifest: exact aircraft, pilot crew & duty limits, munitions/cargo loadout, origin-corridor-destination routing, and live delay & reroute tracking.\n\nAll Sorties (7)\nOn Schedule (3)\nIn-Flight (3)\nRerouted / Alert (0)\nAUDIT-NEW-MISSION\nSORTIE-AUDIT-NEW-MISSION\n\u2022 Operational Sortie AUDIT-NEW-MISSION\nP-1 Operational Mission\nON SCHEDULE\nASSIGNED AIRCRAFT\n\nAUDIT-NEW-AIRCRAFT\n\nTail: AUDIT-NEW-AIRCRAFT\nBase: Air Force Station Forward\nASSIGNED CREW\n\nAUDIT-NEW-CREW [PIC]\n\nMission Specialist\n\nDuty Margin:\n8h left / 10h max\nPAYLOAD / MUNITIONS\n\nTactical Combat / Logistics Payload\n\nWeight:\n8,500 kg\nFLIGHT ROUTE & TIMINGS\nBase-Alpha\nBase-Bravo\n\nVia: AUDIT-ROUTE\n\nDEPARTURE:\nT+1h\nEST. ARRIVAL:\nT+2h\nDeadline: T+8h\nSafety Margin: +45 min\nVERIFIED OPTIMAL (CP-SAT)\nMSN-OP-901\nGARUDA-01\n\u2022 Deep Strike Alpha (Forward Deterrence)\nP-1 Urgent Strike\nON SCHEDULE\nASSIGNED AIRCRAFT\n\nSukhoi Su-30MKI Flanker-H\n\nTail: SB042\nBase: Bareilly AFS (Base-A)\nASSIGNED CREW\n\nWg Cdr Vikram Joshi [PIC]\n\nSqn Ldr Dev Nair (WSO)\n\nDuty Margin:\n1.2h left / 8h max\nPAYLOAD / MUNITIONS\n\n2x BrahMos-A Supersonic Cruise + 4x Astra Mk-1 BVR + 2x R-73\n\nWeight:\n9,400 kg\nFLIGHT ROUTE & TIMINGS\nBareilly AFS\nLeh Forward AFS (Base-B)\n\nVia: Corridor Alpha-1 (Direct FL320, 850 km)\n\nDEPARTURE:\n10:00 UTC (T+00:00)\nEST. ARRIVAL:\n11:15 UTC (T+01:15)\nDeadline: 12:00 UTC\nSafety Margin: +45 min\nVERIFIED OPTIMAL (C"
+    },
+    "status": "PASS",
+    "issue": "",
+    "duration_ms": 1349.103
+  }
+]

@@ -52,6 +52,9 @@ class MagiCoordinator:
 
         # Sort missions by priority (highest priority negotiated first)
         sorted_missions = sorted(missions, key=lambda m: m.priority, reverse=True)
+        committed_airframes = set()
+        committed_crews = set()
+        committed_corridor_slots = set()
 
         for mission in sorted_missions:
             # Find matching corridors for this mission's trajectory
@@ -78,13 +81,27 @@ class MagiCoordinator:
                 for airframe in airframes:
                     if consensus_reached:
                         break
+                    if airframe.id in committed_airframes:
+                        continue
+
                     for crew in crews:
                         if consensus_reached:
                             break
+                        if crew.id in committed_crews:
+                            continue
+
                         for corridor in connected_corridors:
                             if consensus_reached:
                                 break
-                            slot = min(mission.deadline_slot, slots[0])
+                            flight_slots = max(1, (corridor.flight_time_mins + 59) // 60)
+                            viable_slots = [
+                                s for s in slots
+                                if s + flight_slots <= mission.deadline_slot
+                                and (corridor.id, s) not in committed_corridor_slots
+                            ]
+                            if not viable_slots:
+                                continue
+                            slot = viable_slots[0]
 
                             transcripts.append(
                                 NegotiationMessage(
@@ -128,6 +145,10 @@ class MagiCoordinator:
                             # Check for unanimous consensus
                             if not objections:
                                 consensus_reached = True
+                                committed_airframes.add(airframe.id)
+                                committed_crews.add(crew.id)
+                                committed_corridor_slots.add((corridor.id, slot))
+
                                 transcripts.append(
                                     NegotiationMessage(
                                         agent_name="Coordinator",

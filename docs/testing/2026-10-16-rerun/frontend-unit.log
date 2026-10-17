@@ -1,0 +1,27 @@
+
+> air-power-frontend@0.1.0 test
+> node --experimental-strip-types --test src/lib/engine.test.ts src/lib/request-failure.test.ts
+
+(node:20404) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///E:/Projects/SIH2k26_PS26250_ingestion/frontend/src/lib/engine.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to \\?\E:\Projects\SIH2k26_PS26250_ingestion\frontend\package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+âœ” feasible schedule passes independent checks (3.0305ms)
+âœ” impossible capacity is reported honestly (0.4577ms)
+âœ” changed capacity invalidates prior result (0.4186ms)
+âœ” seeded fault detection is reproducible (0.5879ms)
+(node:22820) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///E:/Projects/SIH2k26_PS26250_ingestion/frontend/src/lib/request-failure.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to \\?\E:\Projects\SIH2k26_PS26250_ingestion\frontend\package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+âœ” browser connection failures have a useful recovery message (2.2286ms)
+âœ” HTTP failures retain their status and distinguish recovery paths (0.5983ms)
+âœ” validation messages remain available and unclassified failures get safe guidance (0.4604ms)
+â„¹ tests 7
+â„¹ suites 0
+â„¹ pass 7
+â„¹ fail 0
+â„¹ cancelled 0
+â„¹ skipped 0
+â„¹ todo 0
+â„¹ duration_ms 237.7948

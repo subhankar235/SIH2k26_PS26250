@@ -11,7 +11,7 @@ from .base import BaseMagiAgent, AgentVote
 class FleetAgent(BaseMagiAgent):
     """Evaluates airframe readiness, capacity, range, and turnaround stress."""
 
-    def __init__(self, name: str = "Melchior-Fleet"):
+    def __init__(self, name: str = "AERO-FLEET-01"):
         super().__init__(name=name, domain="fleet")
         self.turnaround_predictor = TurnaroundPredictor()
 
@@ -69,7 +69,7 @@ class FleetAgent(BaseMagiAgent):
 class CrewAgent(BaseMagiAgent):
     """Evaluates pilot qualifications, flight hour caps, and duty windows."""
 
-    def __init__(self, name: str = "Balthasar-Crew"):
+    def __init__(self, name: str = "CREW-LOGISTICS-02"):
         super().__init__(name=name, domain="crew")
 
     def evaluate_candidate(
@@ -120,7 +120,7 @@ class CrewAgent(BaseMagiAgent):
 class PayloadAgent(BaseMagiAgent):
     """Evaluates mission urgency, handling requirements, and deadlines."""
 
-    def __init__(self, name: str = "Casper-Payload"):
+    def __init__(self, name: str = "ARMAMENT-ALLOC-03"):
         super().__init__(name=name, domain="payload")
 
     def evaluate_candidate(
@@ -152,7 +152,7 @@ class PayloadAgent(BaseMagiAgent):
 class ThreatAgent(BaseMagiAgent):
     """Evaluates corridor threat umbrella, radar exposure, and suggests detours."""
 
-    def __init__(self, name: str = "MAGI-Threat"):
+    def __init__(self, name: str = "THREAT-INTEL-05"):
         super().__init__(name=name, domain="threat")
         self.threat_scorer = ThreatRiskScorer()
 
@@ -188,7 +188,7 @@ class ThreatAgent(BaseMagiAgent):
 class WeatherAgent(BaseMagiAgent):
     """Evaluates weather radar, convective activity, and runway minima."""
 
-    def __init__(self, name: str = "MAGI-Weather"):
+    def __init__(self, name: str = "MET-ATMOSPHERE-06"):
         super().__init__(name=name, domain="weather")
         self.trend_predictor = WeatherTrendPredictor()
 

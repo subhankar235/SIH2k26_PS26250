@@ -1,0 +1,270 @@
+{
+  "standard": {
+    "PASS": 1374,
+    "FAIL": 1
+  },
+  "neutral_filename_replay": {
+    "PASS": 1298,
+    "FAIL": 8
+  },
+  "reviewed_catalog": {
+    "PASS": 1366,
+    "FAIL": 9
+  },
+  "neutral_filename_differences": [
+    {
+      "id": "AUD-1250",
+      "category": "api-authorization",
+      "inputs": {
+        "path": "/replan",
+        "body": {}
+      },
+      "standard": "PASS",
+      "neutral_filename": "FAIL",
+      "http": 200
+    },
+    {
+      "id": "AUD-1251",
+      "category": "api-authorization",
+      "inputs": {
+        "path": "/events",
+        "body": {
+          "scenario": "mechanical_fault"
+        }
+      },
+      "standard": "PASS",
+      "neutral_filename": "FAIL",
+      "http": 200
+    },
+    {
+      "id": "AUD-1252",
+      "category": "api-authorization",
+      "inputs": {
+        "path": "/disruption",
+        "body": {
+          "scenario": "storm_front"
+        }
+      },
+      "standard": "PASS",
+      "neutral_filename": "FAIL",
+      "http": 200
+    },
+    {
+      "id": "AUD-1253",
+      "category": "api-authorization",
+      "inputs": {
+        "path": "/planning/solve",
+        "body": {
+          "capacity": 2,
+          "horizon": 4
+        }
+      },
+      "standard": "PASS",
+      "neutral_filename": "FAIL",
+      "http": 200
+    },
+    {
+      "id": "AUD-1254",
+      "category": "api-authorization",
+      "inputs": {
+        "path": "/validity/reverify",
+        "body": {
+          "id": "DEC-803"
+        }
+      },
+      "standard": "PASS",
+      "neutral_filename": "FAIL",
+      "http": 200
+    },
+    {
+      "id": "AUD-1255",
+      "category": "api-authorization",
+      "inputs": {
+        "path": "/stress/runs",
+        "body": {
+          "scenario": "clean",
+          "faultSeverity": "low",
+          "seed": 42
+        }
+      },
+      "standard": "PASS",
+      "neutral_filename": "FAIL",
+      "http": 200
+    },
+    {
+      "id": "AUD-1256",
+      "category": "api-authorization",
+      "inputs": {
+        "path": "/agents/requests",
+        "body": {
+          "query": "Explain current evidence"
+        }
+      },
+      "standard": "PASS",
+      "neutral_filename": "FAIL",
+      "http": 200
+    },
+    {
+      "id": "AUD-1257",
+      "category": "api-authorization",
+      "inputs": {
+        "path": "/approvals/APP-101/decision",
+        "body": {
+          "decision": "approved",
+          "reviewer": "Audit",
+          "rationale": "Test permission gate"
+        }
+      },
+      "standard": "PASS",
+      "neutral_filename": "FAIL",
+      "http": 200
+    }
+  ],
+  "differences_from_previous_on_disk_run": [
+    {
+      "id": "AUD-1369",
+      "category": "browser-evidence-integrity",
+      "previous": "PASS",
+      "current": "FAIL"
+    }
+  ],
+  "unique_scenarios": 1375,
+  "documented_operations_covered": 34,
+  "historical_report_totals": {
+    "PASS": 1184,
+    "FAIL": 191
+  },
+  "historical_categories": {
+    "api-approval-gates": {
+      "total": 8,
+      "pass": 0,
+      "fail": 8
+    },
+    "api-authorization": {
+      "total": 8,
+      "pass": 0,
+      "fail": 8
+    },
+    "api-disruption-debounce": {
+      "total": 4,
+      "pass": 1,
+      "fail": 3
+    },
+    "api-input-validation": {
+      "total": 67,
+      "pass": 59,
+      "fail": 8
+    },
+    "api-solve-boundaries": {
+      "total": 56,
+      "pass": 27,
+      "fail": 29
+    },
+    "api-solve-verify-roundtrip": {
+      "total": 12,
+      "pass": 0,
+      "fail": 12
+    },
+    "browser-evidence-integrity": {
+      "total": 11,
+      "pass": 1,
+      "fail": 10
+    },
+    "browser-failure-states": {
+      "total": 30,
+      "pass": 30,
+      "fail": 0
+    },
+    "browser-routes": {
+      "total": 28,
+      "pass": 28,
+      "fail": 0
+    },
+    "concurrency": {
+      "total": 3,
+      "pass": 0,
+      "fail": 3
+    },
+    "event-idempotency": {
+      "total": 3,
+      "pass": 0,
+      "fail": 3
+    },
+    "event-validation": {
+      "total": 11,
+      "pass": 0,
+      "fail": 11
+    },
+    "fault-injection": {
+      "total": 4,
+      "pass": 2,
+      "fail": 2
+    },
+    "independent-verifier": {
+      "total": 162,
+      "pass": 114,
+      "fail": 48
+    },
+    "live-http": {
+      "total": 25,
+      "pass": 25,
+      "fail": 0
+    },
+    "live-http-methods": {
+      "total": 32,
+      "pass": 32,
+      "fail": 0
+    },
+    "live-missing-resources": {
+      "total": 7,
+      "pass": 4,
+      "fail": 3
+    },
+    "negotiation": {
+      "total": 7,
+      "pass": 4,
+      "fail": 3
+    },
+    "real-kafka": {
+      "total": 6,
+      "pass": 4,
+      "fail": 2
+    },
+    "restart-recovery": {
+      "total": 4,
+      "pass": 0,
+      "fail": 4
+    },
+    "simulator-cli": {
+      "total": 1,
+      "pass": 0,
+      "fail": 1
+    },
+    "solver-boundaries": {
+      "total": 756,
+      "pass": 756,
+      "fail": 0
+    },
+    "solver-resource-contention": {
+      "total": 64,
+      "pass": 64,
+      "fail": 0
+    },
+    "solver-stability": {
+      "total": 4,
+      "pass": 4,
+      "fail": 0
+    },
+    "streaming": {
+      "total": 2,
+      "pass": 1,
+      "fail": 1
+    },
+    "telemetry-transitions": {
+      "total": 60,
+      "pass": 28,
+      "fail": 32
+    }
+  },
+  "historical_note": "Original report remains, but prior detailed result ledgers were overwritten by an intervening all-pass run before this rerun. No original per-case delta is claimed."
+}

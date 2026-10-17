@@ -1,13 +1,18 @@
 """FastAPI application factory for the Agent Engine."""
 
 import os
+import asyncio
+import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .routes import router, set_engine
+from .domain_routes import domain_router
 from transport.equilibrium import EquilibriumEngine
 from storage.database import StorageEngine
 from solver.model import Airframe, Crew, Corridor, Mission
+
+logger = logging.getLogger("AgentEngineServer")
 
 
 def create_demo_world() -> tuple:
@@ -28,9 +33,9 @@ def create_demo_world() -> tuple:
         Corridor(id="Corr-East", from_base="Base-A", to_base="Base-C", distance_km=600, flight_time_mins=70, threat_risk=0.05),
     ]
     missions = [
-        Mission(id="M-Ammo-01", origin_base="Base-A", dest_base="Base-B", payload_kg=15000, priority=9, deadline_slot=2),
-        Mission(id="M-Medical-02", origin_base="Base-A", dest_base="Base-B", payload_kg=4000, priority=7, deadline_slot=2),
-        Mission(id="M-Rations-03", origin_base="Base-A", dest_base="Base-C", payload_kg=5000, priority=4, deadline_slot=3),
+        Mission(id="M-Ammo-01", origin_base="Base-A", dest_base="Base-B", payload_kg=15000, priority=9, deadline_slot=4),
+        Mission(id="M-Medical-02", origin_base="Base-A", dest_base="Base-B", payload_kg=4000, priority=7, deadline_slot=4),
+        Mission(id="M-Rations-03", origin_base="Base-A", dest_base="Base-C", payload_kg=5000, priority=4, deadline_slot=4),
     ]
     return airframes, crews, corridors, missions
 
@@ -48,12 +53,42 @@ def init_default_engine() -> EquilibriumEngine:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     engine = init_default_engine()
+    consumer = None
+    consumer_task = None
+
     try:
         await engine.storage.init_db()
-    except Exception:
-        pass
+        latest = await engine.storage.get_latest_plan()
+        if latest:
+            engine.apply_restored_plan(latest)
+            try:
+                from api.domain_routes import restore_schedule
+                restore_schedule(latest)
+            except Exception as ex:
+                logger.warning(f"Could not sync restored plan to domain routes: {ex}")
+            logger.info(f"Restored and applied persisted plan revision {latest.revision} (run_id: {latest.run_id})")
+    except Exception as e:
+        logger.warning(f"Database init warning: {e}")
+
+    # Connect IngestionEventConsumer to live Kafka broker
+    try:
+        from transport.consumer import IngestionEventConsumer
+        consumer = IngestionEventConsumer(engine=engine)
+        await consumer.start()
+        consumer_task = asyncio.create_task(consumer.consume_loop())
+        logger.info("Kafka IngestionEventConsumer successfully started")
+    except Exception as e:
+        logger.warning(f"Kafka consumer start note (will operate via direct HTTP ingestion): {e}")
 
     yield
+
+    if consumer:
+        try:
+            await consumer.stop()
+            if consumer_task:
+                consumer_task.cancel()
+        except Exception:
+            pass
 
     try:
         await engine.storage.close()
@@ -77,6 +112,7 @@ def create_app() -> FastAPI:
     )
 
     app.include_router(router)
+    app.include_router(domain_router)
     # Ensure engine is seeded immediately
     init_default_engine()
     return app

@@ -1,0 +1,132 @@
+[
+  {
+    "id": "BROWSER-PROBE-1",
+    "scenario": "nonempty",
+    "status": "PASS",
+    "active_plan_request_count": 2,
+    "calls": [
+      "/validity/decisions",
+      "/ingestion/flagged",
+      "/approvals",
+      "/ingestion/status",
+      "/forecasts/FORECAST-01",
+      "/validity/decisions",
+      "/ingestion/flagged",
+      "/approvals",
+      "/ingestion/status",
+      "/forecasts/FORECAST-01",
+      "/plans/active",
+      "/validity/decisions",
+      "/ingestion/flagged",
+      "/approvals",
+      "/ingestion/status",
+      "/forecasts/FORECAST-01",
+      "/plans/active",
+      "/validity/decisions",
+      "/ingestion/flagged",
+      "/approvals",
+      "/ingestion/status",
+      "/forecasts/FORECAST-01"
+    ],
+    "page_errors": [],
+    "shows_returned_mission": true,
+    "shows_verified_optimal": true,
+    "manifest_excerpt": "Flight Dispatch Manifest (7)\nFleet Airframes (8)\nAircrew & Pilots (6)\nMunitions & Priority (6)\nCorridors & Weather (4)\nThreat Radar (3)\nData Feeds Health\nActive Sortie Dispatch & Mission Allocation Board\n\nTransparent air operations manifest: exact aircraft, pilot crew & duty limits, munitions/cargo loadout, origin-corridor-destination routing, and live delay & reroute tracking.\n\nAll Sorties (7)\nOn Schedule (3)\nIn-Flight (3)\nRerouted / Alert (0)\nINDEPENDENT-MISSION\nSORTIE-INDEPENDENT-MISSION\n\u2022 Operational Sortie INDEPENDENT-MISSION\nP-1 Operational Mission\nON SCHEDULE\nASSIGNED AIRCRAFT\n\nINDEPENDENT-AIRCRAFT\n\nTail: INDEPENDENT-AIRCRAFT\nBase: Air Force Station Forward\nASSIGNED CREW\n\nINDEPENDENT-CREW [PIC]\n\nMission Specialist\n\nDuty Margin:\n8h left / 10h max\nPAYLOAD / MUNITIONS\n\nTactical Combat / Logistics Payload\n\nWeight:\n8,500 kg\nFLIGHT ROUTE & TIMINGS\nBase-Alpha\nBase-Bravo\n\nVia: INDEPENDENT-CORRIDOR\n\nDEPARTURE:\nT+2h\nEST. ARRIVAL:\nT+3h\nDeadline: T+8h\nSafety Margin: +45 min\nVERIFIED OPTIMAL (CP-SAT)\nMSN-OP-901\nGARUDA-01\n\u2022 Deep Strike Alpha (Forward Deterrence)\nP-1 Urgent Strike\nON SCHEDULE\nASSIGNED AIRCRAFT\n\nSukhoi Su-30MKI Flanker-H\n\nTail: SB042\nBase: Bareilly AFS (Base-A)\nASSIGNED CREW\n\nWg Cdr Vikram Joshi [PIC]\n\nSqn Ldr Dev Nair (WSO)\n\nDuty Margin:\n1.2h left / 8h max\nPAYLOAD / MUNITIONS\n\n2x BrahMos-A Supersonic Cruise + 4x Astra Mk-1 BVR + 2x R-73\n\nWeight:\n9,400 kg\nFLIGHT ROUTE & TIMINGS\nBareilly AFS\nLeh Forward AFS (Base-B)\n\nVia: Corridor Alpha-1 (Direct FL320, 850 km)\n\nDEPARTURE:\n10:00 UTC (T+00:00)\nEST. ARRIVAL:\n11:15 UTC (T+01:15)\nDeadline: 12:00 UTC\nSafety Margin: +45 min\nVERIFIED OPTIMAL (CP-SAT)\nMSN-OP-902\nTIGER-SWEEP-2\n\u2022 Air Superiority BVR Combat Patrol\nP-2 Air Superiority\nIN-FLIGHT\nASSIGNED AIRCRAFT\n\nDassault Rafale EH\n\nTail: RB011\nBase: Ambala AFS\nASSIGNED CREW\n\nWg Cdr Arjun Rathore [PIC]\n\nSingle Seat (Integrated SPECTRA EW)\n\nDuty Margin:\n3.4h left / 8h max\nPAYLOAD / MUNITIONS\n\n2x SCALP-EG Cruise + 4x Meteor Long-Range BVR + 2x MICA IR\n\nWeight:\n8,200 kg\nFLI"
+  },
+  {
+    "id": "BROWSER-PROBE-2",
+    "scenario": "nonempty-evidence-integrity",
+    "status": "FAIL",
+    "expected": "live manifest contains only returned assignments and no unsupported operational facts",
+    "actual": {
+      "extra_fixture_missions": [
+        "MSN-OP-901",
+        "MSN-OP-902",
+        "MSN-LOG-110"
+      ],
+      "unsupported_facts": [
+        "8,500 kg",
+        "8h left / 10h max",
+        "Base-Alpha",
+        "Safety Margin: +45 min"
+      ],
+      "returned_assignments": [
+        {
+          "mission_id": "INDEPENDENT-MISSION",
+          "airframe_id": "INDEPENDENT-AIRCRAFT",
+          "crew_id": "INDEPENDENT-CREW",
+          "corridor_id": "INDEPENDENT-CORRIDOR",
+          "slot": 2
+        }
+      ]
+    }
+  },
+  {
+    "id": "BROWSER-PROBE-3",
+    "scenario": "empty",
+    "status": "FAIL",
+    "active_plan_request_count": 2,
+    "calls": [
+      "/validity/decisions",
+      "/ingestion/flagged",
+      "/approvals",
+      "/ingestion/status",
+      "/forecasts/FORECAST-01",
+      "/validity/decisions",
+      "/ingestion/flagged",
+      "/approvals",
+      "/ingestion/status",
+      "/forecasts/FORECAST-01",
+      "/plans/active",
+      "/validity/decisions",
+      "/ingestion/flagged",
+      "/approvals",
+      "/ingestion/status",
+      "/forecasts/FORECAST-01",
+      "/plans/active",
+      "/validity/decisions",
+      "/ingestion/flagged",
+      "/approvals",
+      "/ingestion/status",
+      "/forecasts/FORECAST-01"
+    ],
+    "page_errors": [],
+    "shows_returned_mission": false,
+    "shows_verified_optimal": true,
+    "manifest_excerpt": "Flight Dispatch Manifest (6)\nFleet Airframes (8)\nAircrew & Pilots (6)\nMunitions & Priority (6)\nCorridors & Weather (4)\nThreat Radar (3)\nData Feeds Health\nActive Sortie Dispatch & Mission Allocation Board\n\nTransparent air operations manifest: exact aircraft, pilot crew & duty limits, munitions/cargo loadout, origin-corridor-destination routing, and live delay & reroute tracking.\n\nAll Sorties (6)\nOn Schedule (2)\nIn-Flight (3)\nRerouted / Alert (0)\nMSN-OP-901\nGARUDA-01\n\u2022 Deep Strike Alpha (Forward Deterrence)\nP-1 Urgent Strike\nON SCHEDULE\nASSIGNED AIRCRAFT\n\nSukhoi Su-30MKI Flanker-H\n\nTail: SB042\nBase: Bareilly AFS (Base-A)\nASSIGNED CREW\n\nWg Cdr Vikram Joshi [PIC]\n\nSqn Ldr Dev Nair (WSO)\n\nDuty Margin:\n1.2h left / 8h max\nPAYLOAD / MUNITIONS\n\n2x BrahMos-A Supersonic Cruise + 4x Astra Mk-1 BVR + 2x R-73\n\nWeight:\n9,400 kg\nFLIGHT ROUTE & TIMINGS\nBareilly AFS\nLeh Forward AFS (Base-B)\n\nVia: Corridor Alpha-1 (Direct FL320, 850 km)\n\nDEPARTURE:\n10:00 UTC (T+00:00)\nEST. ARRIVAL:\n11:15 UTC (T+01:15)\nDeadline: 12:00 UTC\nSafety Margin: +45 min\nVERIFIED OPTIMAL (CP-SAT)\nMSN-OP-902\nTIGER-SWEEP-2\n\u2022 Air Superiority BVR Combat Patrol\nP-2 Air Superiority\nIN-FLIGHT\nASSIGNED AIRCRAFT\n\nDassault Rafale EH\n\nTail: RB011\nBase: Ambala AFS\nASSIGNED CREW\n\nWg Cdr Arjun Rathore [PIC]\n\nSingle Seat (Integrated SPECTRA EW)\n\nDuty Margin:\n3.4h left / 8h max\nPAYLOAD / MUNITIONS\n\n2x SCALP-EG Cruise + 4x Meteor Long-Range BVR + 2x MICA IR\n\nWeight:\n8,200 kg\nFLIGHT ROUTE & TIMINGS\nAmbala AFS\nUdhampur Sector Base\n\nVia: Corridor Alpha-1 (FL340 High Transit, 720 km)\n\nDEPARTURE:\n10:15 UTC (T+00:15)\nEST. ARRIVAL:\n11:20 UTC (T+01:20)\nDeadline: 12:15 UTC\nSafety Margin: +55 min\nVERIFIED OPTIMAL (CP-SAT)\nMSN-LOG-110\nSAMARITAN-04\n\u2022 Forward Base Resupply & Critical Medical Evac\nP-3 Tactical Airlift\nON SCHEDULE\nASSIGNED AIRCRAFT\n\nLockheed C-130J Super Hercules\n\nTail: KC382\nBase: Hindon AFS\nASSIGNED CREW\n\nSqn Ldr Priya Sharma [PIC]\n\nFlt Lt Rohit Varma (Co-Pilot)\n\nDuty Margin:\n2.8h left / 10h max\nPAYLOAD / MUNITIONS\n\n14,500 k"
+  },
+  {
+    "id": "BROWSER-PROBE-4",
+    "scenario": "unavailable",
+    "status": "FAIL",
+    "active_plan_request_count": 2,
+    "calls": [
+      "/validity/decisions",
+      "/ingestion/flagged",
+      "/approvals",
+      "/ingestion/status",
+      "/forecasts/FORECAST-01",
+      "/validity/decisions",
+      "/ingestion/flagged",
+      "/approvals",
+      "/ingestion/status",
+      "/forecasts/FORECAST-01",
+      "/plans/active",
+      "/validity/decisions",
+      "/ingestion/flagged",
+      "/approvals",
+      "/ingestion/status",
+      "/forecasts/FORECAST-01",
+      "/plans/active",
+      "/validity/decisions",
+      "/ingestion/flagged",
+      "/approvals",
+      "/ingestion/status",
+      "/forecasts/FORECAST-01"
+    ],
+    "page_errors": [],
+    "shows_returned_mission": false,
+    "shows_verified_optimal": true,
+    "manifest_excerpt": "Flight Dispatch Manifest (6)\nFleet Airframes (8)\nAircrew & Pilots (6)\nMunitions & Priority (6)\nCorridors & Weather (4)\nThreat Radar (3)\nData Feeds Health\nActive Sortie Dispatch & Mission Allocation Board\n\nTransparent air operations manifest: exact aircraft, pilot crew & duty limits, munitions/cargo loadout, origin-corridor-destination routing, and live delay & reroute tracking.\n\nAll Sorties (6)\nOn Schedule (2)\nIn-Flight (3)\nRerouted / Alert (0)\nMSN-OP-901\nGARUDA-01\n\u2022 Deep Strike Alpha (Forward Deterrence)\nP-1 Urgent Strike\nON SCHEDULE\nASSIGNED AIRCRAFT\n\nSukhoi Su-30MKI Flanker-H\n\nTail: SB042\nBase: Bareilly AFS (Base-A)\nASSIGNED CREW\n\nWg Cdr Vikram Joshi [PIC]\n\nSqn Ldr Dev Nair (WSO)\n\nDuty Margin:\n1.2h left / 8h max\nPAYLOAD / MUNITIONS\n\n2x BrahMos-A Supersonic Cruise + 4x Astra Mk-1 BVR + 2x R-73\n\nWeight:\n9,400 kg\nFLIGHT ROUTE & TIMINGS\nBareilly AFS\nLeh Forward AFS (Base-B)\n\nVia: Corridor Alpha-1 (Direct FL320, 850 km)\n\nDEPARTURE:\n10:00 UTC (T+00:00)\nEST. ARRIVAL:\n11:15 UTC (T+01:15)\nDeadline: 12:00 UTC\nSafety Margin: +45 min\nVERIFIED OPTIMAL (CP-SAT)\nMSN-OP-902\nTIGER-SWEEP-2\n\u2022 Air Superiority BVR Combat Patrol\nP-2 Air Superiority\nIN-FLIGHT\nASSIGNED AIRCRAFT\n\nDassault Rafale EH\n\nTail: RB011\nBase: Ambala AFS\nASSIGNED CREW\n\nWg Cdr Arjun Rathore [PIC]\n\nSingle Seat (Integrated SPECTRA EW)\n\nDuty Margin:\n3.4h left / 8h max\nPAYLOAD / MUNITIONS\n\n2x SCALP-EG Cruise + 4x Meteor Long-Range BVR + 2x MICA IR\n\nWeight:\n8,200 kg\nFLIGHT ROUTE & TIMINGS\nAmbala AFS\nUdhampur Sector Base\n\nVia: Corridor Alpha-1 (FL340 High Transit, 720 km)\n\nDEPARTURE:\n10:15 UTC (T+00:15)\nEST. ARRIVAL:\n11:20 UTC (T+01:20)\nDeadline: 12:15 UTC\nSafety Margin: +55 min\nVERIFIED OPTIMAL (CP-SAT)\nMSN-LOG-110\nSAMARITAN-04\n\u2022 Forward Base Resupply & Critical Medical Evac\nP-3 Tactical Airlift\nON SCHEDULE\nASSIGNED AIRCRAFT\n\nLockheed C-130J Super Hercules\n\nTail: KC382\nBase: Hindon AFS\nASSIGNED CREW\n\nSqn Ldr Priya Sharma [PIC]\n\nFlt Lt Rohit Varma (Co-Pilot)\n\nDuty Margin:\n2.8h left / 10h max\nPAYLOAD / MUNITIONS\n\n14,500 k"
+  }
+]

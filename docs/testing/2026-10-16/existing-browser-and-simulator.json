@@ -1,0 +1,39 @@
+[
+  {
+    "name": "ui-smoke",
+    "command": [
+      "C:\\Users\\Satyam\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+      "frontend/tests/ui_smoke.py"
+    ],
+    "exit_code": 0,
+    "summary": "PASS: demo/live toggle; time window; search; settings; 14 routes; evidence filters; reverify; solve; compare; polling; approval gates, rationale and failures; audit filter; API retry; mobile navigation."
+  },
+  {
+    "name": "demo-workflows",
+    "command": [
+      "C:\\Users\\Satyam\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+      "frontend/tests/demo_workflows.py"
+    ],
+    "exit_code": 0,
+    "summary": "PASS: 15 demo routes; forecast warning; persistent reverify; solve; preloaded diff; stress/agent polling; approval gate and audit; reset; mobile; no backend requests or browser errors."
+  },
+  {
+    "name": "failure-states",
+    "command": [
+      "C:\\Users\\Satyam\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+      "frontend/tests/failure_states.py"
+    ],
+    "exit_code": 0,
+    "summary": "PASS: network errors across 13 routes; retry; technical details; HTTP 404/403/429/503; mobile layout; live dashboard recovery to demo."
+  },
+  {
+    "name": "simulator",
+    "command": [
+      "C:\\Users\\Satyam\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+      "-c",
+      "import sys,pytest;sys.path.insert(0,'services');raise SystemExit(pytest.main(['services/simulator/tests','-q']))"
+    ],
+    "exit_code": 0,
+    "summary": "1 passed in 0.21s"
+  }
+]

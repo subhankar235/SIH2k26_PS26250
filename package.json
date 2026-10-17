@@ -17,6 +17,10 @@
     "demo:offline": "npm --prefix services/ingestion run system:offline",
     "demo": "npm --prefix services/ingestion run relief:dynamic --",
     "test:pipeline": "npm --prefix services/ingestion run relief:test:dynamic --",
-    "test:dashboard": "npm --prefix services/ingestion run relief:test:negotiation-ui --"
+    "test:dashboard": "npm --prefix services/ingestion run relief:test:negotiation-ui --",
+    "simulator": "python services/simulator/interactive_simulator.py",
+    "frontend:dev": "npm --prefix frontend run dev",
+    "frontend:build": "npm --prefix frontend run build",
+    "frontend:test": "npm --prefix frontend test"
   }
 }
